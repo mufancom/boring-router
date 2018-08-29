@@ -1,0 +1,3 @@
+{
+  "extends": "@magicspace/configs/tslint-prettier"
+}
