@@ -21,7 +21,7 @@ export interface RouteProps<
   TQueryDict extends GeneralQueryDict | undefined
 > {
   match: RouteMatch<TFragmentDict, TQueryDict>;
-  component: ComponentType<RouteComponentProps<TFragmentDict, TQueryDict>>;
+  component?: ComponentType<RouteComponentProps<TFragmentDict, TQueryDict>>;
 }
 
 @observer
@@ -30,7 +30,16 @@ export class Route<
   TQueryDict extends GeneralQueryDict | undefined
 > extends Component<RouteProps<TFragmentDict, TQueryDict>> {
   render(): ReactNode {
-    let {match, component: RouteComponent} = this.props;
-    return match.$matched ? <RouteComponent match={match} /> : <></>;
+    let {match, component: RouteComponent, children} = this.props;
+
+    return match.$matched ? (
+      RouteComponent ? (
+        <RouteComponent match={match} />
+      ) : (
+        children || <></>
+      )
+    ) : (
+      <></>
+    );
   }
 }
