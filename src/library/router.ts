@@ -94,7 +94,7 @@ export class Router {
         skipped = true;
       }
 
-      this.pushRouteChange(routeMatch, skipped, rest, fragmentDict, queryDict);
+      this.pushRouteChange(routeMatch, !matched, rest, fragmentDict, queryDict);
     }
   }
 
