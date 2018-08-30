@@ -172,8 +172,8 @@ export class RouteMatch<
     this._sourceQuery = sourceQueryDict;
 
     this._params = {
-      ...queryDict,
       ...fragmentDict,
+      ...queryDict,
     };
 
     this._matched = matched;
