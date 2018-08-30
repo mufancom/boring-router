@@ -94,7 +94,6 @@ interface RouteMatch<TFragmentDict, TQueryDict> {
   ```tsx
   <Route match={router.account}>
     <p>Account page</p>
-    <Link to={router.default.$path()}>Home</Link>
   </Route>
   ```
 
@@ -105,13 +104,18 @@ interface RouteMatch<TFragmentDict, TQueryDict> {
   ```tsx
   <Route match={router.account} exact>
     <p>Exact account page</p>
-    <Link to={router.account.details.$path()}>Account details</Link>
   </Route>
   ```
 
 - [Fragment](examples/fragment/main.tsx)
 
   Boring Router's version of `/account/:id` alike parameter.
+
+  ```tsx
+  <Link to={router.account.id} params={{id: '123'}}>
+    Account 123
+  </Link>
+  ```
 
   ```tsx
   <Route match={router.account.id}>
@@ -122,6 +126,12 @@ interface RouteMatch<TFragmentDict, TQueryDict> {
 - [Query](examples/query/main.tsx)
 
   Handle query string parameter.
+
+  ```tsx
+  <Link to={router.account} params={{id: '123'}}>
+    Account 123
+  </Link>
+  ```
 
   ```tsx
   <Route match={router.account}>
@@ -135,16 +145,6 @@ interface RouteMatch<TFragmentDict, TQueryDict> {
 
   ```tsx
   <Route match={router.account} component={AccountPage} />
-  ```
-
-- [Link](examples/link/main.tsx)
-
-  Write a useful `<Link>`.
-
-  ```tsx
-  <Link to={router.account.id} params={{id: '123'}}>
-    Account 123
-  </Link>
   ```
 
 ### Run an example
