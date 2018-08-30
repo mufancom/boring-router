@@ -67,29 +67,65 @@ const schema: RouteSchemaDict = {};
 
 ### Example list
 
-- [Basic](examples/basic)
+- [Basic](examples/basic/main.tsx)
 
   Basic usage.
 
-- [Exact](examples/exact)
+  ```tsx
+  <Route match={router.account}>
+    <p>Account page</p>
+    <Link to={router.default.$path()}>Home</Link>
+  </Route>
+  ```
+
+- [Exact](examples/exact/main.tsx)
 
   Match exact path.
 
-- [Fragment](examples/fragment)
+  ```tsx
+  <Route match={router.account} exact>
+    <p>Exact account page</p>
+    <Link to={router.account.details.$path()}>Account details</Link>
+  </Route>
+  ```
+
+- [Fragment](examples/fragment/main.tsx)
 
   Boring Router's version of `/account/:id` alike parameter.
 
-- [Query](examples/query)
+  ```tsx
+  <Route match={router.account.id}>
+    <p>Account {router.account.id.$fragments.id} details page</p>
+  </Route>
+  ```
+
+- [Query](examples/query/main.tsx)
 
   Handle query string parameter.
 
-- [Route Component](examples/route-component)
+  ```tsx
+  <Route match={router.account}>
+    <p>Account {router.account.$query.id} details page</p>
+  </Route>
+  ```
+
+- [Route Component](examples/route-component/main.tsx)
 
   Use `<Route />` with a route component.
 
-- [Link](examples/link)
+  ```tsx
+  <Route match={router.account} component={AccountPage} />
+  ```
+
+- [Link](examples/link/main.tsx)
 
   Write a useful `<Link>`.
+
+  ```tsx
+  <Link to={router.account.id} params={{id: '123'}}>
+    Account 123
+  </Link>
+  ```
 
 ### Run an example
 
