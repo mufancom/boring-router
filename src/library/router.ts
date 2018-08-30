@@ -1,7 +1,13 @@
 import {History, Location} from 'history';
+import hyphenate from 'hyphenate';
 import {Dict} from 'tslang';
 
 import {GeneralFragmentDict, GeneralQueryDict, RouteMatch} from './route-match';
+
+export type FragmentMatcherCallback = (key: string) => string | RegExp;
+
+const DEFAULT_FRAGMENT_MATCHER_CALLBACK: FragmentMatcherCallback = key =>
+  hyphenate(key, {lowerCase: true});
 
 type RouteQuerySchemaType<T> = T extends {
   $query: infer TSchema;
@@ -48,11 +54,24 @@ export type RootRouterType<TRouteSchemaDict> = Router &
     >
   };
 
+export interface RouterOptions {
+  fragmentMatcher?: FragmentMatcherCallback;
+}
+
 export class Router {
   /** @internal */
   _children!: RouteMatch[];
 
-  private constructor(schema: RouteSchemaDict, history: History) {
+  private _fragmentMatcher: FragmentMatcherCallback;
+
+  private constructor(
+    schema: RouteSchemaDict,
+    history: History,
+    {fragmentMatcher}: RouterOptions,
+  ) {
+    this._fragmentMatcher =
+      fragmentMatcher || DEFAULT_FRAGMENT_MATCHER_CALLBACK;
+
     this._children = this.buildRouteMatches(this, schema);
 
     history.listen(this.onLocationChange);
@@ -118,7 +137,11 @@ export class Router {
         schema = {};
       }
 
-      let {$match: match = key, $query: query, $children: children} = schema;
+      let {
+        $match: match = this._fragmentMatcher(key),
+        $query: query,
+        $children: children,
+      } = schema;
 
       let routeMatch = new RouteMatch(key, {match, query});
 
@@ -139,7 +162,8 @@ export class Router {
   static create<TSchema extends RouteSchemaDict>(
     schema: TSchema,
     history: History,
+    options: RouterOptions = {},
   ): RootRouterType<TSchema> {
-    return new Router(schema, history) as RootRouterType<TSchema>;
+    return new Router(schema, history, options) as RootRouterType<TSchema>;
   }
 }

@@ -223,6 +223,10 @@ hoist-non-react-statics@^2.5.0:
   version "2.5.5"
   resolved "http://registry.npm.taobao.org/hoist-non-react-statics/download/hoist-non-react-statics-2.5.5.tgz#c5903cf409c0dfd908f388e619d86b9c1174cb47"
 
+hyphenate@^0.2.1:
+  version "0.2.1"
+  resolved "http://registry.npm.taobao.org/hyphenate/download/hyphenate-0.2.1.tgz#531f403332dc128c3c616ea93fc0f54353a87e85"
+
 iconv-lite@~0.4.13:
   version "0.4.24"
   resolved "http://registry.npm.taobao.org/iconv-lite/download/iconv-lite-0.4.24.tgz#2022b4b25fbddc21d2f524974a474aafe733908b"
