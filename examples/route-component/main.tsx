@@ -3,7 +3,7 @@ import {observer} from 'mobx-react';
 import React, {Component, ReactNode} from 'react';
 import ReactDOM from 'react-dom';
 
-import {Route, RouteComponentPropsType, Router} from '../../bld/library';
+import {Route, RouteComponentProps, Router} from '../../bld/library';
 
 import {Link} from './link';
 
@@ -20,6 +20,9 @@ const router = Router.create(
       $query: {
         id: true,
       },
+      $children: {
+        details: true,
+      },
     },
   },
   history,
@@ -27,22 +30,22 @@ const router = Router.create(
 
 export type RouterType = typeof router;
 
-export interface AccountPageProps
-  extends RouteComponentPropsType<RouterType['account']> {}
+export type AccountPageProps = RouteComponentProps<RouterType['account']>;
 
 export class AccountPage extends Component<AccountPageProps> {
   render(): ReactNode {
-    let {
-      match: {$params},
-    } = this.props;
+    let {match} = this.props;
 
     return (
       <>
         <p>Account page</p>
         <Link to={router.default}>Home</Link>
         <hr />
-        <Route match={router.account}>
-          <p>Account {$params.id} details page</p>
+        <Link to={match.details} preserveQuery>
+          Details
+        </Link>
+        <Route match={match.details}>
+          <p>Account {match.$params.id} details page</p>
         </Route>
       </>
     );

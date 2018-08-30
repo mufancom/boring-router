@@ -1,27 +1,21 @@
 import {observer} from 'mobx-react';
 import React, {Component, ComponentType, ReactNode} from 'react';
 
-import {GeneralParamDict, RouteMatch} from './route-match';
+import {RouteMatch} from './route-match';
 
-export type RouteComponentPropsType<
-  TRouteMatch extends RouteMatch
-> = TRouteMatch extends RouteMatch<infer TParamDict>
-  ? RouteComponentProps<TParamDict>
-  : never;
-
-export interface RouteComponentProps<TParamDict extends GeneralParamDict> {
-  match: RouteMatch<TParamDict>;
+export interface RouteComponentProps<TRouteMatch extends RouteMatch> {
+  match: TRouteMatch;
 }
 
-export interface RouteProps<TParamDict extends GeneralParamDict> {
-  match: RouteMatch<TParamDict>;
+export interface RouteProps<TRouteMatch extends RouteMatch> {
+  match: TRouteMatch;
   exact?: boolean;
-  component?: ComponentType<RouteComponentProps<TParamDict>>;
+  component?: ComponentType<RouteComponentProps<TRouteMatch>>;
 }
 
 @observer
-export class Route<TParamDict extends GeneralParamDict> extends Component<
-  RouteProps<TParamDict>
+export class Route<TRouteMatch extends RouteMatch> extends Component<
+  RouteProps<TRouteMatch>
 > {
   render(): ReactNode {
     let {match, exact, component: RouteComponent, children} = this.props;

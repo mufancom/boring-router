@@ -143,6 +143,12 @@ interface RouteMatch<TParamDict> {
   <Route match={router.account} component={AccountPage} />
   ```
 
+  ```tsx
+  <Route match={match.details}>
+    <p>Account {match.$params.id} details page</p>
+  </Route>
+  ```
+
 ### Run an example
 
 ```sh
