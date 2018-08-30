@@ -35,6 +35,9 @@ export class RouteMatch<
   private _matched = false;
 
   @observable
+  private _exact = false;
+
+  @observable
   private _fragments!: GeneralFragmentDict;
 
   @observable
@@ -67,6 +70,10 @@ export class RouteMatch<
 
   get $matched(): boolean {
     return this._matched;
+  }
+
+  get $exact(): boolean {
+    return this._exact;
   }
 
   get $fragments(): TFragmentDict {
@@ -135,6 +142,7 @@ export class RouteMatch<
     let name = this._name;
 
     let matched = current !== undefined;
+    let exact = matched && rest === '';
 
     let matchPattern = this._matchPattern;
 
@@ -172,6 +180,7 @@ export class RouteMatch<
     this._query = queryDict;
 
     this._matched = matched;
+    this._exact = exact;
 
     return {
       matched,
