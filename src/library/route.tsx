@@ -11,14 +11,14 @@ export type RouteComponentPropsType<
 
 export interface RouteComponentProps<
   TFragmentDict extends GeneralFragmentDict = GeneralFragmentDict,
-  TQueryDict extends GeneralQueryDict | undefined = GeneralQueryDict | undefined
+  TQueryDict extends GeneralQueryDict = GeneralQueryDict
 > {
   match: RouteMatch<TFragmentDict, TQueryDict>;
 }
 
 export interface RouteProps<
   TFragmentDict extends GeneralFragmentDict,
-  TQueryDict extends GeneralQueryDict | undefined
+  TQueryDict extends GeneralQueryDict
 > {
   match: RouteMatch<TFragmentDict, TQueryDict>;
   component?: ComponentType<RouteComponentProps<TFragmentDict, TQueryDict>>;
@@ -27,7 +27,7 @@ export interface RouteProps<
 @observer
 export class Route<
   TFragmentDict extends GeneralFragmentDict,
-  TQueryDict extends GeneralQueryDict | undefined
+  TQueryDict extends GeneralQueryDict
 > extends Component<RouteProps<TFragmentDict, TQueryDict>> {
   render(): ReactNode {
     let {match, component: RouteComponent, children} = this.props;

@@ -15,7 +15,8 @@ export type GeneralQueryDict = Dict<string | undefined>;
 export interface RouteMatchPushResult {
   matched: boolean;
   rest: string;
-  fragmentDict: GeneralFragmentDict | undefined;
+  fragmentDict: GeneralFragmentDict;
+  queryDict: GeneralQueryDict;
 }
 
 export interface RouteMatchOptions {
@@ -25,7 +26,7 @@ export interface RouteMatchOptions {
 
 export class RouteMatch<
   TFragmentDict extends GeneralFragmentDict = GeneralFragmentDict,
-  TQueryDict extends GeneralQueryDict | undefined = GeneralQueryDict | undefined
+  TQueryDict extends GeneralQueryDict = GeneralQueryDict
 > {
   private _matchPattern: string | RegExp;
   private _queryKeys: string[] | undefined;
@@ -34,7 +35,7 @@ export class RouteMatch<
   private _matched = false;
 
   @observable
-  private _fragments: GeneralFragmentDict | undefined;
+  private _fragments!: GeneralFragmentDict;
 
   @observable
   private _query: GeneralQueryDict | undefined;
@@ -81,15 +82,53 @@ export class RouteMatch<
       );
     }
 
-    return query as TQueryDict;
+    return this._query as TQueryDict;
+  }
+
+  $path(
+    params: Partial<TFragmentDict & TQueryDict> = {},
+    preserveQuery = false,
+  ): string {
+    let fragmentDict = this._fragments;
+
+    let paramKeySet = new Set(Object.keys(params));
+
+    let path = Object.keys(fragmentDict)
+      .map(key => {
+        paramKeySet.delete(key);
+
+        let param = params[key];
+        let fragment = typeof param === 'string' ? param : fragmentDict[key];
+
+        if (typeof fragment !== 'string') {
+          throw new Error(`Parameter "${key}" is required`);
+        }
+
+        return `/${fragment}`;
+      })
+      .join('');
+
+    let queryDict = this._query;
+
+    let query = new URLSearchParams([
+      ...(preserveQuery && queryDict
+        ? (Object.entries(queryDict) as [string, string][])
+        : []),
+      ...Array.from(paramKeySet).map(
+        (key): [string, string] => [key, params[key]!],
+      ),
+    ]).toString();
+
+    return path + (query ? `?${query}` : '');
   }
 
   /** @internal */
   _push(
     skipped: boolean,
     upperRest: string,
-    upperFragmentDict: GeneralFragmentDict | undefined,
-    queryDict: GeneralQueryDict,
+    upperFragmentDict: GeneralFragmentDict,
+    upperQueryDict: GeneralQueryDict,
+    sourceQueryDict: GeneralQueryDict,
   ): RouteMatchPushResult {
     let {current, rest} = this._match(skipped, upperRest);
 
@@ -97,26 +136,40 @@ export class RouteMatch<
 
     let matched = current !== undefined;
 
+    let matchPattern = this._matchPattern;
+
     let fragmentDict = {
-      ...upperFragmentDict!,
-      [name]: matched ? current! : name,
+      ...upperFragmentDict,
+      [name]: matched
+        ? current!
+        : typeof matchPattern === 'string'
+          ? matchPattern
+          : undefined!,
     };
 
     this._fragments = fragmentDict;
 
     let queryKeys = this._queryKeys;
 
-    this._query = queryKeys
-      ? matched
+    let queryDict = {
+      ...upperQueryDict,
+      ...(queryKeys && matched
         ? queryKeys.reduce(
             (dict, key) => {
-              dict[key] = queryDict[key];
+              let value = sourceQueryDict[key];
+
+              if (value !== undefined) {
+                dict[key] = sourceQueryDict[key];
+              }
+
               return dict;
             },
             {} as GeneralQueryDict,
           )
-        : {}
-      : undefined;
+        : undefined),
+    };
+
+    this._query = queryDict;
 
     this._matched = matched;
 
@@ -124,6 +177,7 @@ export class RouteMatch<
       matched,
       rest,
       fragmentDict,
+      queryDict,
     };
   }
 
