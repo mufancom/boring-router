@@ -16,7 +16,6 @@ export interface RouteMatchPushResult {
   matched: boolean;
   rest: string;
   fragmentDict: GeneralFragmentDict;
-  queryDict: GeneralQueryDict;
 }
 
 export interface RouteMatchOptions {
@@ -56,9 +55,9 @@ export class RouteMatch<
 
       this._matchPattern = match;
     } else if (match === '*') {
-      this._matchPattern = /[^/]*/;
+      this._matchPattern = /[^/]+/;
     } else if (match === '**') {
-      this._matchPattern = /.*/;
+      this._matchPattern = /.+/;
     } else {
       this._matchPattern = match;
     }
@@ -134,7 +133,6 @@ export class RouteMatch<
     skipped: boolean,
     upperRest: string,
     upperFragmentDict: GeneralFragmentDict,
-    upperQueryDict: GeneralQueryDict,
     sourceQueryDict: GeneralQueryDict,
   ): RouteMatchPushResult {
     let {current, rest} = this._match(skipped, upperRest);
@@ -159,9 +157,8 @@ export class RouteMatch<
 
     let queryKeys = this._queryKeys;
 
-    let queryDict = {
-      ...upperQueryDict,
-      ...(queryKeys && matched
+    let queryDict = queryKeys
+      ? matched
         ? queryKeys.reduce(
             (dict, key) => {
               let value = sourceQueryDict[key];
@@ -174,8 +171,8 @@ export class RouteMatch<
             },
             {} as GeneralQueryDict,
           )
-        : undefined),
-    };
+        : {}
+      : undefined;
 
     this._query = queryDict;
 
@@ -186,7 +183,6 @@ export class RouteMatch<
       matched,
       rest,
       fragmentDict,
-      queryDict,
     };
   }
 

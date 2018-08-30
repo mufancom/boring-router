@@ -16,13 +16,13 @@ yarn add boring-router
 
 ```tsx
 import {Route, Router} from 'boring-router';
-import {observer} from 'mobx';
+import {observer} from 'mobx-react';
 import {createBrowserHistory} from 'history';
 import React, {Component} from 'react';
 
 const history = createBrowserHistory();
 
-const router = new Router(
+const router = Router.create(
   {
     account: true,
     about: true,
@@ -46,6 +46,33 @@ class App extends Component {
   }
 }
 ```
+
+## Schema
+
+Boring Router defines routes via a tree-structure schema:
+
+```ts
+type RouteSchemaDict = Dict<RouteSchema | boolean>;
+
+interface RouteSchema {
+  $match?: string | RegExp;
+  $query?: Dict<boolean>;
+  $children?: Dict<RouteSchema | boolean>;
+}
+
+const schema: RouteSchemaDict = {};
+```
+
+## Examples
+
+- [basic](examples/basic)
+- [exact](examples/exact)
+- [fragment](examples/fragment)
+- [query](examples/query)
+- [route-component](examples/route-component)
+- [link](examples/link)
+
+###
 
 ## License
 

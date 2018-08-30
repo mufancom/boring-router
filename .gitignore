@@ -9,6 +9,8 @@ node_modules/
 # Building artifacts
 
 bld/
+dist/
+.cache/
 *.tgz
 
 # Debugging outputs

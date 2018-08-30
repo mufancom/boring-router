@@ -23,12 +23,11 @@ export type RouteSchemaDict = Dict<RouteSchema | boolean>;
 
 export type RouteMatchType<
   TRouteSchema,
-  TFragmentKey extends string,
-  TQueryKey extends string
+  TFragmentKey extends string
 > = RouteMatch<
   {[K in TFragmentKey]: string},
   Record<
-    Extract<keyof RouteQuerySchemaType<TRouteSchema>, string> | TQueryKey,
+    Extract<keyof RouteQuerySchemaType<TRouteSchema>, string>,
     string | undefined
   >
 > &
@@ -36,8 +35,7 @@ export type RouteMatchType<
     ? {
         [K in Extract<keyof TNestedRouteSchemaDict, string>]: RouteMatchType<
           TNestedRouteSchemaDict[K],
-          TFragmentKey | K,
-          Extract<keyof RouteQuerySchemaType<TRouteSchema>, string> | TQueryKey
+          TFragmentKey | K
         >
       }
     : {});
@@ -46,8 +44,7 @@ export type RootRouterType<TRouteSchemaDict> = Router &
   {
     [K in Extract<keyof TRouteSchemaDict, string>]: RouteMatchType<
       TRouteSchemaDict[K],
-      K,
-      never
+      K
     >
   };
 
@@ -74,7 +71,7 @@ export class Router {
       {} as GeneralQueryDict,
     );
 
-    this.pushRouteChange(this, false, pathname, {}, {}, queryDict);
+    this.pushRouteChange(this, false, pathname, {}, queryDict);
   };
 
   private pushRouteChange(
@@ -82,7 +79,6 @@ export class Router {
     skipped: boolean,
     upperRest: string,
     upperFragmentDict: GeneralFragmentDict,
-    upperQueryDict: GeneralQueryDict,
     sourceQueryDict: GeneralQueryDict,
   ): void {
     if (!target._children) {
@@ -90,11 +86,10 @@ export class Router {
     }
 
     for (let routeMatch of target._children) {
-      let {matched, rest, fragmentDict, queryDict} = routeMatch._push(
+      let {matched, rest, fragmentDict} = routeMatch._push(
         skipped,
         upperRest,
         upperFragmentDict,
-        upperQueryDict,
         sourceQueryDict,
       );
 
@@ -107,7 +102,6 @@ export class Router {
         !matched,
         rest,
         fragmentDict,
-        queryDict,
         sourceQueryDict,
       );
     }
