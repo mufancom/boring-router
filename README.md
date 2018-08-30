@@ -149,6 +149,17 @@ interface RouteMatch<TParamDict> {
   </Route>
   ```
 
+- [Multiple Route Match](examples/multi-route-match/main.tsx)
+
+  Match with multiple route match for shared content.
+
+  ```tsx
+  <Route
+    match={[router.account.signUp, router.account.resetPassword]}
+    component={AccountPage}
+  />
+  ```
+
 ### Run an example
 
 ```sh

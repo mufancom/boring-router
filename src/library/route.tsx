@@ -8,7 +8,7 @@ export interface RouteComponentProps<TRouteMatch extends RouteMatch> {
 }
 
 export interface RouteProps<TRouteMatch extends RouteMatch> {
-  match: TRouteMatch;
+  match: TRouteMatch | TRouteMatch[];
   exact?: boolean;
   component?: ComponentType<RouteComponentProps<TRouteMatch>>;
 }
@@ -20,13 +20,15 @@ export class Route<TRouteMatch extends RouteMatch> extends Component<
   render(): ReactNode {
     let {match, exact, component: RouteComponent, children} = this.props;
 
-    return (exact ? (
-      match.$exact
-    ) : (
-      match.$matched
-    )) ? (
+    let matches = Array.isArray(match) ? match : [match];
+
+    let firstMatch = matches.find(
+      match => (exact ? match.$exact : match.$matched),
+    );
+
+    return firstMatch ? (
       RouteComponent ? (
-        <RouteComponent match={match} />
+        <RouteComponent match={firstMatch} />
       ) : (
         children || <></>
       )
