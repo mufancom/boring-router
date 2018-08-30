@@ -63,6 +63,26 @@ interface RouteSchema {
 const schema: RouteSchemaDict = {};
 ```
 
+> Option `$match` with value `'*'` and `'**'` will be converted to regular expressions `/[^/]+/` and `/.+/` respectively.
+
+## Route match
+
+The value of expression like `router.account` in the usage example above is a `RouteMatch`, and it has the following reactive properties and methods:
+
+```ts
+interface RouteMatch<TFragmentDict, TQueryDict> {
+  $matched: boolean;
+  $exact: boolean;
+  $fragments: TFragmentDict;
+  $query: TQueryDict;
+
+  $path(
+    params?: Partial<TFragmentDict & TQueryDict>,
+    preserveQuery?: boolean,
+  ): string;
+}
+```
+
 ## Examples
 
 ### Example list
