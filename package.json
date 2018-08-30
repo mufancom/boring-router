@@ -1,6 +1,10 @@
 {
   "name": "boring-router",
   "version": "0.1.0-alpha.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/makeflow/boring-router.git"
+  },
   "scripts": {
     "build:library": "tslint -p src/library && rimraf bld/library && tsc -p src/library",
     "build": "yarn build:library"
