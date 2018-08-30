@@ -20,6 +20,13 @@ const router = Router.create(
       $query: {
         id: true,
       },
+      $children: {
+        details: {
+          $query: {
+            id: true,
+          },
+        },
+      },
     },
   },
   history,
@@ -33,17 +40,21 @@ export class App extends Component {
         <h1>Boring Router</h1>
         <Route match={router.default}>
           <p>Home page</p>
-          <div>
-            <Link to={router.account} params={{id: '123'}}>
-              Account 123
-            </Link>
-          </div>
+          <Link to={router.account} params={{id: '123'}}>
+            Account 123
+          </Link>
         </Route>
         <Route match={router.account}>
           <p>Account page</p>
           <Link to={router.default}>Home</Link>
           <hr />
-          <p>Account {router.account.$params.id} details page</p>
+          <p>Account {router.account.$params.id} page</p>
+          <Link to={router.account.details} preserveQuery>
+            Details
+          </Link>
+          <Route match={router.account.details}>
+            <p>Account {router.account.details.$params.id} details</p>
+          </Route>
         </Route>
       </>
     );

@@ -37,7 +37,7 @@ export class RouteMatch<
   private _exact = false;
 
   private _fragments!: GeneralFragmentDict;
-  private _query: GeneralQueryDict | undefined;
+  private _sourceQuery: GeneralQueryDict | undefined;
 
   @observable
   private _params!: GeneralParamDict;
@@ -109,7 +109,7 @@ export class RouteMatch<
       })
       .join('');
 
-    let queryDict = this._query;
+    let queryDict = this._sourceQuery;
 
     let query = new URLSearchParams([
       ...(preserveQuery && queryDict
@@ -169,7 +169,7 @@ export class RouteMatch<
         : {}
       : undefined;
 
-    this._query = queryDict;
+    this._sourceQuery = sourceQueryDict;
 
     this._params = {
       ...queryDict,
