@@ -31,27 +31,15 @@ const router = Router.create(
   history,
 );
 
-export interface ILinkProps {
+export interface LinkProps<TRouteMatch> {
   className?: string;
-  to: unknown;
-  children: ReactNode;
-}
-
-export interface LinkStringToProps extends ILinkProps {
-  to: string;
-}
-
-export interface LinkMatchToProps<TRouteMatch> extends ILinkProps {
-  to: TRouteMatch;
+  to: TRouteMatch | string;
   params?: TRouteMatch extends RouteMatch<infer TFragmentDict, infer TQueryDict>
     ? Partial<TFragmentDict & TQueryDict>
     : never;
   preserveQuery?: boolean;
+  children: ReactNode;
 }
-
-export type LinkProps<TRouteMatch> =
-  | LinkStringToProps
-  | LinkMatchToProps<TRouteMatch>;
 
 @observer
 export class Link<TRouteMatch extends RouteMatch> extends Component<
@@ -71,24 +59,14 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
   }
 
   private onClick = (): void => {
-    let props = this.props;
+    let {to, params, preserveQuery} = this.props;
 
-    let to: string;
-
-    if (isLinkStringToProps(props)) {
-      to = props.to;
-    } else {
-      to = props.to.$path(props.params, props.preserveQuery);
+    if (to instanceof RouteMatch) {
+      to = to.$path(params, preserveQuery);
     }
 
     history.push(to);
   };
-}
-
-function isLinkStringToProps(
-  props: LinkStringToProps | LinkMatchToProps<RouteMatch>,
-): props is LinkStringToProps {
-  return typeof props.to === 'string';
 }
 
 @observer
