@@ -69,15 +69,7 @@ export class RouteMatch<
   }
 
   get $fragments(): TFragmentDict {
-    let fragments = this._fragments;
-
-    if (!fragments) {
-      throw new Error(
-        'Fragment is not accessible, check value of `$matched` first',
-      );
-    }
-
-    return fragments as TFragmentDict;
+    return this._fragments as TFragmentDict;
   }
 
   get $query(): TQueryDict {
@@ -85,7 +77,7 @@ export class RouteMatch<
 
     if (!query) {
       throw new Error(
-        'Query is not accessible, make sure you added it to schema and the value of `$matched` is `true`',
+        'Query is not accessible, make sure you added it to schema',
       );
     }
 
@@ -101,20 +93,21 @@ export class RouteMatch<
   ): RouteMatchPushResult {
     let {current, rest} = this._match(skipped, upperRest);
 
+    let name = this._name;
+
     let matched = current !== undefined;
-    let fragmentDict = matched
-      ? {
-          ...upperFragmentDict!,
-          [this._name]: current!,
-        }
-      : undefined;
+
+    let fragmentDict = {
+      ...upperFragmentDict!,
+      [name]: matched ? current! : name,
+    };
 
     this._fragments = fragmentDict;
 
     let queryKeys = this._queryKeys;
 
-    this._query =
-      matched && queryKeys
+    this._query = queryKeys
+      ? matched
         ? queryKeys.reduce(
             (dict, key) => {
               dict[key] = queryDict[key];
@@ -122,7 +115,8 @@ export class RouteMatch<
             },
             {} as GeneralQueryDict,
           )
-        : undefined;
+        : {}
+      : undefined;
 
     this._matched = matched;
 
