@@ -42,7 +42,7 @@ export class RouteMatch<
   /** @internal */
   _children!: RouteMatch[];
 
-  constructor(private name: string, {match, query}: RouteMatchOptions) {
+  constructor(private _name: string, {match, query}: RouteMatchOptions) {
     if (match instanceof RegExp) {
       if (match.global) {
         throw new Error(
@@ -52,9 +52,9 @@ export class RouteMatch<
 
       this._matchPattern = match;
     } else if (match === '*') {
-      this._matchPattern = /[^/]+/;
+      this._matchPattern = /[^/]*/;
     } else if (match === '**') {
-      this._matchPattern = /.+/;
+      this._matchPattern = /.*/;
     } else {
       this._matchPattern = match;
     }
@@ -105,7 +105,7 @@ export class RouteMatch<
     let fragmentDict = matched
       ? {
           ...upperFragmentDict!,
-          [this.name]: current!,
+          [this._name]: current!,
         }
       : undefined;
 

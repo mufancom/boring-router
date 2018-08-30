@@ -90,7 +90,7 @@ export class Router {
         queryDict,
       );
 
-      if (matched && !skipped) {
+      if (matched) {
         skipped = true;
       }
 
