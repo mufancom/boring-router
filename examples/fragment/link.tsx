@@ -7,8 +7,8 @@ import {RouteMatch} from '../../bld/library';
 export interface LinkProps<TRouteMatch> {
   className?: string;
   to: TRouteMatch | string;
-  params?: TRouteMatch extends RouteMatch<infer TFragmentDict, infer TQueryDict>
-    ? Partial<TFragmentDict & TQueryDict>
+  params?: TRouteMatch extends RouteMatch<infer TParamDict>
+    ? Partial<TParamDict>
     : never;
   preserveQuery?: boolean;
   children: ReactNode;

@@ -10,6 +10,7 @@ interface RouteMatchInternalResult {
 
 export type GeneralFragmentDict = Dict<string>;
 export type GeneralQueryDict = Dict<string | undefined>;
+export type GeneralParamDict = Dict<string | undefined>;
 
 /** @internal */
 export interface RouteMatchPushResult {
@@ -24,8 +25,7 @@ export interface RouteMatchOptions {
 }
 
 export class RouteMatch<
-  TFragmentDict extends GeneralFragmentDict = GeneralFragmentDict,
-  TQueryDict extends GeneralQueryDict = GeneralQueryDict
+  TParamDict extends GeneralParamDict = GeneralParamDict
 > {
   private _matchPattern: string | RegExp;
   private _queryKeys: string[] | undefined;
@@ -36,11 +36,11 @@ export class RouteMatch<
   @observable
   private _exact = false;
 
-  @observable
   private _fragments!: GeneralFragmentDict;
+  private _query: GeneralQueryDict | undefined;
 
   @observable
-  private _query: GeneralQueryDict | undefined;
+  private _params!: GeneralParamDict;
 
   /** @internal */
   _children!: RouteMatch[];
@@ -75,26 +75,11 @@ export class RouteMatch<
     return this._exact;
   }
 
-  get $fragments(): TFragmentDict {
-    return this._fragments as TFragmentDict;
+  get $params(): TParamDict {
+    return this._params as TParamDict;
   }
 
-  get $query(): TQueryDict {
-    let query = this._query;
-
-    if (!query) {
-      throw new Error(
-        'Query is not accessible, make sure you added it to schema',
-      );
-    }
-
-    return this._query as TQueryDict;
-  }
-
-  $path(
-    params: Partial<TFragmentDict & TQueryDict> = {},
-    preserveQuery = false,
-  ): string {
+  $path(params: Partial<TParamDict> = {}, preserveQuery = false): string {
     let fragmentDict = this._fragments;
 
     let paramKeySet = new Set(Object.keys(params));
@@ -104,13 +89,23 @@ export class RouteMatch<
         paramKeySet.delete(key);
 
         let param = params[key];
-        let fragment = typeof param === 'string' ? param : fragmentDict[key];
+        let fragment = fragmentDict[key];
 
-        if (typeof fragment !== 'string') {
-          throw new Error(`Parameter "${key}" is required`);
+        if (typeof fragment === 'string') {
+          if (typeof param === 'string') {
+            throw new Error(
+              `Parameter "${key}" cannot override fragment "${fragment}"`,
+            );
+          }
+
+          return `/${fragment}`;
+        } else {
+          if (typeof param !== 'string') {
+            throw new Error(`Parameter "${key}" is required`);
+          }
+
+          return `/${param}`;
         }
-
-        return `/${fragment}`;
       })
       .join('');
 
@@ -175,6 +170,11 @@ export class RouteMatch<
       : undefined;
 
     this._query = queryDict;
+
+    this._params = {
+      ...queryDict,
+      ...fragmentDict,
+    };
 
     this._matched = matched;
     this._exact = exact;

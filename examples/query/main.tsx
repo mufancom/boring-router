@@ -43,7 +43,7 @@ export class App extends Component {
           <p>Account page</p>
           <Link to={router.default}>Home</Link>
           <hr />
-          <p>Account {router.account.$query.id} details page</p>
+          <p>Account {router.account.$params.id} details page</p>
         </Route>
       </>
     );

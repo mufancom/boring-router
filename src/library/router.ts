@@ -25,11 +25,11 @@ export type RouteMatchType<
   TRouteSchema,
   TFragmentKey extends string
 > = RouteMatch<
-  {[K in TFragmentKey]: string},
   Record<
     Extract<keyof RouteQuerySchemaType<TRouteSchema>, string>,
     string | undefined
-  >
+  > &
+    {[K in TFragmentKey]: string}
 > &
   (TRouteSchema extends RouteSchemaChildrenPartial<infer TNestedRouteSchemaDict>
     ? {

@@ -33,7 +33,7 @@ export interface AccountPageProps
 export class AccountPage extends Component<AccountPageProps> {
   render(): ReactNode {
     let {
-      match: {$query},
+      match: {$params},
     } = this.props;
 
     return (
@@ -42,7 +42,7 @@ export class AccountPage extends Component<AccountPageProps> {
         <Link to={router.default}>Home</Link>
         <hr />
         <Route match={router.account}>
-          <p>Account {$query.id} details page</p>
+          <p>Account {$params.id} details page</p>
         </Route>
       </>
     );

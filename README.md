@@ -70,16 +70,12 @@ const schema: RouteSchemaDict = {};
 The value of expression like `router.account` in the usage example above is a `RouteMatch`, and it has the following reactive properties and methods:
 
 ```ts
-interface RouteMatch<TFragmentDict, TQueryDict> {
+interface RouteMatch<TParamDict> {
   $matched: boolean;
   $exact: boolean;
-  $fragments: TFragmentDict;
-  $query: TQueryDict;
+  $params: TParamDict;
 
-  $path(
-    params?: Partial<TFragmentDict & TQueryDict>,
-    preserveQuery?: boolean,
-  ): string;
+  $path(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
 }
 ```
 
@@ -119,7 +115,7 @@ interface RouteMatch<TFragmentDict, TQueryDict> {
 
   ```tsx
   <Route match={router.account.id}>
-    <p>Account {router.account.id.$fragments.id} details page</p>
+    <p>Account {router.account.id.$params.id} details page</p>
   </Route>
   ```
 
@@ -135,7 +131,7 @@ interface RouteMatch<TFragmentDict, TQueryDict> {
 
   ```tsx
   <Route match={router.account}>
-    <p>Account {router.account.$query.id} details page</p>
+    <p>Account {router.account.$params.id} details page</p>
   </Route>
   ```
 

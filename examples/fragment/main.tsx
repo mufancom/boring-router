@@ -46,7 +46,7 @@ export class App extends Component {
           <Link to={router.default}>Home</Link>
           <hr />
           <Route match={router.account.id}>
-            <p>Account {router.account.id.$fragments.id} details page</p>
+            <p>Account {router.account.id.$params.id} details page</p>
           </Route>
         </Route>
       </>
