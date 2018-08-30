@@ -4,19 +4,19 @@ import {Dict} from 'tslang';
 import {GeneralFragmentDict, GeneralQueryDict, RouteMatch} from './route-match';
 
 type RouteQuerySchemaType<T> = T extends {
-  query: infer TSchema;
+  $query: infer TSchema;
 }
   ? TSchema
   : never;
 
 interface RouteSchemaChildrenPartial<TRouteSchemaDict> {
-  children: TRouteSchemaDict;
+  $children: TRouteSchemaDict;
 }
 
 export interface RouteSchema {
-  match?: string | RegExp;
-  query?: Dict<boolean>;
-  children?: RouteSchemaDict;
+  $match?: string | RegExp;
+  $query?: Dict<boolean>;
+  $children?: RouteSchemaDict;
 }
 
 export type RouteSchemaDict = Dict<RouteSchema | boolean>;
@@ -124,7 +124,7 @@ export class Router {
         schema = {};
       }
 
-      let {match = key, query, children} = schema;
+      let {$match: match = key, $query: query, $children: children} = schema;
 
       let routeMatch = new RouteMatch(key, {match, query});
 
