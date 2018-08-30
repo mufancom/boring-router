@@ -65,14 +65,42 @@ const schema: RouteSchemaDict = {};
 
 ## Examples
 
-- [basic](examples/basic)
-- [exact](examples/exact)
-- [fragment](examples/fragment)
-- [query](examples/query)
-- [route-component](examples/route-component)
-- [link](examples/link)
+### Example list
 
-###
+- [Basic](examples/basic)
+
+  Basic usage.
+
+- [Exact](examples/exact)
+
+  Match exact path.
+
+- [Fragment](examples/fragment)
+
+  Boring Router's version of `/account/:id` alike parameter.
+
+- [Query](examples/query)
+
+  Handle query string parameter.
+
+- [Route Component](examples/route-component)
+
+  Use `<Route />` with a route component.
+
+- [Link](examples/link)
+
+  Write a useful `<Link>`.
+
+### Run an example
+
+```sh
+yarn install
+yarn build
+
+yarn global add parcel
+
+parcel examples/[name]/index.html
+```
 
 ## License
 

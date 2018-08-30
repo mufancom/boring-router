@@ -2,7 +2,8 @@
   "name": "boring-router",
   "version": "0.1.0-alpha.1",
   "scripts": {
-    "build:library": "tslint -p src/library && rimraf bld/library && tsc -p src/library"
+    "build:library": "tslint -p src/library && rimraf bld/library && tsc -p src/library",
+    "build": "yarn build:library"
   },
   "main": "bld/library/index.js",
   "types": "bld/library/index.d.ts",
