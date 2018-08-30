@@ -1,6 +1,6 @@
 {
   "name": "boring-router",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "scripts": {
     "build:library": "tslint -p src/library && rimraf bld/library && tsc -p src/library",
     "build": "yarn build:library"
