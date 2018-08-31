@@ -149,6 +149,16 @@ interface RouteMatch<TParamDict> {
   </Route>
   ```
 
+- [Function as Child](examples/function-as-child/main.tsx)
+
+  Use `<Route />` with a function child.
+
+  ```tsx
+  <Route match={router.account}>
+    {match => <p>Account {match.$params.id} details page</p>}
+  </Route>
+  ```
+
 - [Route Component](examples/route-component/main.tsx)
 
   Use `<Route />` with a route component.
