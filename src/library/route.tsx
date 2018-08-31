@@ -7,10 +7,14 @@ export interface RouteComponentProps<TRouteMatch extends RouteMatch> {
   match: TRouteMatch;
 }
 
+export type RouteComponent<TRouteMatch extends RouteMatch> = ComponentType<
+  RouteComponentProps<TRouteMatch>
+>;
+
 export interface RouteProps<TRouteMatch extends RouteMatch> {
   match: TRouteMatch | TRouteMatch[];
   exact?: boolean;
-  component?: ComponentType<RouteComponentProps<TRouteMatch>>;
+  component?: RouteComponent<TRouteMatch>;
 }
 
 @observer
