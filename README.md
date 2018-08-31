@@ -5,6 +5,15 @@
 
 A light-weight, type-safe, yet reactive router service using MobX.
 
+## Why
+
+There are multiple reasons pushing me to write Boring Router instead of sticking with React Router.
+
+- Making React Router work with a global store/service is not straightforward. Having to parse location twice with the same schema defined with two different approaches looks redundant to me.
+- React Router (and many other alternatives) provides basically no type safety between path schema and match result. And you have to write `to` as strings in links.
+- People can easily write ambiguous path schema without it bringing them attention.
+- I think I've got a nice idea. 😉
+
 ## Installation
 
 ```sh
