@@ -96,14 +96,15 @@ export class Router {
       {} as GeneralQueryDict,
     );
 
-    this.pushRouteChange(this, false, pathname, {}, queryDict);
+    this.pushRouteChange(this, false, pathname, {}, {}, queryDict);
   };
 
   private pushRouteChange(
     target: Router | RouteMatch,
     skipped: boolean,
     upperRest: string,
-    upperFragmentDict: GeneralFragmentDict,
+    upperPathFragmentDict: GeneralFragmentDict,
+    upperParamFragmentDict: GeneralFragmentDict,
     sourceQueryDict: GeneralQueryDict,
   ): void {
     if (!target._children) {
@@ -111,10 +112,16 @@ export class Router {
     }
 
     for (let routeMatch of target._children) {
-      let {matched, rest, fragmentDict} = routeMatch._push(
+      let {
+        matched,
+        rest,
+        pathFragmentDict,
+        paramFragmentDict,
+      } = routeMatch._push(
         skipped,
         upperRest,
-        upperFragmentDict,
+        upperPathFragmentDict,
+        upperParamFragmentDict,
         sourceQueryDict,
       );
 
@@ -126,7 +133,8 @@ export class Router {
         routeMatch,
         !matched,
         rest,
-        fragmentDict,
+        pathFragmentDict,
+        paramFragmentDict,
         sourceQueryDict,
       );
     }

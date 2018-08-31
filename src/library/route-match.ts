@@ -16,7 +16,8 @@ export type GeneralParamDict = Dict<string | undefined>;
 export interface RouteMatchPushResult {
   matched: boolean;
   rest: string;
-  fragmentDict: GeneralFragmentDict;
+  pathFragmentDict: GeneralFragmentDict;
+  paramFragmentDict: GeneralFragmentDict;
 }
 
 export interface RouteMatchOptions {
@@ -36,7 +37,7 @@ export class RouteMatch<
   @observable
   private _exact = false;
 
-  private _fragments!: GeneralFragmentDict;
+  private _pathFragments!: GeneralFragmentDict;
   private _sourceQuery: GeneralQueryDict | undefined;
 
   @observable
@@ -72,7 +73,7 @@ export class RouteMatch<
   }
 
   $ref(params: Partial<TParamDict> = {}, preserveQuery = false): string {
-    let fragmentDict = this._fragments;
+    let fragmentDict = this._pathFragments;
 
     let paramKeySet = new Set(Object.keys(params));
 
@@ -109,7 +110,8 @@ export class RouteMatch<
   _push(
     skipped: boolean,
     upperRest: string,
-    upperFragmentDict: GeneralFragmentDict,
+    upperPathFragmentDict: GeneralFragmentDict,
+    upperParamFragmentDict: GeneralFragmentDict,
     sourceQueryDict: GeneralQueryDict,
   ): RouteMatchPushResult {
     let {current, rest} = this._match(skipped, upperRest);
@@ -121,12 +123,17 @@ export class RouteMatch<
 
     let matchPattern = this._matchPattern;
 
-    let fragmentDict = {
-      ...upperFragmentDict,
-      ...(typeof matchPattern !== 'string' ? {[name]: current} : undefined),
+    let pathFragmentDict = {
+      ...upperPathFragmentDict,
+      ...{[name]: typeof matchPattern === 'string' ? matchPattern : current},
     };
 
-    this._fragments = fragmentDict;
+    let paramFragmentDict = {
+      ...upperParamFragmentDict,
+      ...(typeof matchPattern === 'string' ? undefined : {[name]: current}),
+    };
+
+    this._pathFragments = pathFragmentDict;
 
     let queryKeys = this._queryKeys;
 
@@ -150,7 +157,7 @@ export class RouteMatch<
     this._sourceQuery = sourceQueryDict;
 
     this._params = {
-      ...fragmentDict,
+      ...paramFragmentDict,
       ...queryDict,
     };
 
@@ -160,7 +167,8 @@ export class RouteMatch<
     return {
       matched,
       rest,
-      fragmentDict,
+      pathFragmentDict,
+      paramFragmentDict,
     };
   }
 
