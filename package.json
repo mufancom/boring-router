@@ -1,6 +1,6 @@
 {
   "name": "boring-router",
-  "version": "0.1.0-alpha.11",
+  "version": "0.1.0",
   "description": "A light-weight, type-safe, yet reactive router service using MobX.",
   "repository": {
     "type": "git",
