@@ -3,7 +3,7 @@ import {observer} from 'mobx-react';
 import React, {Component, ReactNode} from 'react';
 import ReactDOM from 'react-dom';
 
-import {Route, Router} from '../../bld/library';
+import {Route, RouteMatch, Router} from '../../bld/library';
 
 import {Link} from './link';
 
@@ -19,7 +19,7 @@ const router = Router.create(
     account: {
       $children: {
         id: {
-          $match: '*',
+          $match: RouteMatch.fragment,
         },
       },
     },

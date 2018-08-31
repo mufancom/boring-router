@@ -4,15 +4,21 @@ import {Dict} from 'tslang';
 
 import {GeneralFragmentDict, GeneralQueryDict, RouteMatch} from './route-match';
 
-export type FragmentMatcherCallback = (key: string) => string | RegExp;
+export type FragmentMatcherCallback = (key: string) => string;
 
 const DEFAULT_FRAGMENT_MATCHER_CALLBACK: FragmentMatcherCallback = key =>
   hyphenate(key, {lowerCase: true});
 
-type RouteQuerySchemaType<T> = T extends {
-  $query: infer TSchema;
+type RouteQuerySchemaType<TRouteSchema> = TRouteSchema extends {
+  $query: infer TQuerySchema;
 }
-  ? TSchema
+  ? TQuerySchema
+  : never;
+
+type FilterRouteMatchNonStringFragment<TRouteSchema, T> = TRouteSchema extends {
+  $match: infer TMatch;
+}
+  ? TMatch extends string ? never : T
   : never;
 
 interface RouteSchemaChildrenPartial<TRouteSchemaDict> {
@@ -27,6 +33,16 @@ export interface RouteSchema {
 
 export type RouteSchemaDict = Dict<RouteSchema | boolean>;
 
+export type RouteMatchFragmentType<
+  TRouteSchemaDict,
+  TFragmentKey extends string
+> = {
+  [K in Extract<keyof TRouteSchemaDict, string>]: RouteMatchType<
+    TRouteSchemaDict[K],
+    TFragmentKey | FilterRouteMatchNonStringFragment<TRouteSchemaDict[K], K>
+  >
+};
+
 export type RouteMatchType<
   TRouteSchema,
   TFragmentKey extends string
@@ -38,21 +54,11 @@ export type RouteMatchType<
     {[K in TFragmentKey]: string}
 > &
   (TRouteSchema extends RouteSchemaChildrenPartial<infer TNestedRouteSchemaDict>
-    ? {
-        [K in Extract<keyof TNestedRouteSchemaDict, string>]: RouteMatchType<
-          TNestedRouteSchemaDict[K],
-          TFragmentKey | K
-        >
-      }
+    ? RouteMatchFragmentType<TNestedRouteSchemaDict, TFragmentKey>
     : {});
 
-export type RootRouterType<TRouteSchemaDict> = Router &
-  {
-    [K in Extract<keyof TRouteSchemaDict, string>]: RouteMatchType<
-      TRouteSchemaDict[K],
-      K
-    >
-  };
+export type RouterType<TRouteSchemaDict> = Router &
+  RouteMatchFragmentType<TRouteSchemaDict, never>;
 
 export interface RouterOptions {
   fragmentMatcher?: FragmentMatcherCallback;
@@ -163,7 +169,7 @@ export class Router {
     schema: TSchema,
     history: History,
     options: RouterOptions = {},
-  ): RootRouterType<TSchema> {
-    return new Router(schema, history, options) as RootRouterType<TSchema>;
+  ): RouterType<TSchema> {
+    return new Router(schema, history, options) as RouterType<TSchema>;
   }
 }

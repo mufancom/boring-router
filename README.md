@@ -27,7 +27,7 @@ const router = Router.create(
     account: true,
     about: true,
     notFound: {
-      $match: '**',
+      $match: RouteMatch.rest,
     },
   },
   history,
@@ -61,7 +61,7 @@ interface RouteSchema {
 }
 ```
 
-> Option `$match` with value `'*'` and `'**'` will be converted to regular expressions `/[^/]+/` and `/.+/` respectively.
+> Two pre-defined `$match` regular expression is available as `RouteMatch.fragment` (`/[^/]+/`) and `RouteMatch.rest` (`/.+/`).
 
 ## Route match
 

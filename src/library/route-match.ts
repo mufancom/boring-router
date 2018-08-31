@@ -8,7 +8,7 @@ interface RouteMatchInternalResult {
   rest: string;
 }
 
-export type GeneralFragmentDict = Dict<string>;
+export type GeneralFragmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
 
@@ -46,21 +46,13 @@ export class RouteMatch<
   _children!: RouteMatch[];
 
   constructor(private _name: string, {match, query}: RouteMatchOptions) {
-    if (match instanceof RegExp) {
-      if (match.global) {
-        throw new Error(
-          'Expecting a non-global regular expression as match pattern',
-        );
-      }
-
-      this._matchPattern = match;
-    } else if (match === '*') {
-      this._matchPattern = /[^/]+/;
-    } else if (match === '**') {
-      this._matchPattern = /.+/;
-    } else {
-      this._matchPattern = match;
+    if (match instanceof RegExp && match.global) {
+      throw new Error(
+        'Expecting a non-global regular expression as match pattern',
+      );
     }
+
+    this._matchPattern = match;
 
     if (query) {
       this._queryKeys = Object.keys(query);
@@ -89,23 +81,13 @@ export class RouteMatch<
         paramKeySet.delete(key);
 
         let param = params[key];
-        let fragment = fragmentDict[key];
+        let fragment = typeof param === 'string' ? param : fragmentDict[key];
 
-        if (typeof fragment === 'string') {
-          if (typeof param === 'string') {
-            throw new Error(
-              `Parameter "${key}" cannot override fragment "${fragment}"`,
-            );
-          }
-
-          return `/${fragment}`;
-        } else {
-          if (typeof param !== 'string') {
-            throw new Error(`Parameter "${key}" is required`);
-          }
-
-          return `/${param}`;
+        if (typeof fragment !== 'string') {
+          throw new Error(`Parameter "${key}" is required`);
         }
+
+        return `/${fragment}`;
       })
       .join('');
 
@@ -141,11 +123,7 @@ export class RouteMatch<
 
     let fragmentDict = {
       ...upperFragmentDict,
-      [name]: matched
-        ? current!
-        : typeof matchPattern === 'string'
-          ? matchPattern
-          : undefined!,
+      ...(typeof matchPattern !== 'string' ? {[name]: current} : undefined),
     };
 
     this._fragments = fragmentDict;
@@ -244,4 +222,7 @@ export class RouteMatch<
       }
     }
   }
+
+  static fragment = /[^/]+/;
+  static rest = /.+/;
 }
