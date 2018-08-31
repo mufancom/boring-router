@@ -71,7 +71,7 @@ export class RouteMatch<
     return this._params as TParamDict;
   }
 
-  $path(params: Partial<TParamDict> = {}, preserveQuery = false): string {
+  $ref(params: Partial<TParamDict> = {}, preserveQuery = false): string {
     let fragmentDict = this._fragments;
 
     let paramKeySet = new Set(Object.keys(params));

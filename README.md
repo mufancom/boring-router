@@ -73,7 +73,7 @@ interface RouteMatch<TParamDict> {
   $exact: boolean;
   $params: TParamDict;
 
-  $path(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
+  $ref(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
 }
 ```
 

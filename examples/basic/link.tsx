@@ -35,7 +35,7 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     let {to, params, preserveQuery} = this.props;
 
     if (to instanceof RouteMatch) {
-      to = to.$path(params, preserveQuery);
+      to = to.$ref(params, preserveQuery);
     }
 
     Link.history.push(to);
