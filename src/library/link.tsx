@@ -1,8 +1,12 @@
 import {History} from 'history';
 import {observer} from 'mobx-react';
-import React, {Component, ReactNode} from 'react';
+import React, {Component, ReactNode, createContext} from 'react';
 
-import {RouteMatch} from '../../bld/library';
+import {RouteMatch} from './route-match';
+
+const {Provider: HistoryProvider, Consumer: HistoryConsumer} = createContext<
+  History
+>(undefined!);
 
 export interface LinkProps<TRouteMatch> {
   className?: string;
@@ -22,24 +26,28 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     let {className, children} = this.props;
 
     return (
-      <a
-        className={className}
-        onClick={this.onClick}
-        href="javascript:;"
-        children={children}
-      />
+      <HistoryConsumer>
+        {history => (
+          <a
+            className={className}
+            onClick={() => this.onClick(history)}
+            href="javascript:;"
+            children={children}
+          />
+        )}
+      </HistoryConsumer>
     );
   }
 
-  private onClick = (): void => {
+  private onClick = (history: History): void => {
     let {to, params, preserveQuery} = this.props;
 
     if (to instanceof RouteMatch) {
       to = to.$ref(params, preserveQuery);
     }
 
-    Link.history.push(to);
+    history.push(to);
   };
-
-  static history: History;
 }
+
+export {HistoryProvider};

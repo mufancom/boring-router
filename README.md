@@ -40,11 +40,15 @@ const router = Router.create(
 class App extends Component {
   render() {
     return (
-      <>
-        <Route match={router.account}>Account page</Route>
+      <HistoryProvider value={history}>
+        <Route match={router.account}>
+          Account page
+          <hr />
+          <Link to={router.about}>About</Link>
+        </Route>
         <Route match={router.about}>About page</Route>
         <Route match={router.notFound}>Not found</Route>
-      </>
+      </HistoryProvider>
     );
   }
 }
