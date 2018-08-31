@@ -29,17 +29,20 @@ export class RouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict
 > {
   /** @internal */
+  private _name: string;
+
+  /** @internal */
   private _matchPattern: string | RegExp;
 
   /** @internal */
   private _queryKeys: string[] | undefined;
 
-  @observable
   /** @internal */
+  @observable
   private _matched = false;
 
-  @observable
   /** @internal */
+  @observable
   private _exact = false;
 
   /** @internal */
@@ -48,14 +51,16 @@ export class RouteMatch<
   /** @internal */
   private _sourceQuery: GeneralQueryDict | undefined;
 
-  @observable
   /** @internal */
+  @observable
   private _params!: GeneralParamDict;
 
   /** @internal */
   _children!: RouteMatch[];
 
-  constructor(private _name: string, {match, query}: RouteMatchOptions) {
+  constructor(name: string, {match, query}: RouteMatchOptions) {
+    this._name = name;
+
     if (match instanceof RegExp && match.global) {
       throw new Error(
         'Expecting a non-global regular expression as match pattern',
