@@ -1317,9 +1317,9 @@ http-signature@~1.2.0:
     jsprim "^1.2.2"
     sshpk "^1.7.0"
 
-hyphenate@^0.2.2:
-  version "0.2.2"
-  resolved "https://registry.npmjs.org/hyphenate/-/hyphenate-0.2.2.tgz#bf53f5346057971a96766044964c3060efc4272b"
+hyphenate@^0.2.4:
+  version "0.2.4"
+  resolved "https://registry.npmjs.org/hyphenate/-/hyphenate-0.2.4.tgz#5c1a99cebef6fe889744cdc339beb60865e12438"
 
 iconv-lite@0.4.23:
   version "0.4.23"

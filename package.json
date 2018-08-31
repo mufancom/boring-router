@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@types/jest": "^23.3.1",
-    "hyphenate": "^0.2.2",
+    "hyphenate": "^0.2.4",
     "tslang": "^0.1.7"
   }
 }
