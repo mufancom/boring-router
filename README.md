@@ -1,3 +1,6 @@
+[![NPM Package](https://badge.fury.io/js/boring-router.svg)](https://www.npmjs.com/package/boring-router)
+[![Build Status](https://travis-ci.org/makeflow/boring-router.svg?branch=master)](https://travis-ci.org/makeflow/boring-router)
+
 # Boring Router
 
 A light-weight, type-safe, yet reactive router service using MobX.
