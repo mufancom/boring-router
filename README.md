@@ -59,8 +59,6 @@ interface RouteSchema {
   $query?: Dict<boolean>;
   $children?: Dict<RouteSchema | boolean>;
 }
-
-const schema: RouteSchemaDict = {};
 ```
 
 > Option `$match` with value `'*'` and `'**'` will be converted to regular expressions `/[^/]+/` and `/.+/` respectively.
