@@ -1,6 +1,7 @@
 import {History} from 'history';
 import {observer} from 'mobx-react';
 import React, {Component, ReactNode, createContext} from 'react';
+import {EmptyObjectPatch} from 'tslang';
 
 import {RouteMatch} from './route-match';
 
@@ -12,7 +13,7 @@ export interface LinkProps<TRouteMatch> {
   className?: string;
   to: TRouteMatch | string;
   params?: TRouteMatch extends RouteMatch<infer TParamDict>
-    ? Partial<TParamDict>
+    ? Partial<TParamDict> & EmptyObjectPatch
     : never;
   preserveQuery?: boolean;
   children: ReactNode;
