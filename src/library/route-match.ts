@@ -28,19 +28,28 @@ export interface RouteMatchOptions {
 export class RouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict
 > {
+  /** @internal */
   private _matchPattern: string | RegExp;
+
+  /** @internal */
   private _queryKeys: string[] | undefined;
 
   @observable
+  /** @internal */
   private _matched = false;
 
   @observable
+  /** @internal */
   private _exact = false;
 
+  /** @internal */
   private _pathFragments!: GeneralFragmentDict;
+
+  /** @internal */
   private _sourceQuery: GeneralQueryDict | undefined;
 
   @observable
+  /** @internal */
   private _params!: GeneralParamDict;
 
   /** @internal */
@@ -172,6 +181,7 @@ export class RouteMatch<
     };
   }
 
+  /** @internal */
   private _match(skipped: boolean, rest: string): RouteMatchInternalResult {
     if (skipped || !rest) {
       return {

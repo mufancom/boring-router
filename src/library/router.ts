@@ -60,6 +60,7 @@ export class Router {
   /** @internal */
   _children!: RouteMatch[];
 
+  /** @internal */
   private _fragmentMatcher: FragmentMatcherCallback;
 
   private constructor(
@@ -70,14 +71,15 @@ export class Router {
     this._fragmentMatcher =
       fragmentMatcher || DEFAULT_FRAGMENT_MATCHER_CALLBACK;
 
-    this._children = this.buildRouteMatches(this, schema);
+    this._children = this._buildRouteMatches(this, schema);
 
-    history.listen(this.onLocationChange);
+    history.listen(this._onLocationChange);
 
-    this.onLocationChange(history.location);
+    this._onLocationChange(history.location);
   }
 
-  private onLocationChange = ({pathname, search}: Location): void => {
+  /** @internal */
+  private _onLocationChange = ({pathname, search}: Location): void => {
     let searchParams = new URLSearchParams(search);
 
     let queryDict = Array.from(searchParams).reduce(
@@ -88,10 +90,11 @@ export class Router {
       {} as GeneralQueryDict,
     );
 
-    this.pushRouteChange(this, false, pathname, {}, {}, queryDict);
+    this._pushRouteChange(this, false, pathname, {}, {}, queryDict);
   };
 
-  private pushRouteChange(
+  /** @internal */
+  private _pushRouteChange(
     target: Router | RouteMatch,
     skipped: boolean,
     upperRest: string,
@@ -121,7 +124,7 @@ export class Router {
         skipped = true;
       }
 
-      this.pushRouteChange(
+      this._pushRouteChange(
         routeMatch,
         !matched,
         rest,
@@ -132,7 +135,8 @@ export class Router {
     }
   }
 
-  private buildRouteMatches(
+  /** @internal */
+  private _buildRouteMatches(
     target: Router | RouteMatch,
     schemaDict: RouteSchemaDict,
   ): RouteMatch[] {
@@ -159,7 +163,7 @@ export class Router {
         continue;
       }
 
-      routeMatch._children = this.buildRouteMatches(routeMatch, children);
+      routeMatch._children = this._buildRouteMatches(routeMatch, children);
     }
 
     return routeMatches;
