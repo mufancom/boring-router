@@ -1,6 +1,7 @@
 import {History} from 'history';
+import {computed} from 'mobx';
 import {observer} from 'mobx-react';
-import React, {Component, ReactNode} from 'react';
+import React, {Component, MouseEvent, ReactNode} from 'react';
 import {EmptyObjectPatch} from 'tslang';
 
 import {HistoryConsumer} from './history';
@@ -28,8 +29,8 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
         {history => (
           <a
             className={className}
-            onClick={() => this.navigate(history)}
-            href="javascript:;"
+            onClick={event => this.onClick(history, event)}
+            href={this.href}
             children={children}
           />
         )}
@@ -37,13 +38,19 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     );
   }
 
-  private navigate(history: History): void {
+  @computed
+  private get href(): string {
     let {to, params, preserveQuery} = this.props;
 
     if (to instanceof RouteMatch) {
       to = to.$ref(params, preserveQuery);
     }
 
-    history.push(to);
+    return to;
+  }
+
+  private onClick(history: History, event: MouseEvent): void {
+    event.preventDefault();
+    history.push(this.href);
   }
 }
