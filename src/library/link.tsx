@@ -1,15 +1,12 @@
 import {History} from 'history';
 import {observer} from 'mobx-react';
-import React, {Component, ReactNode, createContext} from 'react';
+import React, {Component, ReactNode} from 'react';
 import {EmptyObjectPatch} from 'tslang';
 
+import {HistoryConsumer} from './history';
 import {RouteMatch} from './route-match';
 
-const {Provider: HistoryProvider, Consumer: HistoryConsumer} = createContext<
-  History
->(undefined!);
-
-export interface LinkProps<TRouteMatch> {
+export interface LinkProps<TRouteMatch extends RouteMatch> {
   className?: string;
   to: TRouteMatch | string;
   params?: TRouteMatch extends RouteMatch<infer TParamDict>
@@ -31,7 +28,7 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
         {history => (
           <a
             className={className}
-            onClick={() => this.onClick(history)}
+            onClick={() => this.navigate(history)}
             href="javascript:;"
             children={children}
           />
@@ -40,7 +37,7 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     );
   }
 
-  private onClick = (history: History): void => {
+  private navigate(history: History): void {
     let {to, params, preserveQuery} = this.props;
 
     if (to instanceof RouteMatch) {
@@ -48,7 +45,5 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     }
 
     history.push(to);
-  };
+  }
 }
-
-export {HistoryProvider};

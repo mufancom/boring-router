@@ -149,6 +149,14 @@ interface RouteMatch<TParamDict> {
   </Route>
   ```
 
+- [Redirect](examples/redirect/main.tsx)
+
+  Redirect on match.
+
+  ```tsx
+  <Redirect match={router.notFound} to={router.account} params={{id: '123'}} />
+  ```
+
 - [Function as Child](examples/function-as-child/main.tsx)
 
   Use `<Route />` with a function child.
