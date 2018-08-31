@@ -44,7 +44,6 @@
     "react-dom": "^16.4.2",
     "rimraf": "^2.6.2",
     "ts-jest": "^23.1.4",
-    "ts-node": "^7.0.1",
     "tslib": "^1.9.3",
     "tslint": "^5.11.0",
     "tslint-language-service": "^0.9.9",
@@ -52,7 +51,7 @@
   },
   "dependencies": {
     "@types/jest": "^23.3.1",
-    "hyphenate": "^0.2.1",
+    "hyphenate": "^0.2.2",
     "tslang": "^0.1.7"
   }
 }
