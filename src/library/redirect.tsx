@@ -40,14 +40,14 @@ export class Redirect<
     return (
       <HistoryConsumer>
         {history => {
-          this.navigate(history);
+          this.redirect(history);
           return <></>;
         }}
       </HistoryConsumer>
     );
   }
 
-  private navigate(history: History): void {
+  private redirect(history: History): void {
     let {to, params, preserveQuery} = this.props;
 
     if (to instanceof RouteMatch) {
