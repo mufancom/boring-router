@@ -1,8 +1,8 @@
 import {History, Location} from 'history';
 import hyphenate from 'hyphenate';
-import {Dict} from 'tslang';
 
 import {GeneralFragmentDict, GeneralQueryDict, RouteMatch} from './route-match';
+import {RouteSchemaDict} from './schema';
 
 export type FragmentMatcherCallback = (key: string) => string;
 
@@ -24,14 +24,6 @@ type FilterRouteMatchNonStringFragment<TRouteSchema, T> = TRouteSchema extends {
 interface RouteSchemaChildrenPartial<TRouteSchemaDict> {
   $children: TRouteSchemaDict;
 }
-
-export interface RouteSchema {
-  $match?: string | RegExp;
-  $query?: Dict<boolean>;
-  $children?: RouteSchemaDict;
-}
-
-export type RouteSchemaDict = Dict<RouteSchema | boolean>;
 
 export type RouteMatchFragmentType<
   TRouteSchemaDict,
