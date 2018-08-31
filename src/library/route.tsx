@@ -11,10 +11,15 @@ export type RouteComponent<TRouteMatch extends RouteMatch> = ComponentType<
   RouteComponentProps<TRouteMatch>
 >;
 
+export type RouteFunctionChild<TRouteMatch extends RouteMatch> = (
+  match: TRouteMatch,
+) => ReactNode;
+
 export interface RouteProps<TRouteMatch extends RouteMatch> {
   match: TRouteMatch | TRouteMatch[];
   exact?: boolean;
   component?: RouteComponent<TRouteMatch>;
+  children?: RouteFunctionChild<TRouteMatch> | ReactNode;
 }
 
 @observer
@@ -30,14 +35,26 @@ export class Route<TRouteMatch extends RouteMatch> extends Component<
       match => (exact ? match.$exact : match.$matched),
     );
 
-    return firstMatch ? (
-      RouteComponent ? (
-        <RouteComponent match={firstMatch} />
-      ) : (
-        children || <></>
-      )
-    ) : (
-      <></>
-    );
+    if (firstMatch) {
+      if (children !== undefined && children !== null) {
+        if (RouteComponent) {
+          throw new Error(
+            'Cannot specify `component` and `children` simultaneously',
+          );
+        }
+
+        if (typeof children === 'function') {
+          return children(firstMatch);
+        } else {
+          return children;
+        }
+      } else {
+        if (RouteComponent) {
+          return <RouteComponent match={firstMatch} />;
+        }
+      }
+    }
+
+    return <></>;
   }
 }
