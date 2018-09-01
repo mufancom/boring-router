@@ -1,7 +1,10 @@
-import {observable} from 'mobx';
+import {History} from 'history';
+import {autorun, observable} from 'mobx';
 import {Dict} from 'tslang';
 
 import {isPathPrefix} from './@utils';
+
+export type RouteMatchAction = () => void;
 
 interface RouteMatchInternalResult {
   current: string | undefined;
@@ -28,8 +31,10 @@ export interface RouteMatchOptions {
 export class RouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict
 > {
+  readonly $name: string;
+
   /** @internal */
-  private _name: string;
+  private _history: History;
 
   /** @internal */
   private _matchPattern: string | RegExp;
@@ -58,8 +63,13 @@ export class RouteMatch<
   /** @internal */
   _children!: RouteMatch[];
 
-  constructor(name: string, {match, query}: RouteMatchOptions) {
-    this._name = name;
+  constructor(
+    name: string,
+    history: History,
+    {match, query}: RouteMatchOptions,
+  ) {
+    this.$name = name;
+    this._history = history;
 
     if (match instanceof RegExp && match.global) {
       throw new Error(
@@ -120,6 +130,19 @@ export class RouteMatch<
     return path + (query ? `?${query}` : '');
   }
 
+  $navigate(params?: Partial<TParamDict>, preserveQuery?: boolean): void {
+    let ref = this.$ref(params, preserveQuery);
+    this._history.push(ref);
+  }
+
+  $action(action: RouteMatchAction, exact = false): void {
+    autorun(() => {
+      if (exact ? this.$exact : this.$matched) {
+        action();
+      }
+    });
+  }
+
   /** @internal */
   _push(
     skipped: boolean,
@@ -130,7 +153,7 @@ export class RouteMatch<
   ): RouteMatchPushResult {
     let {current, rest} = this._match(skipped, upperRest);
 
-    let name = this._name;
+    let name = this.$name;
 
     let matched = current !== undefined;
     let exact = matched && rest === '';

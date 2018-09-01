@@ -58,16 +58,21 @@ export interface RouterOptions {
 
 export class Router {
   /** @internal */
-  _children!: RouteMatch[];
+  private _history: History;
 
   /** @internal */
   private _fragmentMatcher: FragmentMatcherCallback;
+
+  /** @internal */
+  _children!: RouteMatch[];
 
   private constructor(
     schema: RouteSchemaDict,
     history: History,
     {fragmentMatcher}: RouterOptions,
   ) {
+    this._history = history;
+
     this._fragmentMatcher =
       fragmentMatcher || DEFAULT_FRAGMENT_MATCHER_CALLBACK;
 
@@ -153,7 +158,7 @@ export class Router {
         $children: children,
       } = schema;
 
-      let routeMatch = new RouteMatch(key, {match, query});
+      let routeMatch = new RouteMatch(key, this._history, {match, query});
 
       routeMatches.push(routeMatch);
 
