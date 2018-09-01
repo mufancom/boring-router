@@ -73,7 +73,7 @@ type RouteSchemaDict = Dict<RouteSchema | boolean>;
 interface RouteSchema {
   $match?: string | RegExp;
   $query?: Dict<boolean>;
-  $children?: Dict<RouteSchema | boolean>;
+  $children?: RouteSchemaDict;
 }
 ```
 
