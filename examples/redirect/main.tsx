@@ -1,4 +1,5 @@
 import {createBrowserHistory} from 'history';
+import {observable} from 'mobx';
 import {observer} from 'mobx-react';
 import React, {Component, ReactNode} from 'react';
 import ReactDOM from 'react-dom';
@@ -21,6 +22,7 @@ const router = Router.create(
     },
     account: true,
     profile: true,
+    settings: true,
     about: {
       $query: {
         source: true,
@@ -35,10 +37,14 @@ const router = Router.create(
 
 @observer
 export class App extends Component {
+  @observable
+  loggedIn = false;
+
   render(): ReactNode {
     return (
       <HistoryProvider value={history}>
         <h1>Boring Router</h1>
+        <button onClick={() => (this.loggedIn = true)}>Log In</button>
         <Route match={router.default}>
           <p>Home page</p>
           <div>
@@ -48,18 +54,25 @@ export class App extends Component {
             <Link to={router.about}>About</Link>
           </div>
           <div>
+            <Link to={router.profile}>Profile</Link>
+          </div>
+          <div>
+            <Link to={router.profile}>Settings</Link>
+          </div>
+          <div>
             <Link to="/boring">Boring</Link>
           </div>
         </Route>
         <Route match={router.account}>
           <p>Account page</p>
           <Link to={router.default}>Home</Link>
+          <Redirect match={!this.loggedIn} to={router.default} />
         </Route>
         <Route match={router.about}>
           <p>About page</p>
           <Link to={router.default}>Home</Link>
         </Route>
-        <Redirect match={[router.account, router.profile]} to={router.about} />
+        <Redirect match={[router.profile, router.settings]} to={router.about} />
         <Redirect
           match={router.notFound}
           to={router.about}

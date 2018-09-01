@@ -10,7 +10,7 @@ export interface RedirectProps<
   TRouteMatch extends RouteMatch,
   TToRouteMatch extends RouteMatch
 > {
-  match: TRouteMatch | TRouteMatch[];
+  match: TRouteMatch | TRouteMatch[] | boolean;
   exact?: boolean;
   to: TToRouteMatch | string;
   params?: TToRouteMatch extends RouteMatch<infer TParamDict>
@@ -27,11 +27,15 @@ export class Redirect<
   render(): ReactNode {
     let {match, exact} = this.props;
 
-    let matches = Array.isArray(match) ? match : [match];
+    let matched: boolean;
 
-    let matched = matches.some(
-      match => (exact ? match.$exact : match.$matched),
-    );
+    if (typeof match === 'boolean') {
+      matched = match;
+    } else {
+      let matches = Array.isArray(match) ? match : [match];
+
+      matched = matches.some(match => (exact ? match.$exact : match.$matched));
+    }
 
     if (!matched) {
       return <></>;
