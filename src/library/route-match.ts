@@ -54,7 +54,7 @@ export class RouteMatch<
   private _pathFragments!: GeneralFragmentDict;
 
   /** @internal */
-  private _sourceQuery: GeneralQueryDict | undefined;
+  private _sourceQuery!: GeneralQueryDict;
 
   /** @internal */
   @observable
@@ -119,7 +119,7 @@ export class RouteMatch<
     let sourceQueryDict = this._sourceQuery;
 
     let query = new URLSearchParams([
-      ...(preserveQuery && sourceQueryDict
+      ...(preserveQuery
         ? (Object.entries(sourceQueryDict) as [string, string][])
         : []),
       ...Array.from(paramKeySet).map(
