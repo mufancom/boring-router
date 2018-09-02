@@ -1,19 +1,18 @@
-import {History} from 'history';
 import {computed} from 'mobx';
 import {observer} from 'mobx-react';
 import React, {Component, MouseEvent, ReactNode} from 'react';
 import {EmptyObjectPatch} from 'tslang';
 
-import {HistoryConsumer} from './history';
 import {RouteMatch} from './route-match';
 
 export interface LinkProps<TRouteMatch extends RouteMatch> {
   className?: string;
-  to: TRouteMatch | string;
+  to: TRouteMatch;
   params?: TRouteMatch extends RouteMatch<infer TParamDict>
     ? Partial<TParamDict> & EmptyObjectPatch
     : never;
   preserveQuery?: boolean;
+  replace?: boolean;
   children: ReactNode;
 }
 
@@ -25,16 +24,12 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     let {className, children} = this.props;
 
     return (
-      <HistoryConsumer>
-        {history => (
-          <a
-            className={className}
-            onClick={event => this.onClick(history, event)}
-            href={this.href}
-            children={children}
-          />
-        )}
-      </HistoryConsumer>
+      <a
+        className={className}
+        onClick={this.onClick}
+        href={this.href}
+        children={children}
+      />
     );
   }
 
@@ -42,15 +37,18 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
   private get href(): string {
     let {to, params, preserveQuery} = this.props;
 
-    if (to instanceof RouteMatch) {
-      to = to.$ref(params, preserveQuery);
-    }
-
-    return to;
+    return to.$ref(params, preserveQuery);
   }
 
-  private onClick(history: History, event: MouseEvent): void {
+  private onClick = (event: MouseEvent): void => {
     event.preventDefault();
-    history.push(this.href);
-  }
+
+    let {to, params, preserveQuery, replace} = this.props;
+
+    if (replace) {
+      to.$replace(params, preserveQuery);
+    } else {
+      to.$push(params, preserveQuery);
+    }
+  };
 }

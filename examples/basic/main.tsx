@@ -3,13 +3,7 @@ import {observer} from 'mobx-react';
 import React, {Component, ReactNode} from 'react';
 import ReactDOM from 'react-dom';
 
-import {
-  HistoryProvider,
-  Link,
-  Route,
-  RouteMatch,
-  Router,
-} from '../../bld/library';
+import {Link, Route, RouteMatch, Router} from '../../bld/library';
 
 const history = createBrowserHistory();
 
@@ -31,7 +25,7 @@ const router = Router.create(
 export class App extends Component {
   render(): ReactNode {
     return (
-      <HistoryProvider value={history}>
+      <>
         <h1>Boring Router</h1>
         <Route match={router.default}>
           <p>Home page</p>
@@ -42,7 +36,9 @@ export class App extends Component {
             <Link to={router.about}>About</Link>
           </div>
           <div>
-            <Link to="/boring">Boring</Link>
+            <Link to={router.notFound} params={{notFound: 'boring'}}>
+              Boring
+            </Link>
           </div>
         </Route>
         <Route match={router.account}>
@@ -57,7 +53,7 @@ export class App extends Component {
           <p>Not found</p>
           <Link to={router.default}>Home</Link>
         </Route>
-      </HistoryProvider>
+      </>
     );
   }
 }

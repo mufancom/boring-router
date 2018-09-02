@@ -130,21 +130,26 @@ export class RouteMatch<
     return path + (query ? `?${query}` : '');
   }
 
-  $navigate(params?: Partial<TParamDict>, preserveQuery?: boolean): void {
+  $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void {
     let ref = this.$ref(params, preserveQuery);
     this._history.push(ref);
+  }
+
+  $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void {
+    let ref = this.$ref(params, preserveQuery);
+    this._history.replace(ref);
   }
 
   $action(action: RouteMatchAction, exact = false): void {
     autorun(() => {
       if (exact ? this.$exact : this.$matched) {
-        action();
+        requestAnimationFrame(() => action());
       }
     });
   }
 
   /** @internal */
-  _push(
+  _update(
     skipped: boolean,
     upperRest: string,
     upperPathFragmentDict: GeneralFragmentDict,

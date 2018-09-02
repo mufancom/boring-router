@@ -2,6 +2,8 @@ import {createMemoryHistory} from 'history';
 
 import {Router} from '../bld/library';
 
+(global as any).requestAnimationFrame = (callback: () => void) => callback();
+
 let history = createMemoryHistory();
 
 let router = Router.create(
@@ -20,11 +22,11 @@ let router = Router.create(
 );
 
 router.default.$action(() => {
-  router.account.settings.$navigate();
+  router.account.settings.$push();
 });
 
 router.account.$action(() => {
-  router.account.billings.$navigate();
+  router.account.billings.$push();
 }, true);
 
 test('should navigate from `default` to `account.settings`', () => {
@@ -32,7 +34,7 @@ test('should navigate from `default` to `account.settings`', () => {
 });
 
 test('should navigate from `account` to `account.billings`', () => {
-  router.account.$navigate();
+  router.account.$push();
 
   expect(history.location.pathname).toBe('/account/billings');
 });

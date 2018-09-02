@@ -117,7 +117,7 @@ export class Router {
         rest,
         pathFragmentDict,
         paramFragmentDict,
-      } = routeMatch._push(
+      } = routeMatch._update(
         skipped,
         upperRest,
         upperPathFragmentDict,

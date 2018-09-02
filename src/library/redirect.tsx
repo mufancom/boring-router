@@ -1,22 +1,21 @@
-import {History} from 'history';
 import {observer} from 'mobx-react';
 import React, {Component, ReactNode} from 'react';
 import {EmptyObjectPatch} from 'tslang';
 
-import {HistoryConsumer} from './history';
 import {RouteMatch} from './route-match';
 
 export interface RedirectProps<
   TRouteMatch extends RouteMatch,
   TToRouteMatch extends RouteMatch
 > {
-  match: TRouteMatch | TRouteMatch[] | boolean;
+  match: TRouteMatch | TRouteMatch[];
   exact?: boolean;
-  to: TToRouteMatch | string;
+  to: TToRouteMatch;
   params?: TToRouteMatch extends RouteMatch<infer TParamDict>
     ? Partial<TParamDict> & EmptyObjectPatch
     : never;
   preserveQuery?: boolean;
+  push?: boolean;
 }
 
 @observer
@@ -37,27 +36,20 @@ export class Redirect<
       matched = matches.some(match => (exact ? match.$exact : match.$matched));
     }
 
-    if (!matched) {
-      return <></>;
+    if (matched) {
+      requestAnimationFrame(() => this.redirect());
     }
 
-    return (
-      <HistoryConsumer>
-        {history => {
-          this.redirect(history);
-          return <></>;
-        }}
-      </HistoryConsumer>
-    );
+    return <></>;
   }
 
-  private redirect(history: History): void {
-    let {to, params, preserveQuery} = this.props;
+  private redirect(): void {
+    let {to, params, preserveQuery, push} = this.props;
 
-    if (to instanceof RouteMatch) {
-      to = to.$ref(params, preserveQuery);
+    if (push) {
+      to.$push(params, preserveQuery);
+    } else {
+      to.$replace(params, preserveQuery);
     }
-
-    history.push(to);
   }
 }

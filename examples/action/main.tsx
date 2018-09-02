@@ -3,7 +3,7 @@ import {observer} from 'mobx-react';
 import React, {Component, ReactNode} from 'react';
 import ReactDOM from 'react-dom';
 
-import {Link, Route, Router} from '../../bld/library';
+import {Link, Route, RouteMatch, Router} from '../../bld/library';
 
 const history = createBrowserHistory();
 
@@ -12,21 +12,23 @@ const router = Router.create(
     default: {
       $match: '',
     },
-    account: {
+    account: true,
+    profile: true,
+    about: {
       $query: {
-        id: true,
+        source: true,
       },
-      $children: {
-        details: {
-          $query: {
-            id: true,
-          },
-        },
-      },
+    },
+    notFound: {
+      $match: RouteMatch.rest,
     },
   },
   history,
 );
+
+router.account.$action(() => {
+  router.about.$replace({source: 'action'});
+});
 
 @observer
 export class App extends Component {
@@ -36,21 +38,16 @@ export class App extends Component {
         <h1>Boring Router</h1>
         <Route match={router.default}>
           <p>Home page</p>
-          <Link to={router.account} params={{id: '123'}}>
-            Account 123
-          </Link>
+          <div>
+            <Link to={router.account}>Account</Link>
+          </div>
+          <div>
+            <Link to={router.about}>About</Link>
+          </div>
         </Route>
-        <Route match={router.account}>
-          <p>Account page</p>
+        <Route match={router.about}>
+          <p>About page</p>
           <Link to={router.default}>Home</Link>
-          <hr />
-          <p>Account {router.account.$params.id} page</p>
-          <Link to={router.account.details} preserveQuery>
-            Details
-          </Link>
-          <Route match={router.account.details}>
-            <p>Account {router.account.details.$params.id} details</p>
-          </Route>
         </Route>
       </>
     );
