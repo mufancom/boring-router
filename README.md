@@ -77,7 +77,13 @@ interface RouteSchema {
 }
 ```
 
-> Two pre-defined `$match` regular expression is available as `RouteMatch.fragment` (`/[^/]+/`) and `RouteMatch.rest` (`/.+/`).
+Two pre-defined `$match` regular expression is available as `RouteMatch.fragment` (`/[^/]+/`) and `RouteMatch.rest` (`/.+/`).
+
+A `schema` wrapper function is available to make TypeScript intellisense happier for separated schema definition:
+
+```ts
+function schema<T extends RouteSchemaDict>(schema: T): T;
+```
 
 ## Route match
 
@@ -90,6 +96,9 @@ interface RouteMatch<TParamDict> {
   $params: TParamDict;
 
   $ref(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
+  $push(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
+  $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
+  $action(action: RouteMatchAction, exact?: boolean): string;
 }
 ```
 
