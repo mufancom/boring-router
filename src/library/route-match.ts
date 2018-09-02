@@ -116,11 +116,11 @@ export class RouteMatch<
       })
       .join('');
 
-    let queryDict = this._sourceQuery;
+    let sourceQueryDict = this._sourceQuery;
 
     let query = new URLSearchParams([
-      ...(preserveQuery && queryDict
-        ? (Object.entries(queryDict) as [string, string][])
+      ...(preserveQuery && sourceQueryDict
+        ? (Object.entries(sourceQueryDict) as [string, string][])
         : []),
       ...Array.from(paramKeySet).map(
         (key): [string, string] => [key, params[key]!],
