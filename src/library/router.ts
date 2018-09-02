@@ -53,6 +53,10 @@ export type RouterType<TRouteSchemaDict> = Router &
   RouteMatchFragmentType<TRouteSchemaDict, never>;
 
 export interface RouterOptions {
+  /**
+   * A function to perform default schema field name to fragment string
+   * transformation.
+   */
   fragmentMatcher?: FragmentMatcherCallback;
 }
 

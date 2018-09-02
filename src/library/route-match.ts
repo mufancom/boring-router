@@ -31,6 +31,10 @@ export interface RouteMatchOptions {
 export class RouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict
 > {
+  /**
+   * Name of this `RouteMatch`, correspondent to the field name of route
+   * schema.
+   */
   readonly $name: string;
 
   /** @internal */
@@ -84,18 +88,33 @@ export class RouteMatch<
     }
   }
 
+  /**
+   * A reactive value indicates whether this route is matched.
+   */
   get $matched(): boolean {
     return this._matched;
   }
 
+  /**
+   * A reactive value indicates whether this route is exactly matched.
+   */
   get $exact(): boolean {
     return this._exact;
   }
 
+  /**
+   * A dictionary of the combination of query string and fragments.
+   */
   get $params(): TParamDict {
     return this._params as TParamDict;
   }
 
+  /**
+   * Generates a string reference that can be used for history navigation.
+   * @param params A dictionary of the combination of query string and
+   * fragments.
+   * @param preserveQuery Whether to preserve values in current query string.
+   */
   $ref(params: Partial<TParamDict> = {}, preserveQuery = false): string {
     let fragmentDict = this._pathFragments;
 
@@ -130,16 +149,27 @@ export class RouteMatch<
     return path + (query ? `?${query}` : '');
   }
 
+  /**
+   * Perform a `history.push()` with `this.$ref(params, preserveQuery)`.
+   */
   $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void {
     let ref = this.$ref(params, preserveQuery);
     this._history.push(ref);
   }
 
+  /**
+   * Perform a `history.replace()` with `this.$ref(params, preserveQuery)`.
+   */
   $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void {
     let ref = this.$ref(params, preserveQuery);
     this._history.replace(ref);
   }
 
+  /**
+   * Perform an action if this `RouteMatch` matches.
+   * @param action A callback to perform this action.
+   * @param exact Perform this action only if it's an exact match.
+   */
   $action(action: RouteMatchAction, exact = false): void {
     autorun(() => {
       if (exact ? this.$exact : this.$matched) {
