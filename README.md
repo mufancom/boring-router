@@ -77,7 +77,7 @@ interface RouteSchema {
 }
 ```
 
-Two pre-defined `$match` regular expression is available as `RouteMatch.fragment` (`/[^/]+/`) and `RouteMatch.rest` (`/.+/`).
+Two pre-defined `$match` regular expressions are available as `RouteMatch.fragment` (`/[^/]+/`) and `RouteMatch.rest` (`/.+/`).
 
 A `schema` wrapper function is available to make TypeScript intellisense happier for separated schema definition:
 
