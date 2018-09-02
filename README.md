@@ -27,7 +27,7 @@ yarn add boring-router
 ## Usage
 
 ```tsx
-import {HistoryProvider, Link, Route, RouteMatch, Router} from 'boring-router';
+import {Link, Route, RouteMatch, Router} from 'boring-router';
 import {observer} from 'mobx-react';
 import {createBrowserHistory} from 'history';
 import React, {Component} from 'react';
@@ -49,7 +49,7 @@ const router = Router.create(
 class App extends Component {
   render() {
     return (
-      <HistoryProvider value={history}>
+      <>
         <Route match={router.account}>
           Account page
           <hr />
@@ -57,7 +57,7 @@ class App extends Component {
         </Route>
         <Route match={router.about}>About page</Route>
         <Route match={router.notFound}>Not found</Route>
-      </HistoryProvider>
+      </>
     );
   }
 }
