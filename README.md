@@ -96,9 +96,9 @@ interface RouteMatch<TParamDict> {
   $params: TParamDict;
 
   $ref(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
-  $push(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
-  $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
-  $action(action: RouteMatchAction, exact?: boolean): string;
+  $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
+  $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
+  $action(action: RouteMatchAction, exact?: boolean): void;
 }
 ```
 
