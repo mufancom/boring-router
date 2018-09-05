@@ -166,6 +166,14 @@ interface RouteMatch<TParamDict> {
   <Redirect match={router.notFound} to={router.account} params={{id: '123'}} />
   ```
 
+- [NavLink](examples/nav-link/main.tsx)
+
+  Like `<Link>` but will add a class name if `to` matches.
+
+  ```tsx
+  <NavLink to={router.account}>Account</NavLink>
+  ```
+
 - [Function as Child](examples/function-as-child/main.tsx)
 
   Use `<Route />` with a function child.
