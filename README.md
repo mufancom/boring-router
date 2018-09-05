@@ -201,6 +201,16 @@ interface RouteMatch<TParamDict> {
   />
   ```
 
+- [Action](examples/action/main.tsx)
+
+  Take an action on route match.
+
+  ```tsx
+  router.account.$action(() => {
+    router.about.$replace({source: 'action'});
+  });
+  ```
+
 ### Run an example
 
 ```sh
