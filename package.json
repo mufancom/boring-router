@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@magicspace/configs": "^0.1.28",
+    "@types/classnames": "^2.2.6",
     "@types/history": "^4.7.0",
     "@types/react": "^16.4.12",
     "@types/react-dom": "^16.0.7",
@@ -51,6 +52,7 @@
   },
   "dependencies": {
     "@types/jest": "^23.3.1",
+    "classnames": "^2.2.6",
     "hyphenate": "^0.2.4",
     "tslang": "^0.1.7"
   }
