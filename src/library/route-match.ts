@@ -4,7 +4,7 @@ import {Dict} from 'tslang';
 
 import {isPathPrefix} from './@utils';
 
-export type RouteMatchAction = () => void;
+export type RouteMatchReaction = () => void;
 
 interface RouteMatchInternalResult {
   current: string | undefined;
@@ -166,14 +166,14 @@ export class RouteMatch<
   }
 
   /**
-   * Perform an action if this `RouteMatch` matches.
-   * @param action A callback to perform this action.
-   * @param exact Perform this action only if it's an exact match.
+   * Perform a reaction if this `RouteMatch` matches.
+   * @param reaction A callback to perform this reaction.
+   * @param exact Perform this reaction only if it's an exact match.
    */
-  $action(action: RouteMatchAction, exact = false): void {
+  $react(reaction: RouteMatchReaction, exact = false): void {
     autorun(() => {
       if (exact ? this.$exact : this.$matched) {
-        requestAnimationFrame(() => action());
+        requestAnimationFrame(() => reaction());
       }
     });
   }

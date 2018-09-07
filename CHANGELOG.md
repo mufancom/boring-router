@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 - unreleased
+
+### Breaking changes
+
+- `RouteMatch#$action` has been replaced with `RouteMatch#$react`.
+
 ## [0.2.1] - 2018-9-5
 
 ### Changes

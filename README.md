@@ -98,7 +98,7 @@ interface RouteMatch<TParamDict> {
   $ref(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
   $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
   $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
-  $action(action: RouteMatchAction, exact?: boolean): void;
+  $react(reaction: RouteMatchReaction, exact?: boolean): void;
 }
 ```
 
@@ -209,13 +209,13 @@ interface RouteMatch<TParamDict> {
   />
   ```
 
-- [Action](examples/action/main.tsx)
+- [Reaction](examples/reaction/main.tsx)
 
-  Take an action on route match.
+  Take a reaction on route match.
 
   ```tsx
-  router.account.$action(() => {
-    router.about.$replace({source: 'action'});
+  router.account.$react(() => {
+    router.about.$replace({source: 'reaction'});
   });
   ```
 

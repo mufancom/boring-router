@@ -21,11 +21,11 @@ let router = Router.create(
   history,
 );
 
-router.default.$action(() => {
+router.default.$react(() => {
   router.account.settings.$push();
 });
 
-router.account.$action(() => {
+router.account.$react(() => {
   router.account.billings.$push();
 }, true);
 

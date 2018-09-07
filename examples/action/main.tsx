@@ -26,8 +26,8 @@ const router = Router.create(
   history,
 );
 
-router.account.$action(() => {
-  router.about.$replace({source: 'action'});
+router.account.$react(() => {
+  router.about.$replace({source: 'reaction'});
 });
 
 @observer
