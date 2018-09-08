@@ -10,6 +10,7 @@ let router = Router.create(
       $match: '',
     },
     account: {
+      $exact: true,
       $children: {
         settings: true,
         billings: true,

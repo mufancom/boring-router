@@ -36,6 +36,7 @@ export interface RouteMatchUpdateResult {
 export interface RouteMatchOptions {
   match: string | RegExp;
   query: Dict<boolean> | undefined;
+  exact: boolean;
 }
 
 export class RouteMatch<
@@ -76,13 +77,15 @@ export class RouteMatch<
   @observable
   private _params!: GeneralParamDict;
 
+  _allowExact: boolean;
+
   /** @internal */
   _children: RouteMatch[] | undefined;
 
   constructor(
     name: string,
     history: History,
-    {match, query}: RouteMatchOptions,
+    {match, query, exact}: RouteMatchOptions,
   ) {
     this.$name = name;
     this._history = history;
@@ -98,6 +101,8 @@ export class RouteMatch<
     if (query) {
       this._queryKeys = Object.keys(query);
     }
+
+    this._allowExact = exact;
   }
 
   /**

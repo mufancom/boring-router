@@ -13,9 +13,11 @@ let router = Router.create(
       $query: {
         callback: true,
       },
+      $exact: true,
       $children: {
         id: {
           $match: RouteMatch.fragment,
+          $exact: true,
           $children: {
             settings: true,
             billings: {

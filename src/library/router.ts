@@ -154,13 +154,17 @@ export class Router {
       }
 
       if (exact) {
-        return [
-          {
-            match: routeMatch,
-            fragment: fragment!,
-            exact: true,
-          },
-        ];
+        if (!routeMatch._children || routeMatch._allowExact) {
+          return [
+            {
+              match: routeMatch,
+              fragment: fragment!,
+              exact: true,
+            },
+          ];
+        } else {
+          continue;
+        }
       }
 
       let result = this._match(routeMatch, rest);
@@ -240,10 +244,15 @@ export class Router {
       let {
         $match: match = this._fragmentMatcher(key),
         $query: query,
+        $exact: exact = false,
         $children: children,
       } = schema;
 
-      let routeMatch = new RouteMatch(key, this._history, {match, query});
+      let routeMatch = new RouteMatch(key, this._history, {
+        match,
+        query,
+        exact,
+      });
 
       routeMatches.push(routeMatch);
 
