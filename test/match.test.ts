@@ -44,6 +44,8 @@ let router = Router.create(
   history,
 );
 
+beforeAll(async () => {});
+
 test('should match `default`', () => {
   expect(router.default.$matched).toBe(true);
   expect(router.default.$exact).toBe(true);

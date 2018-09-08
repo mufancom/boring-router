@@ -2,6 +2,7 @@ import {observer} from 'mobx-react';
 import React, {Component, ReactNode} from 'react';
 import {EmptyObjectPatch} from 'tslang';
 
+import {then} from './@utils';
 import {RouteMatch} from './route-match';
 
 export interface RedirectProps<
@@ -37,7 +38,7 @@ export class Redirect<
     }
 
     if (matched) {
-      requestAnimationFrame(() => this.redirect());
+      then(() => this.redirect());
     }
 
     return <></>;

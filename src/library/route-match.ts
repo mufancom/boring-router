@@ -2,7 +2,7 @@ import {History} from 'history';
 import {autorun, observable} from 'mobx';
 import {Dict} from 'tslang';
 
-import {isPathPrefix} from './@utils';
+import {isPathPrefix, then} from './@utils';
 
 /**
  * Route match interception callback.
@@ -197,7 +197,7 @@ export class RouteMatch<
   $react(reaction: RouteMatchReaction, exact = false): void {
     autorun(() => {
       if (exact ? this.$exact : this.$matched) {
-        requestAnimationFrame(() => reaction());
+        then(() => reaction());
       }
     });
   }

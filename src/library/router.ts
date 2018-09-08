@@ -1,6 +1,7 @@
 import {History, Location} from 'history';
 import hyphenate from 'hyphenate';
 
+import {then} from './@utils';
 import {GeneralFragmentDict, GeneralQueryDict, RouteMatch} from './route-match';
 import {RouteSchemaDict} from './schema';
 
@@ -90,7 +91,7 @@ export class Router {
 
     this._update(this, new Map(), {}, {}, {});
 
-    requestAnimationFrame(() => {
+    then(() => {
       history.listen(this._onLocationChange);
       this._onLocationChange(history.location);
     });
