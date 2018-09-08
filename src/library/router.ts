@@ -52,6 +52,12 @@ export type RouteMatchType<
 export type RouterType<TRouteSchemaDict> = Router &
   RouteMatchFragmentType<TRouteSchemaDict, never>;
 
+export interface RouteMatchEntry {
+  match: RouteMatch;
+  exact: boolean;
+  fragment: string;
+}
+
 export interface RouterOptions {
   /**
    * A function to perform default schema field name to fragment string
@@ -68,7 +74,7 @@ export class Router {
   private _fragmentMatcher: FragmentMatcherCallback;
 
   /** @internal */
-  _children!: RouteMatch[];
+  _children: RouteMatch[];
 
   private constructor(
     schema: RouteSchemaDict,
@@ -99,44 +105,115 @@ export class Router {
       {} as GeneralQueryDict,
     );
 
-    this._pushRouteChange(this, false, pathname, {}, {}, queryDict);
+    let matchResult = this._match(this, pathname);
+
+    if (typeof matchResult === 'string') {
+      this._history.replace(matchResult);
+      return;
+    }
+
+    let routeMatchEntryMap = new Map(
+      matchResult
+        ? matchResult.map(
+            (entry): [RouteMatch, RouteMatchEntry] => [entry.match, entry],
+          )
+        : undefined,
+    );
+
+    this._update(this, routeMatchEntryMap, {}, {}, queryDict);
   };
 
   /** @internal */
-  private _pushRouteChange(
+  private _match(
     target: Router | RouteMatch,
-    skipped: boolean,
     upperRest: string,
+  ): RouteMatchEntry[] | string | undefined {
+    for (let routeMatch of target._children || []) {
+      let {fragment, rest} = routeMatch._match(upperRest);
+
+      let matched = fragment !== undefined;
+      let exact = matched && rest === '';
+
+      if (matched) {
+        let interceptionResult = routeMatch._intercept(exact);
+
+        if (typeof interceptionResult === 'string') {
+          return interceptionResult;
+        } else if (interceptionResult === false) {
+          matched = false;
+          exact = false;
+        }
+      }
+
+      if (!matched) {
+        continue;
+      }
+
+      if (exact) {
+        return [
+          {
+            match: routeMatch,
+            fragment: fragment!,
+            exact: true,
+          },
+        ];
+      }
+
+      let result = this._match(routeMatch, rest);
+
+      if (typeof result === 'string') {
+        return result;
+      } else if (result) {
+        return [
+          {
+            match: routeMatch,
+            fragment: fragment!,
+            exact: false,
+          },
+          ...result,
+        ];
+      }
+    }
+
+    return undefined;
+  }
+
+  /** @internal */
+  private _update(
+    target: Router | RouteMatch,
+    routeMatchEntryMap: Map<RouteMatch, RouteMatchEntry>,
     upperPathFragmentDict: GeneralFragmentDict,
     upperParamFragmentDict: GeneralFragmentDict,
     sourceQueryDict: GeneralQueryDict,
   ): void {
-    if (!target._children) {
-      return;
-    }
+    for (let routeMatch of target._children || []) {
+      let entry = routeMatchEntryMap.get(routeMatch);
 
-    for (let routeMatch of target._children) {
-      let {
+      let matched: boolean;
+      let exact: boolean;
+      let fragment: string | undefined;
+
+      if (entry) {
+        matched = true;
+        exact = entry.exact;
+        fragment = entry.fragment;
+      } else {
+        matched = false;
+        exact = false;
+      }
+
+      let {pathFragmentDict, paramFragmentDict} = routeMatch._update(
         matched,
-        rest,
-        pathFragmentDict,
-        paramFragmentDict,
-      } = routeMatch._update(
-        skipped,
-        upperRest,
+        exact,
+        fragment,
         upperPathFragmentDict,
         upperParamFragmentDict,
         sourceQueryDict,
       );
 
-      if (matched) {
-        skipped = true;
-      }
-
-      this._pushRouteChange(
+      this._update(
         routeMatch,
-        !matched,
-        rest,
+        routeMatchEntryMap,
         pathFragmentDict,
         paramFragmentDict,
         sourceQueryDict,

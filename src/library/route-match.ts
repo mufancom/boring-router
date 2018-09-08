@@ -4,11 +4,23 @@ import {Dict} from 'tslang';
 
 import {isPathPrefix} from './@utils';
 
+/**
+ * Route match interception callback.
+ * @return Return `true` or `undefined` to do nothing; return `false` to ignore
+ * this match; return a full path to redirect.
+ */
+export type RouteMatchInterception = () => string | boolean | void;
+
 export type RouteMatchReaction = () => void;
 
 interface RouteMatchInternalResult {
-  current: string | undefined;
+  fragment: string | undefined;
   rest: string;
+}
+
+interface RouteMatchInterceptionEntry {
+  interception: RouteMatchInterception;
+  exact: boolean;
 }
 
 export type GeneralFragmentDict = Dict<string | undefined>;
@@ -16,9 +28,7 @@ export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
 
 /** @internal */
-export interface RouteMatchPushResult {
-  matched: boolean;
-  rest: string;
+export interface RouteMatchUpdateResult {
   pathFragmentDict: GeneralFragmentDict;
   paramFragmentDict: GeneralFragmentDict;
 }
@@ -46,6 +56,8 @@ export class RouteMatch<
   /** @internal */
   private _queryKeys: string[] | undefined;
 
+  private _interceptionEntries: RouteMatchInterceptionEntry[] = [];
+
   /** @internal */
   @observable
   private _matched = false;
@@ -65,7 +77,7 @@ export class RouteMatch<
   private _params!: GeneralParamDict;
 
   /** @internal */
-  _children!: RouteMatch[];
+  _children: RouteMatch[] | undefined;
 
   constructor(
     name: string,
@@ -166,6 +178,18 @@ export class RouteMatch<
   }
 
   /**
+   * Intercept route matching if this `RouteMatch` matches.
+   * @param interception The interception callback.
+   * @param exact Intercept only if it's an exact match.
+   */
+  $intercept(interception: RouteMatchInterception, exact = false): void {
+    this._interceptionEntries.push({
+      interception,
+      exact,
+    });
+  }
+
+  /**
    * Perform a reaction if this `RouteMatch` matches.
    * @param reaction A callback to perform this reaction.
    * @param exact Perform this reaction only if it's an exact match.
@@ -179,30 +203,115 @@ export class RouteMatch<
   }
 
   /** @internal */
+  _match(rest: string): RouteMatchInternalResult {
+    if (!rest) {
+      return {
+        fragment: undefined,
+        rest: '',
+      };
+    }
+
+    if (!rest.startsWith('/')) {
+      throw new Error(
+        `Expecting rest of path to be started with "/", but got ${JSON.stringify(
+          rest,
+        )} instead`,
+      );
+    }
+
+    rest = rest.slice(1);
+
+    let pattern = this._matchPattern;
+
+    if (typeof pattern === 'string') {
+      if (isPathPrefix(rest, pattern)) {
+        return {
+          fragment: pattern,
+          rest: rest.slice(pattern.length),
+        };
+      } else {
+        return {
+          fragment: undefined,
+          rest: '',
+        };
+      }
+    } else {
+      let groups = pattern.exec(rest);
+
+      if (groups) {
+        let matched = groups[0];
+
+        if (!isPathPrefix(rest, matched)) {
+          throw new Error(
+            `Invalid regular expression pattern, expecting rest of path to be started with "/" after match (matched ${JSON.stringify(
+              matched,
+            )} out of ${JSON.stringify(rest)})`,
+          );
+        }
+
+        return {
+          fragment: matched,
+          rest: rest.slice(matched.length),
+        };
+      } else {
+        return {
+          fragment: undefined,
+          rest: '',
+        };
+      }
+    }
+  }
+
+  /** @internal */
+  _intercept(exact: boolean): string | false | undefined {
+    let entries = this._interceptionEntries;
+
+    if (exact) {
+      entries = entries.filter(entry => entry.exact);
+    }
+
+    for (let {interception} of entries) {
+      let result = interception();
+
+      if (result === true || result === undefined) {
+        continue;
+      }
+
+      if (result === false) {
+        return false;
+      }
+
+      if (typeof result === 'string') {
+        return result;
+      }
+
+      throw new Error('Invalid interception result');
+    }
+
+    return undefined;
+  }
+
+  /** @internal */
   _update(
-    skipped: boolean,
-    upperRest: string,
+    matched: boolean,
+    exact: boolean,
+    fragment: string | undefined,
     upperPathFragmentDict: GeneralFragmentDict,
     upperParamFragmentDict: GeneralFragmentDict,
     sourceQueryDict: GeneralQueryDict,
-  ): RouteMatchPushResult {
-    let {current, rest} = this._match(skipped, upperRest);
-
+  ): RouteMatchUpdateResult {
     let name = this.$name;
-
-    let matched = current !== undefined;
-    let exact = matched && rest === '';
 
     let matchPattern = this._matchPattern;
 
     let pathFragmentDict = {
       ...upperPathFragmentDict,
-      ...{[name]: typeof matchPattern === 'string' ? matchPattern : current},
+      ...{[name]: typeof matchPattern === 'string' ? matchPattern : fragment},
     };
 
     let paramFragmentDict = {
       ...upperParamFragmentDict,
-      ...(typeof matchPattern === 'string' ? undefined : {[name]: current}),
+      ...(typeof matchPattern === 'string' ? undefined : {[name]: fragment}),
     };
 
     this._pathFragments = pathFragmentDict;
@@ -237,71 +346,9 @@ export class RouteMatch<
     this._exact = exact;
 
     return {
-      matched,
-      rest,
       pathFragmentDict,
       paramFragmentDict,
     };
-  }
-
-  /** @internal */
-  private _match(skipped: boolean, rest: string): RouteMatchInternalResult {
-    if (skipped || !rest) {
-      return {
-        current: undefined,
-        rest: '',
-      };
-    }
-
-    if (!rest.startsWith('/')) {
-      throw new Error(
-        `Expecting rest of path to be started with "/", but got ${JSON.stringify(
-          rest,
-        )} instead`,
-      );
-    }
-
-    rest = rest.slice(1);
-
-    let pattern = this._matchPattern;
-
-    if (typeof pattern === 'string') {
-      if (isPathPrefix(rest, pattern)) {
-        return {
-          current: pattern,
-          rest: rest.slice(pattern.length),
-        };
-      } else {
-        return {
-          current: undefined,
-          rest: '',
-        };
-      }
-    } else {
-      let groups = pattern.exec(rest);
-
-      if (groups) {
-        let matched = groups[0];
-
-        if (!isPathPrefix(rest, matched)) {
-          throw new Error(
-            `Invalid regular expression pattern, expecting rest of path to be started with "/" after match (matched ${JSON.stringify(
-              matched,
-            )} out of ${JSON.stringify(rest)})`,
-          );
-        }
-
-        return {
-          current: matched,
-          rest: rest.slice(matched.length),
-        };
-      } else {
-        return {
-          current: undefined,
-          rest: '',
-        };
-      }
-    }
   }
 
   static fragment = /[^/]+/;
