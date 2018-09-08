@@ -86,11 +86,14 @@ export class Router {
     this._fragmentMatcher =
       fragmentMatcher || DEFAULT_FRAGMENT_MATCHER_CALLBACK;
 
-    this._children = this._buildRouteMatches(this, schema);
+    this._children = this._build(this, schema);
 
-    history.listen(this._onLocationChange);
+    this._update(this, new Map(), {}, {}, {});
 
-    this._onLocationChange(history.location);
+    requestAnimationFrame(() => {
+      history.listen(this._onLocationChange);
+      this._onLocationChange(history.location);
+    });
   }
 
   /** @internal */
@@ -222,7 +225,7 @@ export class Router {
   }
 
   /** @internal */
-  private _buildRouteMatches(
+  private _build(
     target: Router | RouteMatch,
     schemaDict: RouteSchemaDict,
   ): RouteMatch[] {
@@ -249,7 +252,7 @@ export class Router {
         continue;
       }
 
-      routeMatch._children = this._buildRouteMatches(routeMatch, children);
+      routeMatch._children = this._build(routeMatch, children);
     }
 
     return routeMatches;

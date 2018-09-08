@@ -266,8 +266,8 @@ export class RouteMatch<
   _intercept(exact: boolean): string | false | undefined {
     let entries = this._interceptionEntries;
 
-    if (exact) {
-      entries = entries.filter(entry => entry.exact);
+    if (!exact) {
+      entries = entries.filter(entry => !entry.exact);
     }
 
     for (let {interception} of entries) {
