@@ -16,7 +16,7 @@ let router = Router.create(
       $exact: true,
       $children: {
         id: {
-          $match: RouteMatch.fragment,
+          $match: /\d+/,
           $exact: true,
           $children: {
             settings: true,
@@ -26,16 +26,6 @@ let router = Router.create(
               },
             },
           },
-        },
-      },
-    },
-    invalid: {
-      $query: {
-        value: true,
-      },
-      $children: {
-        value: {
-          $match: RouteMatch.fragment,
         },
       },
     },
@@ -83,6 +73,16 @@ test('should match `account`', () => {
   expect(() => router.account.id.settings.$ref()).toThrow(
     'Parameter "id" is required',
   );
+});
+
+test('should match `notFound`', () => {
+  history.push('/account/boring');
+
+  expect(router.account.$matched).toBe(false);
+  expect(router.account.$exact).toBe(false);
+
+  expect(router.notFound.$matched).toBe(true);
+  expect(router.notFound.$exact).toBe(true);
 });
 
 test('should match `account.id`', () => {
