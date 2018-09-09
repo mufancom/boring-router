@@ -57,6 +57,7 @@ export class RouteMatch<
   /** @internal */
   private _queryKeys: string[] | undefined;
 
+  /** @internal */
   private _interceptionEntries: RouteMatchInterceptionEntry[] = [];
 
   /** @internal */
@@ -77,6 +78,7 @@ export class RouteMatch<
   @observable
   private _params!: GeneralParamDict;
 
+  /** @internal */
   _allowExact: boolean;
 
   /** @internal */
