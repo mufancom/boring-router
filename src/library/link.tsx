@@ -40,7 +40,7 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     try {
       return to.$ref(params, preserveQuery);
     } catch (error) {
-      return undefined;
+      return 'javascript:;';
     }
   }
 
