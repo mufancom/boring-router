@@ -34,10 +34,14 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
   }
 
   @computed
-  private get href(): string {
+  private get href(): string | undefined {
     let {to, params, preserveQuery} = this.props;
 
-    return to.$ref(params, preserveQuery);
+    try {
+      return to.$ref(params, preserveQuery);
+    } catch (error) {
+      return undefined;
+    }
   }
 
   private onClick = (event: MouseEvent): void => {
