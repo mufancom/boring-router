@@ -37,7 +37,7 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     );
   }
 
-  private onMouseEnter(): void {
+  private onMouseEnter = (): void => {
     let {to, params, preserveQuery} = this.props;
 
     try {
@@ -45,7 +45,7 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     } catch (error) {
       this.href = 'javascript:;';
     }
-  }
+  };
 
   private onClick = (event: MouseEvent): void => {
     event.preventDefault();
