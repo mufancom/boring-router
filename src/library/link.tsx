@@ -1,4 +1,4 @@
-import {computed} from 'mobx';
+import {observable} from 'mobx';
 import {observer} from 'mobx-react';
 import React, {Component, MouseEvent, ReactNode} from 'react';
 import {EmptyObjectPatch} from 'tslang';
@@ -20,27 +20,30 @@ export interface LinkProps<TRouteMatch extends RouteMatch> {
 export class Link<TRouteMatch extends RouteMatch> extends Component<
   LinkProps<TRouteMatch>
 > {
+  @observable
+  private href = 'javascript:;';
+
   render(): ReactNode {
     let {className, children} = this.props;
 
     return (
       <a
         className={className}
-        onClick={this.onClick}
         href={this.href}
+        onMouseEnter={this.onMouseEnter}
+        onClick={this.onClick}
         children={children}
       />
     );
   }
 
-  @computed
-  private get href(): string | undefined {
+  private onMouseEnter(): void {
     let {to, params, preserveQuery} = this.props;
 
     try {
-      return to.$ref(params, preserveQuery);
+      this.href = to.$ref(params, preserveQuery);
     } catch (error) {
-      return 'javascript:;';
+      this.href = 'javascript:;';
     }
   }
 
