@@ -264,6 +264,7 @@ export class Router {
     }
   };
 
+  /** @internal */
   private _revert(): void {
     this._history.replace(this._location || this._default);
   }
