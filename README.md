@@ -91,14 +91,42 @@ The value of expression like `router.account` in the usage example above is a `R
 
 ```ts
 interface RouteMatch<TParamDict> {
+  $name: string;
+
   $matched: boolean;
   $exact: boolean;
+
   $params: TParamDict;
 
   $ref(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
   $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
   $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
-  $react(reaction: RouteMatchReaction, exact?: boolean): void;
+
+  $beforeEnter(callback: RouteMatchBeforeEnter<this>): this;
+  $beforeLeave(callback: RouteMatchBeforeLeave): this;
+  $afterEnter(callback: RouteMatchAfterEnter): this;
+  $afterLeave(callback: RouteMatchAfterLeave): this;
+
+  $service(factory: RouteMatchServiceFactory<this>): this;
+
+  static fragment: RegExp;
+  static rest: RegExp;
+}
+```
+
+Within `$beforeEnter` hook and service hook, a special version of `RouteMatch` is available as `MatchingRouteMatch`, providing restricted functionality:
+
+```ts
+interface MatchingRouteMatch<TParamDict> {
+  $name: string;
+
+  $exact: boolean;
+
+  $params: TParamDict;
+
+  $ref(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
+  $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
+  $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
 }
 ```
 
