@@ -1,8 +1,14 @@
-import {History, Location} from 'history';
+import {Action, History, Location, locationsAreEqual, parsePath} from 'history';
 import hyphenate from 'hyphenate';
+import {extendObservable, observable} from 'mobx';
 
 import {then} from './@utils';
-import {GeneralFragmentDict, GeneralQueryDict, RouteMatch} from './route-match';
+import {
+  GeneralQueryDict,
+  MatchingRouteMatch,
+  RouteMatch,
+  RouteMatchOptions,
+} from './route-match';
 import {RouteSchemaDict} from './schema';
 
 export type FragmentMatcherCallback = (key: string) => string;
@@ -22,9 +28,27 @@ type FilterRouteMatchNonStringFragment<TRouteSchema, T> = TRouteSchema extends {
   ? TMatch extends string ? never : T
   : never;
 
-interface RouteSchemaChildrenPartial<TRouteSchemaDict> {
+interface RouteSchemaChildrenSection<TRouteSchemaDict> {
   $children: TRouteSchemaDict;
 }
+
+export type NestedRouteSchemaDictType<
+  TRouteSchema
+> = TRouteSchema extends RouteSchemaChildrenSection<
+  infer TNestedRouteSchemaDict
+>
+  ? TNestedRouteSchemaDict
+  : {};
+
+interface RouteSchemaExtensionSection<TRouteMatchExtension> {
+  $extension: TRouteMatchExtension;
+}
+
+export type RouteMatchExtensionType<
+  TRouteSchema
+> = TRouteSchema extends RouteSchemaExtensionSection<infer TRouteMatchExtension>
+  ? TRouteMatchExtension
+  : {};
 
 export type RouteMatchFragmentType<
   TRouteSchemaDict,
@@ -46,9 +70,11 @@ export type RouteMatchType<
   > &
     {[K in TFragmentKey]: string}
 > &
-  (TRouteSchema extends RouteSchemaChildrenPartial<infer TNestedRouteSchemaDict>
-    ? RouteMatchFragmentType<TNestedRouteSchemaDict, TFragmentKey>
-    : {});
+  RouteMatchFragmentType<
+    NestedRouteSchemaDictType<TRouteSchema>,
+    TFragmentKey
+  > &
+  RouteMatchExtensionType<TRouteSchema>;
 
 export type RouterType<TRouteSchemaDict> = Router &
   RouteMatchFragmentType<TRouteSchemaDict, never>;
@@ -59,12 +85,19 @@ export interface RouteMatchEntry {
   fragment: string;
 }
 
+export interface RouteSource {
+  matchToMatchEntryMap: Map<RouteMatch, RouteMatchEntry>;
+  queryDict: GeneralQueryDict;
+}
+
 export interface RouterOptions {
   /**
    * A function to perform default schema field name to fragment string
    * transformation.
    */
   fragmentMatcher?: FragmentMatcherCallback;
+  /** Default path on error. */
+  default?: string;
 }
 
 export class Router {
@@ -75,30 +108,55 @@ export class Router {
   private _fragmentMatcher: FragmentMatcherCallback;
 
   /** @internal */
+  private _location: Location;
+
+  /** @internal */
+  private _source: RouteSource = observable({
+    matchToMatchEntryMap: new Map(),
+    queryDict: {},
+  });
+
+  /** @internal */
+  @observable
+  private _matchingSource: RouteSource = observable({
+    matchToMatchEntryMap: new Map(),
+    queryDict: {},
+  });
+
+  /** @internal */
   _children: RouteMatch[];
 
   private constructor(
     schema: RouteSchemaDict,
     history: History,
-    {fragmentMatcher}: RouterOptions,
+    {fragmentMatcher, default: defaultPath = '/'}: RouterOptions,
   ) {
     this._history = history;
+    this._location = parsePath(defaultPath);
 
     this._fragmentMatcher =
       fragmentMatcher || DEFAULT_FRAGMENT_MATCHER_CALLBACK;
 
-    this._children = this._build(this, schema);
-
-    this._update(this, new Map(), {}, {}, {});
+    this._children = this._build(schema, this);
 
     then(() => {
       history.listen(this._onLocationChange);
-      this._onLocationChange(history.location);
+      this._onLocationChange(history.location, 'POP');
     });
   }
 
   /** @internal */
-  private _onLocationChange = ({pathname, search}: Location): void => {
+  private _onLocationChange = (
+    {pathname, search}: Location,
+    action: Action,
+  ): void => {
+    let history = this._history;
+    let location = history.location;
+
+    if (locationsAreEqual(this._location, location)) {
+      return;
+    }
+
     let searchParams = new URLSearchParams(search);
 
     let queryDict = Array.from(searchParams).reduce(
@@ -109,132 +167,156 @@ export class Router {
       {} as GeneralQueryDict,
     );
 
-    let matchResult = this._match(this, pathname);
+    let routeMatchEntries = this._match(this, pathname) || [];
 
-    if (typeof matchResult === 'string') {
-      this._history.replace(matchResult);
-      return;
-    }
-
-    let routeMatchEntryMap = new Map(
-      matchResult
-        ? matchResult.map(
-            (entry): [RouteMatch, RouteMatchEntry] => [entry.match, entry],
-          )
-        : undefined,
+    let matchToMatchEntryMap = new Map(
+      routeMatchEntries.map(
+        (entry): [RouteMatch, RouteMatchEntry] => [entry.match, entry],
+      ),
     );
 
-    this._update(this, routeMatchEntryMap, {}, {}, queryDict);
+    Object.assign(this._matchingSource, {
+      matchToMatchEntryMap,
+      queryDict,
+    });
+
+    // Prepare previous/next match set
+
+    let previousMatchSet = new Set(this._source.matchToMatchEntryMap.keys());
+    let nextMatchSet = new Set(matchToMatchEntryMap.keys());
+
+    let leavingMatchSet = new Set(previousMatchSet);
+
+    for (let match of nextMatchSet) {
+      leavingMatchSet.delete(match);
+    }
+
+    let enteringMatchSet = new Set(nextMatchSet);
+
+    for (let match of previousMatchSet) {
+      enteringMatchSet.delete(match);
+    }
+
+    // Process before hooks
+
+    for (let match of Array.from(leavingMatchSet).reverse()) {
+      let result = match._beforeLeave();
+
+      if (!result) {
+        this._revert(action);
+        return;
+      }
+    }
+
+    for (let match of enteringMatchSet) {
+      let result = match._beforeEnter();
+
+      if (typeof result === 'string') {
+        history.replace(result);
+        return;
+      }
+
+      if (!result) {
+        this._revert(action);
+        return;
+      }
+    }
+
+    this._location = location;
+
+    Object.assign(this._source, this._matchingSource);
+
+    // Update
+
+    for (let match of leavingMatchSet) {
+      match._update(false, false);
+    }
+
+    for (let match of nextMatchSet) {
+      let {exact} = matchToMatchEntryMap.get(match)!;
+      match._update(true, exact);
+    }
+
+    // Process after hooks
+
+    for (let match of leavingMatchSet) {
+      match._afterLeave();
+    }
+
+    for (let match of enteringMatchSet) {
+      match._afterEnter();
+    }
   };
+
+  private _revert(action: Action): void {
+    let history = this._history;
+    let location = this._location;
+
+    switch (action) {
+      case 'PUSH':
+        history.goBack();
+        break;
+      case 'POP':
+      case 'REPLACE':
+        history.replace(location);
+        break;
+    }
+  }
 
   /** @internal */
   private _match(
     target: Router | RouteMatch,
     upperRest: string,
-  ): RouteMatchEntry[] | string | undefined {
+  ): RouteMatchEntry[] | undefined {
     for (let routeMatch of target._children || []) {
-      let {fragment, rest} = routeMatch._match(upperRest);
-
-      let matched = fragment !== undefined;
-      let exact = matched && rest === '';
-
-      if (matched) {
-        let interceptionResult = routeMatch._intercept(exact);
-
-        if (typeof interceptionResult === 'string') {
-          return interceptionResult;
-        } else if (interceptionResult === false) {
-          matched = false;
-          exact = false;
-        }
-      }
+      let {matched, exactlyMatched, fragment, rest} = routeMatch._match(
+        upperRest,
+      );
 
       if (!matched) {
         continue;
       }
 
-      if (exact) {
-        if (!routeMatch._children || routeMatch._allowExact) {
-          return [
-            {
-              match: routeMatch,
-              fragment: fragment!,
-              exact: true,
-            },
-          ];
-        } else {
-          continue;
-        }
-      }
-
-      let result = this._match(routeMatch, rest);
-
-      if (typeof result === 'string') {
-        return result;
-      } else if (result) {
+      if (exactlyMatched) {
         return [
           {
             match: routeMatch,
             fragment: fragment!,
-            exact: false,
+            exact: true,
           },
-          ...result,
         ];
       }
+
+      let result = this._match(routeMatch, rest);
+
+      if (!result) {
+        continue;
+      }
+
+      return [
+        {
+          match: routeMatch,
+          fragment: fragment!,
+          exact: false,
+        },
+        ...result,
+      ];
     }
 
     return undefined;
   }
 
   /** @internal */
-  private _update(
-    target: Router | RouteMatch,
-    routeMatchEntryMap: Map<RouteMatch, RouteMatchEntry>,
-    upperPathFragmentDict: GeneralFragmentDict,
-    upperParamFragmentDict: GeneralFragmentDict,
-    sourceQueryDict: GeneralQueryDict,
-  ): void {
-    for (let routeMatch of target._children || []) {
-      let entry = routeMatchEntryMap.get(routeMatch);
-
-      let matched: boolean;
-      let exact: boolean;
-      let fragment: string | undefined;
-
-      if (entry) {
-        matched = true;
-        exact = entry.exact;
-        fragment = entry.fragment;
-      } else {
-        matched = false;
-        exact = false;
-      }
-
-      let {pathFragmentDict, paramFragmentDict} = routeMatch._update(
-        matched,
-        exact,
-        fragment,
-        upperPathFragmentDict,
-        upperParamFragmentDict,
-        sourceQueryDict,
-      );
-
-      this._update(
-        routeMatch,
-        routeMatchEntryMap,
-        pathFragmentDict,
-        paramFragmentDict,
-        sourceQueryDict,
-      );
-    }
-  }
-
-  /** @internal */
   private _build(
-    target: Router | RouteMatch,
     schemaDict: RouteSchemaDict,
+    parent: RouteMatch | Router,
+    matchingParent?: MatchingRouteMatch,
   ): RouteMatch[] {
     let routeMatches: RouteMatch[] = [];
+
+    let source = this._source;
+    let matchingSource = this._matchingSource;
+    let history = this._history;
 
     for (let [key, schema] of Object.entries(schemaDict)) {
       if (typeof schema === 'boolean') {
@@ -246,23 +328,64 @@ export class Router {
         $query: query,
         $exact: exact = false,
         $children: children,
+        $extension: extension = {},
       } = schema;
 
-      let routeMatch = new RouteMatch(key, this._history, {
+      let options: RouteMatchOptions = {
         match,
         query,
         exact,
-      });
+      };
+
+      let routeMatch = new RouteMatch(
+        key,
+        source,
+        parent instanceof RouteMatch ? parent : undefined,
+        history,
+        options,
+      );
+
+      extendObservable(routeMatch, extension);
+
+      let matchingRouteMatch = new MatchingRouteMatch(
+        key,
+        matchingSource,
+        matchingParent,
+        routeMatch,
+        history,
+        options,
+      );
+
+      for (let key of Object.keys(extension)) {
+        Object.defineProperty(matchingRouteMatch, key, {
+          get() {
+            return (routeMatch as any)[key];
+          },
+          set(value) {
+            (routeMatch as any)[key] = value;
+          },
+        });
+      }
+
+      routeMatch._matching = matchingRouteMatch;
 
       routeMatches.push(routeMatch);
 
-      (target as any)[key] = routeMatch;
+      (parent as any)[key] = routeMatch;
+
+      if (matchingParent) {
+        (matchingParent as any)[key] = matchingRouteMatch;
+      }
 
       if (!children) {
         continue;
       }
 
-      routeMatch._children = this._build(routeMatch, children);
+      routeMatch._children = this._build(
+        children,
+        routeMatch,
+        matchingRouteMatch,
+      );
     }
 
     return routeMatches;

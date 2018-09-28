@@ -1,26 +1,50 @@
 import {History} from 'history';
-import {autorun, observable} from 'mobx';
-import {Dict} from 'tslang';
+import {computed, observable} from 'mobx';
+import {Dict, EmptyObjectPatch, OmitValueOfKey} from 'tslang';
 
-import {isPathPrefix, then} from './@utils';
+import {isPathPrefix} from './@utils';
+import {RouteMatchEntry, RouteSource} from './router';
 
 /**
- * Route match interception callback.
- * @return Return `true` or `undefined` to do nothing; return `false` to ignore
- * this match; return a full path to redirect.
+ * Route match before enter callback.
+ * @return Return `true` or `undefined` to do nothing; return `false` to revert
+ * this history change; return full path to redirect.
  */
-export type RouteMatchInterception = () => string | boolean | void;
+export type RouteMatchBeforeEnter<
+  TRouteMatch extends RouteMatch = RouteMatch
+> = (
+  next: OmitValueOfKey<
+    TRouteMatch,
+    Exclude<keyof RouteMatch, keyof MatchingRouteMatch>
+  >,
+) => string | boolean | void;
 
-export type RouteMatchReaction = () => void;
+/**
+ * Route match before leave callback.
+ * @return Return `true` or `undefined` to do nothing; return `false` to revert
+ * this history change.
+ */
+export type RouteMatchBeforeLeave = () => boolean | void;
 
-interface RouteMatchInternalResult {
-  fragment: string | undefined;
-  rest: string;
+export type RouteMatchAfterEnter = () => void;
+export type RouteMatchAfterLeave = () => void;
+
+export type RouteMatchServiceFactory<TRouteMatch extends RouteMatch> = (
+  match: TRouteMatch,
+) => IRouteService<TRouteMatch>;
+
+export interface IRouteService<TRouteMatch extends RouteMatch = RouteMatch> {
+  beforeEnter?: RouteMatchBeforeEnter<TRouteMatch>;
+  afterEnter?: RouteMatchAfterEnter;
+  beforeLeave?: RouteMatchBeforeLeave;
+  afterLeave?: RouteMatchAfterLeave;
 }
 
-interface RouteMatchInterceptionEntry {
-  interception: RouteMatchInterception;
-  exact: boolean;
+interface RouteMatchInternalResult {
+  matched: boolean;
+  exactlyMatched: boolean;
+  fragment: string | undefined;
+  rest: string;
 }
 
 export type GeneralFragmentDict = Dict<string | undefined>;
@@ -33,13 +57,16 @@ export interface RouteMatchUpdateResult {
   paramFragmentDict: GeneralFragmentDict;
 }
 
-export interface RouteMatchOptions {
+export interface RouteMatchSharedOptions {
   match: string | RegExp;
   query: Dict<boolean> | undefined;
+}
+
+export interface RouteMatchOptions extends RouteMatchSharedOptions {
   exact: boolean;
 }
 
-export class RouteMatch<
+abstract class RouteMatchShared<
   TParamDict extends GeneralParamDict = GeneralParamDict
 > {
   /**
@@ -49,47 +76,30 @@ export class RouteMatch<
   readonly $name: string;
 
   /** @internal */
-  private _history: History;
+  protected _history: History;
 
   /** @internal */
-  private _matchPattern: string | RegExp;
+  protected _source: RouteSource;
 
   /** @internal */
-  private _queryKeys: string[] | undefined;
+  protected _parent: RouteMatchShared | undefined;
 
   /** @internal */
-  private _interceptionEntries: RouteMatchInterceptionEntry[] = [];
+  protected _matchPattern: string | RegExp;
 
   /** @internal */
-  @observable
-  private _matched = false;
-
-  /** @internal */
-  @observable
-  private _exact = false;
-
-  /** @internal */
-  private _pathFragments!: GeneralFragmentDict;
-
-  /** @internal */
-  private _sourceQuery!: GeneralQueryDict;
-
-  /** @internal */
-  @observable
-  private _params!: GeneralParamDict;
-
-  /** @internal */
-  _allowExact: boolean;
-
-  /** @internal */
-  _children: RouteMatch[] | undefined;
+  protected _queryKeys: string[] | undefined;
 
   constructor(
     name: string,
+    source: RouteSource,
+    parent: RouteMatchShared | undefined,
     history: History,
-    {match, query, exact}: RouteMatchOptions,
+    {match, query}: RouteMatchSharedOptions,
   ) {
     this.$name = name;
+    this._source = source;
+    this._parent = parent;
     this._history = history;
 
     if (match instanceof RegExp && match.global) {
@@ -103,29 +113,81 @@ export class RouteMatch<
     if (query) {
       this._queryKeys = Object.keys(query);
     }
-
-    this._allowExact = exact;
-  }
-
-  /**
-   * A reactive value indicates whether this route is matched.
-   */
-  get $matched(): boolean {
-    return this._matched;
-  }
-
-  /**
-   * A reactive value indicates whether this route is exactly matched.
-   */
-  get $exact(): boolean {
-    return this._exact;
   }
 
   /**
    * A dictionary of the combination of query string and fragments.
    */
+  @computed
   get $params(): TParamDict {
-    return this._params as TParamDict;
+    return {
+      ...this._paramFragments,
+      ...this._query,
+    } as TParamDict;
+  }
+
+  /** @internal */
+  @computed
+  protected get _fragment(): string | undefined {
+    let entry = this._getMatchEntry(this._source);
+    return entry && entry.fragment;
+  }
+
+  /** @internal */
+  @computed
+  protected get _paramFragments(): GeneralFragmentDict {
+    let parent = this._parent;
+    let upperFragmentDict = parent && parent._paramFragments;
+
+    let matchPattern = this._matchPattern;
+    let fragment = this._fragment;
+
+    return {
+      ...upperFragmentDict,
+      ...(typeof matchPattern === 'string'
+        ? undefined
+        : {[this.$name]: fragment}),
+    };
+  }
+
+  /** @internal */
+  @computed
+  protected get _pathFragments(): GeneralFragmentDict {
+    let parent = this._parent;
+    let upperFragmentDict = parent && parent._pathFragments;
+
+    let matchPattern = this._matchPattern;
+    let fragment = this._fragment;
+
+    return {
+      ...upperFragmentDict,
+      ...{
+        [this.$name]:
+          typeof matchPattern === 'string' ? matchPattern : fragment,
+      },
+    };
+  }
+
+  /** @internal */
+  @computed
+  protected get _query(): GeneralQueryDict | undefined {
+    let queryKeys = this._queryKeys;
+    let sourceQueryDict = this._source.queryDict;
+
+    return queryKeys
+      ? queryKeys.reduce(
+          (dict, key) => {
+            let value = sourceQueryDict[key];
+
+            if (value !== undefined) {
+              dict[key] = sourceQueryDict[key];
+            }
+
+            return dict;
+          },
+          {} as GeneralQueryDict,
+        )
+      : undefined;
   }
 
   /**
@@ -134,8 +196,12 @@ export class RouteMatch<
    * fragments.
    * @param preserveQuery Whether to preserve values in current query string.
    */
-  $ref(params: Partial<TParamDict> = {}, preserveQuery = false): string {
+  $ref(
+    params: Partial<TParamDict> & EmptyObjectPatch = {},
+    preserveQuery = false,
+  ): string {
     let fragmentDict = this._pathFragments;
+    let sourceQueryDict = this._source.queryDict;
 
     let paramKeySet = new Set(Object.keys(params));
 
@@ -154,8 +220,6 @@ export class RouteMatch<
       })
       .join('');
 
-    let sourceQueryDict = this._sourceQuery;
-
     let query = new URLSearchParams([
       ...(preserveQuery
         ? (Object.entries(sourceQueryDict) as [string, string][])
@@ -165,13 +229,16 @@ export class RouteMatch<
       ),
     ]).toString();
 
-    return path + (query ? `?${query}` : '');
+    return `${path}${query ? `?${query}` : ''}`;
   }
 
   /**
    * Perform a `history.push()` with `this.$ref(params, preserveQuery)`.
    */
-  $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void {
+  $push(
+    params?: Partial<TParamDict> & EmptyObjectPatch,
+    preserveQuery?: boolean,
+  ): void {
     let ref = this.$ref(params, preserveQuery);
     this._history.push(ref);
   }
@@ -179,183 +246,285 @@ export class RouteMatch<
   /**
    * Perform a `history.replace()` with `this.$ref(params, preserveQuery)`.
    */
-  $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void {
+  $replace(
+    params?: Partial<TParamDict> & EmptyObjectPatch,
+    preserveQuery?: boolean,
+  ): void {
     let ref = this.$ref(params, preserveQuery);
     this._history.replace(ref);
   }
 
-  /**
-   * Intercept route matching if this `RouteMatch` matches.
-   * @param interception The interception callback.
-   * @param exact Intercept only if it's an exact match.
-   */
-  $intercept(interception: RouteMatchInterception, exact = false): void {
-    this._interceptionEntries.push({
-      interception,
-      exact,
-    });
+  /** @internal */
+  abstract _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined;
+}
+
+export class MatchingRouteMatch<
+  TParamDict extends GeneralParamDict = GeneralParamDict
+> extends RouteMatchShared<TParamDict> {
+  /** @internal */
+  private _origin: RouteMatch<TParamDict>;
+
+  constructor(
+    name: string,
+    source: RouteSource,
+    parent: RouteMatchShared<TParamDict> | undefined,
+    origin: RouteMatch<TParamDict>,
+    history: History,
+    options: RouteMatchSharedOptions,
+  ) {
+    super(name, source, parent, history, options);
+
+    this._origin = origin;
   }
 
   /**
-   * Perform a reaction if this `RouteMatch` matches.
-   * @param reaction A callback to perform this reaction.
-   * @param exact Perform this reaction only if it's an exact match.
+   * A reactive value indicates whether this route is exactly matched.
    */
-  $react(reaction: RouteMatchReaction, exact = false): void {
-    autorun(() => {
-      if (exact ? this.$exact : this.$matched) {
-        then(() => reaction());
-      }
-    });
+  get $exact(): boolean {
+    let entry = this._getMatchEntry();
+    return !!entry && entry.exact;
   }
 
   /** @internal */
-  _match(rest: string): RouteMatchInternalResult {
-    if (!rest) {
-      return {
-        fragment: undefined,
-        rest: '',
-      };
+  _getMatchEntry(): RouteMatchEntry | undefined {
+    return this._origin._getMatchEntry(this._source);
+  }
+}
+
+export class RouteMatch<
+  TParamDict extends GeneralParamDict = GeneralParamDict
+> extends RouteMatchShared<TParamDict> {
+  /** @internal */
+  private _beforeEnterCallbacks: RouteMatchBeforeEnter[] = [];
+
+  /** @internal */
+  private _beforeLeaveCallbacks: RouteMatchBeforeLeave[] = [];
+
+  /** @internal */
+  private _afterEnterCallbacks: RouteMatchAfterEnter[] = [];
+
+  /** @internal */
+  private _afterLeaveCallbacks: RouteMatchAfterLeave[] = [];
+
+  /** @internal */
+  private _service: IRouteService | undefined;
+
+  /** @internal */
+  @observable
+  private _matched = false;
+
+  /** @internal */
+  @observable
+  private _exactlyMatched = false;
+
+  /** @internal */
+  private _allowExact: boolean;
+
+  /** @internal */
+  _children: RouteMatch[] | undefined;
+
+  /** @internal */
+  _matching!: MatchingRouteMatch<TParamDict>;
+
+  constructor(
+    name: string,
+    source: RouteSource,
+    parent: RouteMatch | undefined,
+    history: History,
+    {exact, ...sharedOptions}: RouteMatchOptions,
+  ) {
+    super(name, source, parent, history, sharedOptions);
+
+    this._allowExact = exact;
+  }
+
+  /**
+   * A reactive value indicates whether this route is matched.
+   */
+  get $matched(): boolean {
+    return this._matched;
+  }
+
+  /**
+   * A reactive value indicates whether this route is exactly matched.
+   */
+  get $exact(): boolean {
+    return this._exactlyMatched;
+  }
+
+  $beforeEnter(callback: RouteMatchBeforeEnter<this>): this {
+    this._beforeEnterCallbacks.push(callback as RouteMatchBeforeEnter);
+    return this;
+  }
+
+  $beforeLeave(callback: RouteMatchBeforeLeave): this {
+    this._beforeLeaveCallbacks.push(callback);
+    return this;
+  }
+
+  $afterEnter(callback: RouteMatchAfterEnter): this {
+    this._afterEnterCallbacks.push(callback);
+    return this;
+  }
+
+  $afterLeave(callback: RouteMatchAfterLeave): this {
+    this._afterLeaveCallbacks.push(callback);
+    return this;
+  }
+
+  $service(factory: RouteMatchServiceFactory<this>): this {
+    if (this._service) {
+      throw new Error(`Service has already been defined for "${this.$name}"`);
     }
 
-    if (!rest.startsWith('/')) {
-      throw new Error(
-        `Expecting rest of path to be started with "/", but got ${JSON.stringify(
-          rest,
-        )} instead`,
-      );
-    }
+    this._service = factory(this) as IRouteService<any>;
 
-    rest = rest.slice(1);
+    return this;
+  }
 
-    let pattern = this._matchPattern;
+  /** @internal */
+  _match(upperRest: string): RouteMatchInternalResult {
+    let fragment: string | undefined;
+    let rest: string;
 
-    if (typeof pattern === 'string') {
-      if (isPathPrefix(rest, pattern)) {
-        return {
-          fragment: pattern,
-          rest: rest.slice(pattern.length),
-        };
+    if (upperRest) {
+      if (!upperRest.startsWith('/')) {
+        throw new Error(
+          `Expecting rest of path to be started with "/", but got ${JSON.stringify(
+            upperRest,
+          )} instead`,
+        );
+      }
+
+      upperRest = upperRest.slice(1);
+
+      let pattern = this._matchPattern;
+
+      if (typeof pattern === 'string') {
+        if (isPathPrefix(upperRest, pattern)) {
+          fragment = pattern;
+          rest = upperRest.slice(pattern.length);
+        } else {
+          fragment = undefined;
+          rest = '';
+        }
       } else {
-        return {
-          fragment: undefined,
-          rest: '',
-        };
+        let groups = pattern.exec(upperRest);
+
+        if (groups) {
+          let matched = groups[0];
+
+          if (!isPathPrefix(upperRest, matched)) {
+            throw new Error(
+              `Invalid regular expression pattern, expecting rest of path to be started with "/" after match (matched ${JSON.stringify(
+                matched,
+              )} out of ${JSON.stringify(upperRest)})`,
+            );
+          }
+
+          fragment = matched;
+          rest = upperRest.slice(matched.length);
+        } else {
+          fragment = undefined;
+          rest = '';
+        }
       }
     } else {
-      let groups = pattern.exec(rest);
-
-      if (groups) {
-        let matched = groups[0];
-
-        if (!isPathPrefix(rest, matched)) {
-          throw new Error(
-            `Invalid regular expression pattern, expecting rest of path to be started with "/" after match (matched ${JSON.stringify(
-              matched,
-            )} out of ${JSON.stringify(rest)})`,
-          );
-        }
-
-        return {
-          fragment: matched,
-          rest: rest.slice(matched.length),
-        };
-      } else {
-        return {
-          fragment: undefined,
-          rest: '',
-        };
-      }
+      fragment = undefined;
+      rest = '';
     }
+
+    let matched = fragment !== undefined;
+    let exactlyMatched = matched && rest === '';
+
+    if (exactlyMatched && (this._children && !this._allowExact)) {
+      matched = false;
+      exactlyMatched = false;
+    }
+
+    return {
+      matched,
+      exactlyMatched,
+      fragment,
+      rest,
+    };
   }
 
   /** @internal */
-  _intercept(exact: boolean): string | false | undefined {
-    let entries = this._interceptionEntries;
-
-    if (!exact) {
-      entries = entries.filter(entry => !entry.exact);
-    }
-
-    for (let {interception} of entries) {
-      let result = interception();
-
-      if (result === true || result === undefined) {
-        continue;
-      }
+  _beforeLeave(): boolean {
+    for (let callback of this._beforeLeaveCallbacks) {
+      let result = callback();
 
       if (result === false) {
         return false;
       }
-
-      if (typeof result === 'string') {
-        return result;
-      }
-
-      throw new Error('Invalid interception result');
     }
 
-    return undefined;
+    let service = this._service;
+
+    if (service && service.beforeLeave) {
+      service.beforeLeave();
+    }
+
+    return true;
   }
 
   /** @internal */
-  _update(
-    matched: boolean,
-    exact: boolean,
-    fragment: string | undefined,
-    upperPathFragmentDict: GeneralFragmentDict,
-    upperParamFragmentDict: GeneralFragmentDict,
-    sourceQueryDict: GeneralQueryDict,
-  ): RouteMatchUpdateResult {
-    let name = this.$name;
+  _beforeEnter(): string | boolean {
+    let next = this._matching;
 
-    let matchPattern = this._matchPattern;
+    for (let callback of this._beforeEnterCallbacks) {
+      let result = callback(next);
 
-    let pathFragmentDict = {
-      ...upperPathFragmentDict,
-      ...{[name]: typeof matchPattern === 'string' ? matchPattern : fragment},
-    };
+      if (typeof result === 'string' || result === false) {
+        return result;
+      }
+    }
 
-    let paramFragmentDict = {
-      ...upperParamFragmentDict,
-      ...(typeof matchPattern === 'string' ? undefined : {[name]: fragment}),
-    };
+    let service = this._service;
 
-    this._pathFragments = pathFragmentDict;
+    if (service && service.beforeEnter) {
+      service.beforeEnter(next);
+    }
 
-    let queryKeys = this._queryKeys;
+    return true;
+  }
 
-    let queryDict = queryKeys
-      ? matched
-        ? queryKeys.reduce(
-            (dict, key) => {
-              let value = sourceQueryDict[key];
+  /** @internal */
+  _afterLeave(): void {
+    for (let callback of this._afterLeaveCallbacks) {
+      callback();
+    }
 
-              if (value !== undefined) {
-                dict[key] = sourceQueryDict[key];
-              }
+    let service = this._service;
 
-              return dict;
-            },
-            {} as GeneralQueryDict,
-          )
-        : {}
-      : undefined;
+    if (service && service.afterLeave) {
+      service.afterLeave();
+    }
+  }
 
-    this._sourceQuery = sourceQueryDict;
+  /** @internal */
+  _afterEnter(): void {
+    for (let callback of this._afterEnterCallbacks) {
+      callback();
+    }
 
-    this._params = {
-      ...paramFragmentDict,
-      ...queryDict,
-    };
+    let service = this._service;
 
+    if (service && service.afterEnter) {
+      service.afterEnter();
+    }
+  }
+
+  /** @internal */
+  _update(matched: boolean, exactlyMatched: boolean): void {
     this._matched = matched;
-    this._exact = exact;
+    this._exactlyMatched = exactlyMatched;
+  }
 
-    return {
-      pathFragmentDict,
-      paramFragmentDict,
-    };
+  /** @internal */
+  _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined {
+    return source.matchToMatchEntryMap.get(this);
   }
 
   static fragment = /[^/]+/;

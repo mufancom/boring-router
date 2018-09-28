@@ -39,7 +39,7 @@
     "@types/react-dom": "^16.0.7",
     "history": "^4.7.2",
     "jest": "^23.5.0",
-    "mobx": "^5.1.0",
+    "mobx": "^5.5.0",
     "mobx-react": "^5.2.5",
     "prettier": "^1.13.7",
     "react": "^16.4.2",
@@ -54,6 +54,6 @@
   "dependencies": {
     "classnames": "^2.2.6",
     "hyphenate": "^0.2.4",
-    "tslang": "^0.1.7"
+    "tslang": "^0.1.9"
   }
 }

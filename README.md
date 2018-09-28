@@ -209,13 +209,30 @@ interface RouteMatch<TParamDict> {
   />
   ```
 
-- [Reaction](examples/reaction/main.tsx)
+- [Hooks](examples/hooks/main.tsx)
 
-  Take a reaction on route match.
+  Add hooks to route match.
 
   ```tsx
-  router.account.$react(() => {
-    router.about.$replace({source: 'reaction'});
+  router.account.$beforeEnter(() => {
+    return router.about.$ref();
+  });
+  ```
+
+- [Service](examples/service/main.tsx)
+
+  Add service to route match.
+
+  ```tsx
+  router.account.$service(match => {
+    return {
+      beforeEnter() {
+        match.account = new Account();
+      },
+      afterLeave() {
+        match.account = undefined;
+      },
+    };
   });
   ```
 

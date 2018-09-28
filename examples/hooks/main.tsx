@@ -13,7 +13,12 @@ const router = Router.create(
       $match: '',
     },
     account: true,
-    profile: true,
+    profile: {
+      $exact: true,
+      $children: {
+        details: true,
+      },
+    },
     about: {
       $query: {
         source: true,
@@ -26,9 +31,25 @@ const router = Router.create(
   history,
 );
 
-router.account.$intercept(() => {
+router.account.$beforeEnter(() => {
   return router.about.$ref({source: 'reaction'});
 });
+
+router.profile
+  .$beforeEnter(match => {
+    console.info('before enter profile');
+    console.info('before enter ref', match.$ref());
+    return match.$exact ? match.details.$ref() : undefined;
+  })
+  .$afterEnter(() => {
+    console.info('after enter profile');
+  })
+  .$beforeLeave(() => {
+    console.info('before leave profile');
+  })
+  .$afterLeave(() => {
+    console.info('after leave profile');
+  });
 
 @observer
 export class App extends Component {
@@ -42,8 +63,15 @@ export class App extends Component {
             <Link to={router.account}>Account</Link>
           </div>
           <div>
+            <Link to={router.profile}>Profile</Link>
+          </div>
+          <div>
             <Link to={router.about}>About</Link>
           </div>
+        </Route>
+        <Route match={router.profile.details}>
+          <p>Profile details page</p>
+          <Link to={router.default}>Home</Link>
         </Route>
         <Route match={router.about}>
           <p>About page</p>
