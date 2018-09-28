@@ -6,13 +6,11 @@ import {isPathPrefix} from './@utils';
 import {RouteMatchEntry, RouteSource} from './router';
 
 /**
- * Route match before enter callback.
+ * Route before enter callback.
  * @return Return `true` or `undefined` to do nothing; return `false` to revert
  * this history change; return full path to redirect.
  */
-export type RouteMatchBeforeEnter<
-  TRouteMatch extends RouteMatch = RouteMatch
-> = (
+export type RouteBeforeEnter<TRouteMatch extends RouteMatch = RouteMatch> = (
   next: OmitValueOfKey<
     TRouteMatch,
     Exclude<keyof RouteMatch, keyof MatchingRouteMatch>
@@ -20,27 +18,24 @@ export type RouteMatchBeforeEnter<
 ) => Promise<string | boolean | void> | string | boolean | void;
 
 /**
- * Route match before leave callback.
+ * Route before leave callback.
  * @return Return `true` or `undefined` to do nothing; return `false` to revert
  * this history change.
  */
-export type RouteMatchBeforeLeave = () =>
-  | Promise<boolean | void>
-  | boolean
-  | void;
+export type RouteBeforeLeave = () => Promise<boolean | void> | boolean | void;
 
-export type RouteMatchAfterEnter = () => Promise<void> | void;
-export type RouteMatchAfterLeave = () => Promise<void> | void;
+export type RouteAfterEnter = () => Promise<void> | void;
+export type RouteAfterLeave = () => Promise<void> | void;
 
-export type RouteMatchServiceFactory<TRouteMatch extends RouteMatch> = (
+export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
 ) => IRouteService<TRouteMatch> | Promise<IRouteService<TRouteMatch>>;
 
 export interface IRouteService<TRouteMatch extends RouteMatch = RouteMatch> {
-  beforeEnter?: RouteMatchBeforeEnter<TRouteMatch>;
-  afterEnter?: RouteMatchAfterEnter;
-  beforeLeave?: RouteMatchBeforeLeave;
-  afterLeave?: RouteMatchAfterLeave;
+  beforeEnter?: RouteBeforeEnter<TRouteMatch>;
+  afterEnter?: RouteAfterEnter;
+  beforeLeave?: RouteBeforeLeave;
+  afterLeave?: RouteAfterLeave;
 }
 
 interface RouteMatchInternalResult {
@@ -298,16 +293,16 @@ export class RouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict
 > extends RouteMatchShared<TParamDict> {
   /** @internal */
-  private _beforeEnterCallbacks: RouteMatchBeforeEnter[] = [];
+  private _beforeEnterCallbacks: RouteBeforeEnter[] = [];
 
   /** @internal */
-  private _beforeLeaveCallbacks: RouteMatchBeforeLeave[] = [];
+  private _beforeLeaveCallbacks: RouteBeforeLeave[] = [];
 
   /** @internal */
-  private _afterEnterCallbacks: RouteMatchAfterEnter[] = [];
+  private _afterEnterCallbacks: RouteAfterEnter[] = [];
 
   /** @internal */
-  private _afterLeaveCallbacks: RouteMatchAfterLeave[] = [];
+  private _afterLeaveCallbacks: RouteAfterLeave[] = [];
 
   /** @internal */
   private _serviceInstanceOrPromise:
@@ -316,7 +311,7 @@ export class RouteMatch<
     | undefined;
 
   /** @internal */
-  private _serviceFactory: RouteMatchServiceFactory<any> | undefined;
+  private _serviceFactory: RouteServiceFactory<any> | undefined;
 
   /** @internal */
   @observable
@@ -361,27 +356,27 @@ export class RouteMatch<
     return this._exactlyMatched;
   }
 
-  $beforeEnter(callback: RouteMatchBeforeEnter<this>): this {
-    this._beforeEnterCallbacks.push(callback as RouteMatchBeforeEnter);
+  $beforeEnter(callback: RouteBeforeEnter<this>): this {
+    this._beforeEnterCallbacks.push(callback as RouteBeforeEnter);
     return this;
   }
 
-  $beforeLeave(callback: RouteMatchBeforeLeave): this {
+  $beforeLeave(callback: RouteBeforeLeave): this {
     this._beforeLeaveCallbacks.push(callback);
     return this;
   }
 
-  $afterEnter(callback: RouteMatchAfterEnter): this {
+  $afterEnter(callback: RouteAfterEnter): this {
     this._afterEnterCallbacks.push(callback);
     return this;
   }
 
-  $afterLeave(callback: RouteMatchAfterLeave): this {
+  $afterLeave(callback: RouteAfterLeave): this {
     this._afterLeaveCallbacks.push(callback);
     return this;
   }
 
-  $service(factory: RouteMatchServiceFactory<this>): this {
+  $service(factory: RouteServiceFactory<this>): this {
     if (this._serviceFactory) {
       throw new Error(`Service has already been defined for "${this.$name}"`);
     }
