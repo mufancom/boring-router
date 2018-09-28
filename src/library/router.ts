@@ -1,8 +1,8 @@
-import {Action, History, Location, locationsAreEqual, parsePath} from 'history';
+import {History, Location, parsePath} from 'history';
 import hyphenate from 'hyphenate';
 import {extendObservable, observable} from 'mobx';
 
-import {then} from './@utils';
+import {isLocationEqual, then} from './@utils';
 import {
   GeneralQueryDict,
   MatchingRouteMatch,
@@ -108,7 +108,10 @@ export class Router {
   private _fragmentMatcher: FragmentMatcherCallback;
 
   /** @internal */
-  private _location: Location;
+  private _default: Location;
+
+  /** @internal */
+  private _location: Location | undefined;
 
   /** @internal */
   private _source: RouteSource = observable({
@@ -124,6 +127,9 @@ export class Router {
   });
 
   /** @internal */
+  private _changing = Promise.resolve();
+
+  /** @internal */
   _children: RouteMatch[];
 
   private constructor(
@@ -132,7 +138,7 @@ export class Router {
     {fragmentMatcher, default: defaultPath = '/'}: RouterOptions,
   ) {
     this._history = history;
-    this._location = parsePath(defaultPath);
+    this._default = parsePath(defaultPath);
 
     this._fragmentMatcher =
       fragmentMatcher || DEFAULT_FRAGMENT_MATCHER_CALLBACK;
@@ -141,19 +147,27 @@ export class Router {
 
     then(() => {
       history.listen(this._onLocationChange);
-      this._onLocationChange(history.location, 'POP');
+      this._onLocationChange(history.location);
     });
   }
 
   /** @internal */
-  private _onLocationChange = (
-    {pathname, search}: Location,
-    action: Action,
-  ): void => {
-    let history = this._history;
-    let location = history.location;
+  private _onLocationChange = (location: Location): void => {
+    this._changing = this._changing
+      .then(() => this._asyncOnLocationChange(location))
+      .catch(console.error);
+  };
 
-    if (locationsAreEqual(this._location, location)) {
+  /** @internal */
+  private _asyncOnLocationChange = async (
+    nextLocation: Location,
+  ): Promise<void> => {
+    let {pathname, search} = nextLocation;
+
+    let history = this._history;
+    let location = this._location;
+
+    if (location && isLocationEqual(location, nextLocation)) {
       return;
     }
 
@@ -191,6 +205,8 @@ export class Router {
       leavingMatchSet.delete(match);
     }
 
+    let reversedLeavingMatches = Array.from(leavingMatchSet).reverse();
+
     let enteringMatchSet = new Set(nextMatchSet);
 
     for (let match of previousMatchSet) {
@@ -199,17 +215,17 @@ export class Router {
 
     // Process before hooks
 
-    for (let match of Array.from(leavingMatchSet).reverse()) {
-      let result = match._beforeLeave();
+    for (let match of reversedLeavingMatches) {
+      let result = await match._beforeLeave();
 
       if (!result) {
-        this._revert(action);
+        this._revert();
         return;
       }
     }
 
     for (let match of enteringMatchSet) {
-      let result = match._beforeEnter();
+      let result = await match._beforeEnter();
 
       if (typeof result === 'string') {
         history.replace(result);
@@ -217,18 +233,18 @@ export class Router {
       }
 
       if (!result) {
-        this._revert(action);
+        this._revert();
         return;
       }
     }
 
-    this._location = location;
+    this._location = nextLocation;
 
     Object.assign(this._source, this._matchingSource);
 
     // Update
 
-    for (let match of leavingMatchSet) {
+    for (let match of reversedLeavingMatches) {
       match._update(false, false);
     }
 
@@ -239,28 +255,17 @@ export class Router {
 
     // Process after hooks
 
-    for (let match of leavingMatchSet) {
-      match._afterLeave();
+    for (let match of reversedLeavingMatches) {
+      await match._afterLeave();
     }
 
     for (let match of enteringMatchSet) {
-      match._afterEnter();
+      await match._afterEnter();
     }
   };
 
-  private _revert(action: Action): void {
-    let history = this._history;
-    let location = this._location;
-
-    switch (action) {
-      case 'PUSH':
-        history.goBack();
-        break;
-      case 'POP':
-      case 'REPLACE':
-        history.replace(location);
-        break;
-    }
+  private _revert(): void {
+    this._history.replace(this._location || this._default);
   }
 
   /** @internal */

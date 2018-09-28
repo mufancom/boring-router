@@ -2,6 +2,8 @@ import {createMemoryHistory} from 'history';
 
 import {Router} from '../bld/library';
 
+import {nap} from './@utils';
+
 let history = createMemoryHistory();
 
 let router = Router.create(
@@ -44,10 +46,10 @@ router.about
   .$beforeLeave(aboutBeforeLeave)
   .$afterLeave(aboutAfterLeave);
 
-beforeAll(async () => {});
-
 test('should navigate from `redirect` to `about`', async () => {
   history.push('/redirect');
+
+  await nap();
 
   expect(history.location.pathname).toBe('/about');
   expect(router.about.$matched).toBe(true);
@@ -62,6 +64,8 @@ test('should navigate from `redirect` to `about`', async () => {
 
 test('should revert navigation from `about` to `revert` by `revert.$beforeEnter`', async () => {
   history.push('/revert');
+
+  await nap();
 
   expect(history.location.pathname).toBe('/about');
   expect(router.about.$matched).toBe(true);
@@ -79,6 +83,8 @@ test('should revert navigation from `about` to `revert` by `revert.$beforeEnter`
 test('should revert navigation from `persist` to `about` by `persist.$beforeLeave`', async () => {
   history.push('/persist');
   history.push('/about');
+
+  await nap();
 
   expect(history.location.pathname).toBe('/persist');
   expect(router.about.$matched).toBe(false);

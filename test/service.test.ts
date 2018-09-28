@@ -2,6 +2,8 @@ import {createMemoryHistory} from 'history';
 
 import {Router} from '../bld/library';
 
+import {nap} from './@utils';
+
 let history = createMemoryHistory();
 
 class Account {
@@ -43,14 +45,16 @@ router.account.$service(match => {
   };
 });
 
-beforeAll(async () => {});
-
-test('should navigate from `default` to `account`', () => {
+test('should navigate from `default` to `account`', async () => {
   let id = 'abc';
+
+  await nap();
 
   expect(router.account.account).toBeUndefined();
 
   history.push(`/account?id=${encodeURIComponent(id)}`);
+
+  await nap();
 
   expect(history.location.pathname).toBe('/account');
   expect(router.account.account.id).toBe(id);
@@ -58,8 +62,10 @@ test('should navigate from `default` to `account`', () => {
   expect(afterEnter).toHaveBeenCalled();
 });
 
-test('should navigate from `account` to `default`', () => {
+test('should navigate from `account` to `default`', async () => {
   router.default.$push();
+
+  await nap();
 
   expect(history.location.pathname).toBe('/');
   expect(router.account.account).toBeUndefined();

@@ -2,6 +2,8 @@ import {createMemoryHistory} from 'history';
 
 import {RouteMatch, Router} from '../bld/library';
 
+import {nap} from './@utils';
+
 let history = createMemoryHistory();
 
 let router = Router.create(
@@ -36,16 +38,18 @@ let router = Router.create(
   history,
 );
 
-beforeAll(async () => {});
+test('should match `default`', async () => {
+  await nap();
 
-test('should match `default`', () => {
   expect(router.default.$matched).toBe(true);
   expect(router.default.$exact).toBe(true);
   expect<object>({...router.default.$params}).toEqual({});
 });
 
-test('should match `notFound`', () => {
+test('should match `notFound`', async () => {
   history.push('/boring');
+
+  await nap();
 
   expect(router.notFound.$matched).toBe(true);
   expect(router.notFound.$exact).toBe(true);
@@ -53,13 +57,17 @@ test('should match `notFound`', () => {
 
   history.push('/boring/router?foo=bar');
 
+  await nap();
+
   expect(router.notFound.$matched).toBe(true);
   expect(router.notFound.$exact).toBe(true);
   expect({...router.notFound.$params}).toEqual({notFound: 'boring/router'});
 });
 
-test('should match `account`', () => {
+test('should match `account`', async () => {
   history.push('/account');
+
+  await nap();
 
   expect(router.default.$matched).toBe(false);
   expect(router.default.$exact).toBe(false);
@@ -75,8 +83,10 @@ test('should match `account`', () => {
   );
 });
 
-test('should match `notFound`', () => {
+test('should match `notFound`', async () => {
   history.push('/account/boring');
+
+  await nap();
 
   expect(router.account.$matched).toBe(false);
   expect(router.account.$exact).toBe(false);
@@ -85,8 +95,10 @@ test('should match `notFound`', () => {
   expect(router.notFound.$exact).toBe(true);
 });
 
-test('should match `account.id`', () => {
+test('should match `account.id`', async () => {
   history.push('/account/123');
+
+  await nap();
 
   expect(router.account.$matched).toBe(true);
   expect(router.account.id.$matched).toBe(true);
@@ -99,8 +111,10 @@ test('should match `account.id`', () => {
   expect(router.account.id.$ref({id: '456'})).toBe('/account/456');
 });
 
-test('should match `account.id.settings`', () => {
+test('should match `account.id.settings`', async () => {
   history.push('/account/123/settings');
+
+  await nap();
 
   expect(router.account.$matched).toBe(true);
   expect(router.account.id.$matched).toBe(true);
@@ -117,8 +131,10 @@ test('should match `account.id.settings`', () => {
   );
 });
 
-test('should match `account.id.billings`', () => {
+test('should match `account.id.billings`', async () => {
   history.push('/account/123/billings?callback=/redirect');
+
+  await nap();
 
   expect(router.account.$matched).toBe(true);
   expect(router.account.id.$matched).toBe(true);

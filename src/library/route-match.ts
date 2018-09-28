@@ -17,21 +17,24 @@ export type RouteMatchBeforeEnter<
     TRouteMatch,
     Exclude<keyof RouteMatch, keyof MatchingRouteMatch>
   >,
-) => string | boolean | void;
+) => Promise<string | boolean | void> | string | boolean | void;
 
 /**
  * Route match before leave callback.
  * @return Return `true` or `undefined` to do nothing; return `false` to revert
  * this history change.
  */
-export type RouteMatchBeforeLeave = () => boolean | void;
+export type RouteMatchBeforeLeave = () =>
+  | Promise<boolean | void>
+  | boolean
+  | void;
 
-export type RouteMatchAfterEnter = () => void;
-export type RouteMatchAfterLeave = () => void;
+export type RouteMatchAfterEnter = () => Promise<void> | void;
+export type RouteMatchAfterLeave = () => Promise<void> | void;
 
 export type RouteMatchServiceFactory<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
-) => IRouteService<TRouteMatch>;
+) => IRouteService<TRouteMatch> | Promise<IRouteService<TRouteMatch>>;
 
 export interface IRouteService<TRouteMatch extends RouteMatch = RouteMatch> {
   beforeEnter?: RouteMatchBeforeEnter<TRouteMatch>;
@@ -307,7 +310,13 @@ export class RouteMatch<
   private _afterLeaveCallbacks: RouteMatchAfterLeave[] = [];
 
   /** @internal */
-  private _service: IRouteService | undefined;
+  private _serviceInstanceOrPromise:
+    | IRouteService
+    | Promise<IRouteService>
+    | undefined;
+
+  /** @internal */
+  private _serviceFactory: RouteMatchServiceFactory<any> | undefined;
 
   /** @internal */
   @observable
@@ -373,11 +382,11 @@ export class RouteMatch<
   }
 
   $service(factory: RouteMatchServiceFactory<this>): this {
-    if (this._service) {
+    if (this._serviceFactory) {
       throw new Error(`Service has already been defined for "${this.$name}"`);
     }
 
-    this._service = factory(this) as IRouteService<any>;
+    this._serviceFactory = factory;
 
     return this;
   }
@@ -451,7 +460,7 @@ export class RouteMatch<
   }
 
   /** @internal */
-  _beforeLeave(): boolean {
+  async _beforeLeave(): Promise<boolean> {
     for (let callback of this._beforeLeaveCallbacks) {
       let result = callback();
 
@@ -460,59 +469,79 @@ export class RouteMatch<
       }
     }
 
-    let service = this._service;
+    let service = await this._getService();
 
-    if (service && service.beforeLeave) {
-      service.beforeLeave();
+    if (!service || !service.beforeLeave) {
+      return true;
+    }
+
+    let result = service.beforeLeave();
+
+    if (result === false) {
+      return false;
     }
 
     return true;
   }
 
   /** @internal */
-  _beforeEnter(): string | boolean {
+  async _beforeEnter(): Promise<string | boolean> {
     let next = this._matching;
 
     for (let callback of this._beforeEnterCallbacks) {
-      let result = callback(next);
+      let result = await callback(next);
 
       if (typeof result === 'string' || result === false) {
         return result;
       }
     }
 
-    let service = this._service;
+    let service = await this._getService();
 
-    if (service && service.beforeEnter) {
-      service.beforeEnter(next);
+    if (!service || !service.beforeEnter) {
+      return true;
+    }
+
+    let result = await service.beforeEnter(next);
+
+    if (typeof result === 'string' || result === false) {
+      return result;
     }
 
     return true;
   }
 
   /** @internal */
-  _afterLeave(): void {
+  async _afterLeave(): Promise<void> {
     for (let callback of this._afterLeaveCallbacks) {
-      callback();
+      await callback();
     }
 
-    let service = this._service;
+    let service = await this._getService();
 
-    if (service && service.afterLeave) {
-      service.afterLeave();
+    if (!service) {
+      return;
+    }
+
+    if (service.afterLeave) {
+      await service.afterLeave();
     }
   }
 
   /** @internal */
-  _afterEnter(): void {
+  async _afterEnter(): Promise<void> {
     for (let callback of this._afterEnterCallbacks) {
-      callback();
+      await callback();
     }
 
-    let service = this._service;
+    let service = await this._getService();
 
-    if (service && service.afterEnter) {
-      service.afterEnter();
+    if (!service) {
+      return;
+    }
+
+    if (service.afterEnter) {
+      await service.afterEnter();
     }
   }
 
@@ -525,6 +554,33 @@ export class RouteMatch<
   /** @internal */
   _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined {
     return source.matchToMatchEntryMap.get(this);
+  }
+
+  /** @internal */
+  private async _getService(): Promise<IRouteService | undefined> {
+    let instanceOrPromise = this._serviceInstanceOrPromise;
+
+    if (instanceOrPromise) {
+      return instanceOrPromise;
+    }
+
+    let factory = this._serviceFactory;
+
+    if (!factory) {
+      return undefined;
+    }
+
+    let result = (this._serviceInstanceOrPromise = factory(this));
+
+    if (result instanceof Promise) {
+      result
+        .then(service => {
+          this._serviceInstanceOrPromise = service;
+        })
+        .catch(console.error);
+    }
+
+    return result;
   }
 
   static fragment = /[^/]+/;
