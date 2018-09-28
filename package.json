@@ -46,7 +46,6 @@
     "react-dom": "^16.4.2",
     "rimraf": "^2.6.2",
     "ts-jest": "^23.1.4",
-    "tslib": "^1.9.3",
     "tslint": "^5.11.0",
     "tslint-language-service": "^0.9.9",
     "typescript": "^3.0.1"
@@ -54,6 +53,7 @@
   "dependencies": {
     "classnames": "^2.2.6",
     "hyphenate": "^0.2.4",
-    "tslang": "^0.1.9"
+    "tslang": "^0.1.9",
+    "tslib": "^1.9.3"
   }
 }
