@@ -1,11 +1,11 @@
 import {History, Location, parsePath} from 'history';
 import hyphenate from 'hyphenate';
-import {extendObservable, observable} from 'mobx';
+import {observable} from 'mobx';
 
 import {isLocationEqual, then} from './@utils';
 import {
   GeneralQueryDict,
-  MatchingRouteMatch,
+  NextRouteMatch,
   RouteMatch,
   RouteMatchOptions,
 } from './route-match';
@@ -316,7 +316,7 @@ export class Router {
   private _build(
     schemaDict: RouteSchemaDict,
     parent: RouteMatch | Router,
-    matchingParent?: MatchingRouteMatch,
+    matchingParent?: NextRouteMatch,
   ): RouteMatch[] {
     let routeMatches: RouteMatch[] = [];
 
@@ -347,51 +347,36 @@ export class Router {
         key,
         source,
         parent instanceof RouteMatch ? parent : undefined,
+        extension,
         history,
         options,
       );
 
-      extendObservable(routeMatch, extension);
-
-      let matchingRouteMatch = new MatchingRouteMatch(
+      let nextRouteMatch = new NextRouteMatch(
         key,
         matchingSource,
         matchingParent,
         routeMatch,
+        extension,
         history,
         options,
       );
 
-      for (let key of Object.keys(extension)) {
-        Object.defineProperty(matchingRouteMatch, key, {
-          get() {
-            return (routeMatch as any)[key];
-          },
-          set(value) {
-            (routeMatch as any)[key] = value;
-          },
-        });
-      }
-
-      routeMatch._matching = matchingRouteMatch;
+      routeMatch._next = nextRouteMatch;
 
       routeMatches.push(routeMatch);
 
       (parent as any)[key] = routeMatch;
 
       if (matchingParent) {
-        (matchingParent as any)[key] = matchingRouteMatch;
+        (matchingParent as any)[key] = nextRouteMatch;
       }
 
       if (!children) {
         continue;
       }
 
-      routeMatch._children = this._build(
-        children,
-        routeMatch,
-        matchingRouteMatch,
-      );
+      routeMatch._children = this._build(children, routeMatch, nextRouteMatch);
     }
 
     return routeMatches;

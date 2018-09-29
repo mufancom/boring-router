@@ -1,6 +1,7 @@
 import {createMemoryHistory} from 'history';
+import {computed, observable} from 'mobx';
 
-import {Router} from '../bld/library';
+import {IRouteService, NextRouteMatchType, Router} from '../bld/library';
 
 import {nap} from './@utils';
 
@@ -22,6 +23,10 @@ let router = Router.create(
       },
       $extension: {
         account: undefined! as Account,
+        name: undefined! as string,
+      },
+      $children: {
+        foo: true,
       },
     },
   },
@@ -32,18 +37,37 @@ let afterEnter = jest.fn();
 
 let beforeLeave = jest.fn();
 
-router.account.$service(match => {
-  return {
-    beforeEnter: ({$params: {id}}) => {
-      match.account = new Account(id!);
-    },
-    afterEnter,
-    beforeLeave,
-    afterLeave: () => {
-      match.account = undefined!;
-    },
-  };
-});
+type AccountRouteMatch = typeof router.account;
+
+class AccountRouteService implements IRouteService<AccountRouteMatch> {
+  @observable
+  account!: Account;
+
+  constructor(private match: AccountRouteMatch) {}
+
+  @computed
+  get name() {
+    return `[${this.match.$params.id}]`;
+  }
+
+  beforeEnter({$params: {id}}: NextRouteMatchType<AccountRouteMatch>): void {
+    this.account = new Account(id!);
+  }
+
+  afterEnter(): void {
+    afterEnter();
+  }
+
+  beforeLeave(): void {
+    beforeLeave();
+  }
+
+  afterLeave(): void {
+    this.account = undefined!;
+  }
+}
+
+router.account.$service(match => new AccountRouteService(match));
 
 test('should navigate from `default` to `account`', async () => {
   let id = 'abc';
@@ -58,6 +82,7 @@ test('should navigate from `default` to `account`', async () => {
 
   expect(history.location.pathname).toBe('/account');
   expect(router.account.account.id).toBe(id);
+  expect(router.account.name).toBe(`[${id}]`);
 
   expect(afterEnter).toHaveBeenCalled();
 });
@@ -69,6 +94,7 @@ test('should navigate from `account` to `default`', async () => {
 
   expect(history.location.pathname).toBe('/');
   expect(router.account.account).toBeUndefined();
+  expect(router.account.name).toBeUndefined();
 
   expect(beforeLeave).toHaveBeenCalled();
 });

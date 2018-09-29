@@ -114,10 +114,10 @@ interface RouteMatch<TParamDict> {
 }
 ```
 
-Within `$beforeEnter` hook and service hook, a special version of `RouteMatch` is available as `MatchingRouteMatch`, providing restricted functionality:
+Within `$beforeEnter` hook and service hook, a special version of `RouteMatch` is available as `NextRouteMatch`, providing restricted functionality:
 
 ```ts
-interface MatchingRouteMatch<TParamDict> {
+interface NextRouteMatch<TParamDict> {
   $name: string;
 
   $exact: boolean;
@@ -252,16 +252,7 @@ interface MatchingRouteMatch<TParamDict> {
   Add service to route match.
 
   ```tsx
-  router.account.$service(match => {
-    return {
-      beforeEnter() {
-        match.account = new Account();
-      },
-      afterLeave() {
-        match.account = undefined;
-      },
-    };
-  });
+  router.account.$service(match => new AccountRouteService(match));
   ```
 
 ### Run an example

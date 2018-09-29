@@ -1,9 +1,19 @@
 import {History} from 'history';
 import {computed, observable} from 'mobx';
-import {Dict, EmptyObjectPatch, OmitValueOfKey} from 'tslang';
+import {
+  Dict,
+  EmptyObjectPatch,
+  OmitValueOfKey,
+  OmitValueWithType,
+} from 'tslang';
 
 import {isPathPrefix} from './@utils';
 import {RouteMatchEntry, RouteSource} from './router';
+
+export type NextRouteMatchType<TRouteMatch extends RouteMatch> = OmitValueOfKey<
+  TRouteMatch,
+  Exclude<keyof RouteMatch, keyof NextRouteMatch>
+>;
 
 /**
  * Route before enter callback.
@@ -11,10 +21,7 @@ import {RouteMatchEntry, RouteSource} from './router';
  * this history change; return full path to redirect.
  */
 export type RouteBeforeEnter<TRouteMatch extends RouteMatch = RouteMatch> = (
-  next: OmitValueOfKey<
-    TRouteMatch,
-    Exclude<keyof RouteMatch, keyof MatchingRouteMatch>
-  >,
+  next: NextRouteMatchType<TRouteMatch>,
 ) => Promise<string | boolean | void> | string | boolean | void;
 
 /**
@@ -31,12 +38,19 @@ export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
 ) => IRouteService<TRouteMatch> | Promise<IRouteService<TRouteMatch>>;
 
-export interface IRouteService<TRouteMatch extends RouteMatch = RouteMatch> {
+export type IRouteService<TRouteMatch extends RouteMatch = RouteMatch> = {
   beforeEnter?: RouteBeforeEnter<TRouteMatch>;
   afterEnter?: RouteAfterEnter;
   beforeLeave?: RouteBeforeLeave;
   afterLeave?: RouteAfterLeave;
-}
+} & RouteServiceExtension<TRouteMatch>;
+
+export type RouteServiceExtension<
+  TRouteMatch extends RouteMatch
+> = OmitValueWithType<
+  OmitValueOfKey<TRouteMatch, keyof RouteMatch>,
+  RouteMatch
+>;
 
 interface RouteMatchInternalResult {
   matched: boolean;
@@ -256,7 +270,7 @@ abstract class RouteMatchShared<
   abstract _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined;
 }
 
-export class MatchingRouteMatch<
+export class NextRouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict
 > extends RouteMatchShared<TParamDict> {
   /** @internal */
@@ -267,12 +281,21 @@ export class MatchingRouteMatch<
     source: RouteSource,
     parent: RouteMatchShared<TParamDict> | undefined,
     origin: RouteMatch<TParamDict>,
+    extension: object,
     history: History,
     options: RouteMatchSharedOptions,
   ) {
     super(name, source, parent, history, options);
 
     this._origin = origin;
+
+    for (let key of Object.keys(extension)) {
+      Object.defineProperty(this, key, {
+        get() {
+          return (origin as any)[key];
+        },
+      });
+    }
   }
 
   /**
@@ -305,10 +328,11 @@ export class RouteMatch<
   private _afterLeaveCallbacks: RouteAfterLeave[] = [];
 
   /** @internal */
-  private _serviceInstanceOrPromise:
-    | IRouteService
-    | Promise<IRouteService>
-    | undefined;
+  @observable
+  private _service: IRouteService | undefined;
+
+  /** @internal */
+  private _servicePromise: Promise<IRouteService> | undefined;
 
   /** @internal */
   private _serviceFactory: RouteServiceFactory<any> | undefined;
@@ -328,16 +352,28 @@ export class RouteMatch<
   _children: RouteMatch[] | undefined;
 
   /** @internal */
-  _matching!: MatchingRouteMatch<TParamDict>;
+  _next!: NextRouteMatch<TParamDict>;
 
   constructor(
     name: string,
     source: RouteSource,
     parent: RouteMatch | undefined,
+    extension: object,
     history: History,
     {exact, ...sharedOptions}: RouteMatchOptions,
   ) {
     super(name, source, parent, history, sharedOptions);
+
+    for (let [key, defaultValue] of Object.entries(extension)) {
+      Object.defineProperty(this, key, {
+        get() {
+          let service = (this as RouteMatch).$matched
+            ? (this as RouteMatch)._service
+            : undefined;
+          return service ? (service as any)[key] : defaultValue;
+        },
+      });
+    }
 
     this._allowExact = exact;
   }
@@ -481,7 +517,7 @@ export class RouteMatch<
 
   /** @internal */
   async _beforeEnter(): Promise<string | boolean> {
-    let next = this._matching;
+    let next = this._next;
 
     for (let callback of this._beforeEnterCallbacks) {
       let result = await callback(next);
@@ -553,10 +589,10 @@ export class RouteMatch<
 
   /** @internal */
   private async _getService(): Promise<IRouteService | undefined> {
-    let instanceOrPromise = this._serviceInstanceOrPromise;
+    let serviceOrServicePromise = this._service || this._servicePromise;
 
-    if (instanceOrPromise) {
-      return instanceOrPromise;
+    if (serviceOrServicePromise) {
+      return serviceOrServicePromise;
     }
 
     let factory = this._serviceFactory;
@@ -565,17 +601,17 @@ export class RouteMatch<
       return undefined;
     }
 
-    let result = (this._serviceInstanceOrPromise = factory(this));
+    let output = factory(this);
 
-    if (result instanceof Promise) {
-      result
-        .then(service => {
-          this._serviceInstanceOrPromise = service;
-        })
-        .catch(console.error);
+    if (output instanceof Promise) {
+      return (this._servicePromise = output.then(service => {
+        this._service = service;
+        return service;
+      }));
+    } else {
+      this._service = output;
+      return output;
     }
-
-    return result;
   }
 
   static fragment = /[^/]+/;
