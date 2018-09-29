@@ -2,7 +2,7 @@ import {History, Location, parsePath} from 'history';
 import hyphenate from 'hyphenate';
 import {observable} from 'mobx';
 
-import {isLocationEqual, then} from './@utils';
+import {isLocationEqual, isShallowlyEqual, then} from './@utils';
 import {
   GeneralQueryDict,
   NextRouteMatch,
@@ -114,6 +114,9 @@ export class Router {
   private _location: Location | undefined;
 
   /** @internal */
+  private _nextLocation: Location | undefined;
+
+  /** @internal */
   private _source: RouteSource = observable({
     matchToMatchEntryMap: new Map(),
     queryDict: {},
@@ -153,6 +156,8 @@ export class Router {
 
   /** @internal */
   private _onLocationChange = (location: Location): void => {
+    this._nextLocation = location;
+
     this._changing = this._changing
       .then(() => this._asyncOnLocationChange(location))
       .catch(console.error);
@@ -162,9 +167,12 @@ export class Router {
   private _asyncOnLocationChange = async (
     nextLocation: Location,
   ): Promise<void> => {
+    if (this._isNextLocationOutDated(nextLocation)) {
+      return;
+    }
+
     let {pathname, search} = nextLocation;
 
-    let history = this._history;
     let location = this._location;
 
     if (location && isLocationEqual(location, nextLocation)) {
@@ -196,7 +204,9 @@ export class Router {
 
     // Prepare previous/next match set
 
-    let previousMatchSet = new Set(this._source.matchToMatchEntryMap.keys());
+    let previousMatchToMatchEntryMap = this._source.matchToMatchEntryMap;
+
+    let previousMatchSet = new Set(previousMatchToMatchEntryMap.keys());
     let nextMatchSet = new Set(matchToMatchEntryMap.keys());
 
     let leavingMatchSet = new Set(previousMatchSet);
@@ -207,10 +217,16 @@ export class Router {
 
     let reversedLeavingMatches = Array.from(leavingMatchSet).reverse();
 
-    let enteringMatchSet = new Set(nextMatchSet);
+    let enteringAndUpdatingMatchSet = new Set(nextMatchSet);
 
     for (let match of previousMatchSet) {
-      enteringMatchSet.delete(match);
+      if (!enteringAndUpdatingMatchSet.has(match)) {
+        continue;
+      }
+
+      if (isShallowlyEqual(match._pathFragments, match._next._pathFragments)) {
+        enteringAndUpdatingMatchSet.delete(match);
+      }
     }
 
     // Process before hooks
@@ -218,17 +234,24 @@ export class Router {
     for (let match of reversedLeavingMatches) {
       let result = await match._beforeLeave();
 
+      if (this._isNextLocationOutDated(nextLocation)) {
+        return;
+      }
+
       if (!result) {
         this._revert();
         return;
       }
     }
 
-    for (let match of enteringMatchSet) {
-      let result = await match._beforeEnter();
+    for (let match of enteringAndUpdatingMatchSet) {
+      let update = previousMatchSet.has(match);
 
-      if (typeof result === 'string') {
-        history.replace(result);
+      let result = update
+        ? await match._beforeUpdate()
+        : await match._beforeEnter();
+
+      if (this._isNextLocationOutDated(nextLocation)) {
         return;
       }
 
@@ -259,10 +282,21 @@ export class Router {
       await match._afterLeave();
     }
 
-    for (let match of enteringMatchSet) {
-      await match._afterEnter();
+    for (let match of enteringAndUpdatingMatchSet) {
+      let update = previousMatchSet.has(match);
+
+      if (update) {
+        await match._afterUpdate();
+      } else {
+        await match._afterEnter();
+      }
     }
   };
+
+  /** @internal */
+  private _isNextLocationOutDated(location: Location): boolean {
+    return location !== this._nextLocation;
+  }
 
   /** @internal */
   private _revert(): void {

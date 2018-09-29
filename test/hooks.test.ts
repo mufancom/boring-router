@@ -19,7 +19,9 @@ let router = Router.create(
   history,
 );
 
-let redirectBeforeEnter = jest.fn(() => router.about.$ref());
+let redirectBeforeEnter = jest.fn(() => {
+  router.about.$push();
+});
 let redirectAfterEnter = jest.fn();
 
 router.redirect
@@ -82,6 +84,9 @@ test('should revert navigation from `about` to `revert` by `revert.$beforeEnter`
 
 test('should revert navigation from `persist` to `about` by `persist.$beforeLeave`', async () => {
   history.push('/persist');
+
+  await nap();
+
   history.push('/about');
 
   await nap();

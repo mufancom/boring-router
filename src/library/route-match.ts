@@ -22,7 +22,16 @@ export type NextRouteMatchType<TRouteMatch extends RouteMatch> = OmitValueOfKey<
  */
 export type RouteBeforeEnter<TRouteMatch extends RouteMatch = RouteMatch> = (
   next: NextRouteMatchType<TRouteMatch>,
-) => Promise<string | boolean | void> | string | boolean | void;
+) => Promise<boolean | void> | boolean | void;
+
+/**
+ * Route before update callback.
+ * @return Return `true` or `undefined` to do nothing; return `false` to revert
+ * this history change; return full path to redirect.
+ */
+export type RouteBeforeUpdate<TRouteMatch extends RouteMatch = RouteMatch> = (
+  next: NextRouteMatchType<TRouteMatch>,
+) => Promise<boolean | void> | boolean | void;
 
 /**
  * Route before leave callback.
@@ -32,6 +41,7 @@ export type RouteBeforeEnter<TRouteMatch extends RouteMatch = RouteMatch> = (
 export type RouteBeforeLeave = () => Promise<boolean | void> | boolean | void;
 
 export type RouteAfterEnter = () => Promise<void> | void;
+export type RouteAfterUpdate = () => Promise<void> | void;
 export type RouteAfterLeave = () => Promise<void> | void;
 
 export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
@@ -41,6 +51,8 @@ export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
 export type IRouteService<TRouteMatch extends RouteMatch = RouteMatch> = {
   beforeEnter?: RouteBeforeEnter<TRouteMatch>;
   afterEnter?: RouteAfterEnter;
+  beforeUpdate?: RouteBeforeUpdate<TRouteMatch>;
+  afterUpdate?: RouteAfterUpdate;
   beforeLeave?: RouteBeforeLeave;
   afterLeave?: RouteAfterLeave;
 } & RouteServiceExtension<TRouteMatch>;
@@ -164,7 +176,7 @@ abstract class RouteMatchShared<
 
   /** @internal */
   @computed
-  protected get _pathFragments(): GeneralFragmentDict {
+  get _pathFragments(): GeneralFragmentDict {
     let parent = this._parent;
     let upperFragmentDict = parent && parent._pathFragments;
 
@@ -319,10 +331,16 @@ export class RouteMatch<
   private _beforeEnterCallbacks: RouteBeforeEnter[] = [];
 
   /** @internal */
+  private _beforeUpdateCallbacks: RouteBeforeUpdate[] = [];
+
+  /** @internal */
   private _beforeLeaveCallbacks: RouteBeforeLeave[] = [];
 
   /** @internal */
   private _afterEnterCallbacks: RouteAfterEnter[] = [];
+
+  /** @internal */
+  private _afterUpdateCallbacks: RouteAfterUpdate[] = [];
 
   /** @internal */
   private _afterLeaveCallbacks: RouteAfterLeave[] = [];
@@ -516,14 +534,14 @@ export class RouteMatch<
   }
 
   /** @internal */
-  async _beforeEnter(): Promise<string | boolean> {
+  async _beforeEnter(): Promise<boolean> {
     let next = this._next;
 
     for (let callback of this._beforeEnterCallbacks) {
       let result = await callback(next);
 
-      if (typeof result === 'string' || result === false) {
-        return result;
+      if (result === false) {
+        return false;
       }
     }
 
@@ -535,8 +553,35 @@ export class RouteMatch<
 
     let result = await service.beforeEnter(next);
 
-    if (typeof result === 'string' || result === false) {
-      return result;
+    if (result === false) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /** @internal */
+  async _beforeUpdate(): Promise<boolean> {
+    let next = this._next;
+
+    for (let callback of this._beforeUpdateCallbacks) {
+      let result = await callback(next);
+
+      if (result === false) {
+        return false;
+      }
+    }
+
+    let service = await this._getService();
+
+    if (!service || !service.beforeUpdate) {
+      return true;
+    }
+
+    let result = await service.beforeUpdate(next);
+
+    if (result === false) {
+      return false;
     }
 
     return true;
@@ -573,6 +618,23 @@ export class RouteMatch<
 
     if (service.afterEnter) {
       await service.afterEnter();
+    }
+  }
+
+  /** @internal */
+  async _afterUpdate(): Promise<void> {
+    for (let callback of this._afterUpdateCallbacks) {
+      await callback();
+    }
+
+    let service = await this._getService();
+
+    if (!service) {
+      return;
+    }
+
+    if (service.afterUpdate) {
+      await service.afterUpdate();
     }
   }
 

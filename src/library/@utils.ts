@@ -18,3 +18,19 @@ export function isLocationEqual(left: Location, right: Location): boolean {
   let keys: (keyof Location)[] = ['pathname', 'search', 'hash'];
   return keys.every(key => left[key] === right[key]);
 }
+
+export function isShallowlyEqual(left: any, right: any): boolean {
+  if (left === right) {
+    return true;
+  }
+
+  let keySet = new Set([...Object.keys(left), ...Object.keys(right)]);
+
+  for (let key of keySet) {
+    if (left[key] !== right[key]) {
+      return false;
+    }
+  }
+
+  return true;
+}
