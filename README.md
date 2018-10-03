@@ -77,7 +77,7 @@ interface RouteSchema {
 }
 ```
 
-Two pre-defined `$match` regular expressions are available as `RouteMatch.fragment` (`/[^/]+/`) and `RouteMatch.rest` (`/.+/`).
+Two pre-defined `$match` regular expressions are available as `RouteMatch.segment` (`/[^/]+/`) and `RouteMatch.rest` (`/.+/`).
 
 A `schema` wrapper function is available to make TypeScript intellisense happier for separated schema definition:
 
@@ -109,7 +109,7 @@ interface RouteMatch<TParamDict> {
 
   $service(factory: RouteMatchServiceFactory<this>): this;
 
-  static fragment: RegExp;
+  static segment: RegExp;
   static rest: RegExp;
 }
 ```
@@ -154,7 +154,7 @@ interface NextRouteMatch<TParamDict> {
   </Route>
   ```
 
-- [Fragment](examples/fragment/main.tsx)
+- [Segment](examples/segment/main.tsx)
 
   Boring Router's version of `/account/:id` alike parameter.
 

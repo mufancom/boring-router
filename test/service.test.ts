@@ -24,7 +24,7 @@ let router = Router.create(
     account: {
       $children: {
         accountId: {
-          $match: RouteMatch.fragment,
+          $match: RouteMatch.segment,
           $extension: {
             account: undefined! as Account,
             name: undefined! as string,

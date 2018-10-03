@@ -16,7 +16,7 @@ const router = Router.create(
       $exact: true,
       $children: {
         id: {
-          $match: RouteMatch.fragment,
+          $match: RouteMatch.segment,
         },
       },
     },

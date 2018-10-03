@@ -11,9 +11,9 @@ import {
 } from './route-match';
 import {RouteSchemaDict} from './schema';
 
-export type FragmentMatcherCallback = (key: string) => string;
+export type SegmentMatcherCallback = (key: string) => string;
 
-const DEFAULT_FRAGMENT_MATCHER_CALLBACK: FragmentMatcherCallback = key =>
+const DEFAULT_SEGMENT_MATCHER_CALLBACK: SegmentMatcherCallback = key =>
   hyphenate(key, {lowerCase: true});
 
 type RouteQuerySchemaType<TRouteSchema> = TRouteSchema extends {
@@ -22,7 +22,7 @@ type RouteQuerySchemaType<TRouteSchema> = TRouteSchema extends {
   ? TQuerySchema
   : never;
 
-type FilterRouteMatchNonStringFragment<TRouteSchema, T> = TRouteSchema extends {
+type FilterRouteMatchNonStringSegment<TRouteSchema, T> = TRouteSchema extends {
   $match: infer TMatch;
 }
   ? TMatch extends string ? never : T
@@ -50,39 +50,36 @@ export type RouteMatchExtensionType<
   ? TRouteMatchExtension
   : {};
 
-export type RouteMatchFragmentType<
+export type RouteMatchSegmentType<
   TRouteSchemaDict,
-  TFragmentKey extends string
+  TSegmentKey extends string
 > = {
   [K in Extract<keyof TRouteSchemaDict, string>]: RouteMatchType<
     TRouteSchemaDict[K],
-    TFragmentKey | FilterRouteMatchNonStringFragment<TRouteSchemaDict[K], K>
+    TSegmentKey | FilterRouteMatchNonStringSegment<TRouteSchemaDict[K], K>
   >
 };
 
 export type RouteMatchType<
   TRouteSchema,
-  TFragmentKey extends string
+  TSegmentKey extends string
 > = RouteMatch<
   Record<
     Extract<keyof RouteQuerySchemaType<TRouteSchema>, string>,
     string | undefined
   > &
-    {[K in TFragmentKey]: string}
+    {[K in TSegmentKey]: string}
 > &
-  RouteMatchFragmentType<
-    NestedRouteSchemaDictType<TRouteSchema>,
-    TFragmentKey
-  > &
+  RouteMatchSegmentType<NestedRouteSchemaDictType<TRouteSchema>, TSegmentKey> &
   RouteMatchExtensionType<TRouteSchema>;
 
 export type RouterType<TRouteSchemaDict> = Router &
-  RouteMatchFragmentType<TRouteSchemaDict, never>;
+  RouteMatchSegmentType<TRouteSchemaDict, never>;
 
 export interface RouteMatchEntry {
   match: RouteMatch;
   exact: boolean;
-  fragment: string;
+  segment: string;
 }
 
 export interface RouteSource {
@@ -92,10 +89,10 @@ export interface RouteSource {
 
 export interface RouterOptions {
   /**
-   * A function to perform default schema field name to fragment string
+   * A function to perform default schema field name to segment string
    * transformation.
    */
-  fragmentMatcher?: FragmentMatcherCallback;
+  segmentMatcher?: SegmentMatcherCallback;
   /** Default path on error. */
   default?: string;
 }
@@ -105,7 +102,7 @@ export class Router {
   private _history: History;
 
   /** @internal */
-  private _fragmentMatcher: FragmentMatcherCallback;
+  private _segmentMatcher: SegmentMatcherCallback;
 
   /** @internal */
   private _default: Location;
@@ -138,13 +135,12 @@ export class Router {
   private constructor(
     schema: RouteSchemaDict,
     history: History,
-    {fragmentMatcher, default: defaultPath = '/'}: RouterOptions,
+    {segmentMatcher, default: defaultPath = '/'}: RouterOptions,
   ) {
     this._history = history;
     this._default = parsePath(defaultPath);
 
-    this._fragmentMatcher =
-      fragmentMatcher || DEFAULT_FRAGMENT_MATCHER_CALLBACK;
+    this._segmentMatcher = segmentMatcher || DEFAULT_SEGMENT_MATCHER_CALLBACK;
 
     this._children = this._build(schema, this);
 
@@ -224,7 +220,7 @@ export class Router {
         continue;
       }
 
-      if (isShallowlyEqual(match._pathFragments, match._next._pathFragments)) {
+      if (isShallowlyEqual(match._pathSegments, match._next._pathSegments)) {
         enteringAndUpdatingMatchSet.delete(match);
       }
     }
@@ -309,7 +305,7 @@ export class Router {
     upperRest: string,
   ): RouteMatchEntry[] | undefined {
     for (let routeMatch of target._children || []) {
-      let {matched, exactlyMatched, fragment, rest} = routeMatch._match(
+      let {matched, exactlyMatched, segment, rest} = routeMatch._match(
         upperRest,
       );
 
@@ -321,7 +317,7 @@ export class Router {
         return [
           {
             match: routeMatch,
-            fragment: fragment!,
+            segment: segment!,
             exact: true,
           },
         ];
@@ -336,7 +332,7 @@ export class Router {
       return [
         {
           match: routeMatch,
-          fragment: fragment!,
+          segment: segment!,
           exact: false,
         },
         ...result,
@@ -364,7 +360,7 @@ export class Router {
       }
 
       let {
-        $match: match = this._fragmentMatcher(key),
+        $match: match = this._segmentMatcher(key),
         $query: query,
         $exact: exact = false,
         $children: children,

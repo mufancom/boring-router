@@ -30,7 +30,7 @@ const router = Router.create(
     account: {
       $children: {
         id: {
-          $match: RouteMatch.fragment,
+          $match: RouteMatch.segment,
           $extension: {
             tick: undefined! as number,
             account: undefined! as Account,

@@ -9,10 +9,10 @@
   "scripts": {
     "build:library": "rimraf bld/library && tsc -p src/library",
     "typecheck:test": "tsc -p test",
-    "typecheck:examples": "tsc -p examples/basic && tsc -p examples/exact && tsc -p examples/fragment && tsc -p examples/query && tsc -p examples/route-component && tsc -p examples/multi-route-match",
+    "typecheck:examples": "tsc -p examples/basic && tsc -p examples/exact && tsc -p examples/segment && tsc -p examples/query && tsc -p examples/route-component && tsc -p examples/multi-route-match",
     "lint:library": "tslint -p src/library",
     "lint:test": "tslint -p test",
-    "lint:examples": "tslint -p examples/basic && tslint -p examples/exact && tslint -p examples/fragment && tslint -p examples/query && tslint -p examples/route-component && tslint -p examples/multi-route-match",
+    "lint:examples": "tslint -p examples/basic && tslint -p examples/exact && tslint -p examples/segment && tslint -p examples/query && tslint -p examples/route-component && tslint -p examples/multi-route-match",
     "test:library": "yarn build:library && yarn lint:library && jest",
     "test:test": "yarn typecheck:test && yarn lint:test",
     "test:examples": "yarn typecheck:examples && yarn lint:examples",

@@ -67,18 +67,18 @@ export type RouteServiceExtension<
 interface RouteMatchInternalResult {
   matched: boolean;
   exactlyMatched: boolean;
-  fragment: string | undefined;
+  segment: string | undefined;
   rest: string;
 }
 
-export type GeneralFragmentDict = Dict<string | undefined>;
+export type GeneralSegmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
 
 /** @internal */
 export interface RouteMatchUpdateResult {
-  pathFragmentDict: GeneralFragmentDict;
-  paramFragmentDict: GeneralFragmentDict;
+  pathSegmentDict: GeneralSegmentDict;
+  paramSegmentDict: GeneralSegmentDict;
 }
 
 export interface RouteMatchSharedOptions {
@@ -140,54 +140,53 @@ abstract class RouteMatchShared<
   }
 
   /**
-   * A dictionary of the combination of query string and fragments.
+   * A dictionary of the combination of query string and segments.
    */
   @computed
   get $params(): TParamDict {
     return {
-      ...this._paramFragments,
+      ...this._paramSegments,
       ...this._query,
     } as TParamDict;
   }
 
   /** @internal */
   @computed
-  protected get _fragment(): string | undefined {
+  protected get _segment(): string | undefined {
     let entry = this._getMatchEntry(this._source);
-    return entry && entry.fragment;
+    return entry && entry.segment;
   }
 
   /** @internal */
   @computed
-  protected get _paramFragments(): GeneralFragmentDict {
+  protected get _paramSegments(): GeneralSegmentDict {
     let parent = this._parent;
-    let upperFragmentDict = parent && parent._paramFragments;
+    let upperSegmentDict = parent && parent._paramSegments;
 
     let matchPattern = this._matchPattern;
-    let fragment = this._fragment;
+    let segment = this._segment;
 
     return {
-      ...upperFragmentDict,
+      ...upperSegmentDict,
       ...(typeof matchPattern === 'string'
         ? undefined
-        : {[this.$name]: fragment}),
+        : {[this.$name]: segment}),
     };
   }
 
   /** @internal */
   @computed
-  get _pathFragments(): GeneralFragmentDict {
+  get _pathSegments(): GeneralSegmentDict {
     let parent = this._parent;
-    let upperFragmentDict = parent && parent._pathFragments;
+    let upperSegmentDict = parent && parent._pathSegments;
 
     let matchPattern = this._matchPattern;
-    let fragment = this._fragment;
+    let segment = this._segment;
 
     return {
-      ...upperFragmentDict,
+      ...upperSegmentDict,
       ...{
-        [this.$name]:
-          typeof matchPattern === 'string' ? matchPattern : fragment,
+        [this.$name]: typeof matchPattern === 'string' ? matchPattern : segment,
       },
     };
   }
@@ -217,30 +216,30 @@ abstract class RouteMatchShared<
   /**
    * Generates a string reference that can be used for history navigation.
    * @param params A dictionary of the combination of query string and
-   * fragments.
+   * segments.
    * @param preserveQuery Whether to preserve values in current query string.
    */
   $ref(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
     preserveQuery = false,
   ): string {
-    let fragmentDict = this._pathFragments;
+    let segmentDict = this._pathSegments;
     let sourceQueryDict = this._source.queryDict;
 
     let paramKeySet = new Set(Object.keys(params));
 
-    let path = Object.keys(fragmentDict)
+    let path = Object.keys(segmentDict)
       .map(key => {
         paramKeySet.delete(key);
 
         let param = params[key];
-        let fragment = typeof param === 'string' ? param : fragmentDict[key];
+        let segment = typeof param === 'string' ? param : segmentDict[key];
 
-        if (typeof fragment !== 'string') {
+        if (typeof segment !== 'string') {
           throw new Error(`Parameter "${key}" is required`);
         }
 
-        return `/${fragment}`;
+        return `/${segment}`;
       })
       .join('');
 
@@ -442,7 +441,7 @@ export class RouteMatch<
 
   /** @internal */
   _match(upperRest: string): RouteMatchInternalResult {
-    let fragment: string | undefined;
+    let segment: string | undefined;
     let rest: string;
 
     if (upperRest) {
@@ -460,10 +459,10 @@ export class RouteMatch<
 
       if (typeof pattern === 'string') {
         if (isPathPrefix(upperRest, pattern)) {
-          fragment = pattern;
+          segment = pattern;
           rest = upperRest.slice(pattern.length);
         } else {
-          fragment = undefined;
+          segment = undefined;
           rest = '';
         }
       } else {
@@ -480,19 +479,19 @@ export class RouteMatch<
             );
           }
 
-          fragment = matched;
+          segment = matched;
           rest = upperRest.slice(matched.length);
         } else {
-          fragment = undefined;
+          segment = undefined;
           rest = '';
         }
       }
     } else {
-      fragment = undefined;
+      segment = undefined;
       rest = '';
     }
 
-    let matched = fragment !== undefined;
+    let matched = segment !== undefined;
     let exactlyMatched = matched && rest === '';
 
     if (exactlyMatched && (this._children && !this._allowExact)) {
@@ -503,7 +502,7 @@ export class RouteMatch<
     return {
       matched,
       exactlyMatched,
-      fragment,
+      segment,
       rest,
     };
   }
@@ -676,6 +675,6 @@ export class RouteMatch<
     }
   }
 
-  static fragment = /[^/]+/;
+  static segment = /[^/]+/;
   static rest = /.+/;
 }
