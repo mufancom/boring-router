@@ -103,8 +103,12 @@ interface RouteMatch<TParamDict> {
   $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
 
   $beforeEnter(callback: RouteMatchBeforeEnter<this>): this;
-  $beforeLeave(callback: RouteMatchBeforeLeave): this;
   $afterEnter(callback: RouteMatchAfterEnter): this;
+
+  $beforeUpdate(callback: RouteMatchBeforeUpdate<this>): this;
+  $afterUpdate(callback: RouteMatchAfterUpdate): this;
+
+  $beforeLeave(callback: RouteMatchBeforeLeave): this;
   $afterLeave(callback: RouteMatchAfterLeave): this;
 
   $service(factory: RouteMatchServiceFactory<this>): this;
@@ -114,7 +118,7 @@ interface RouteMatch<TParamDict> {
 }
 ```
 
-Within `$beforeEnter` hook and service hook, a special version of `RouteMatch` is available as `NextRouteMatch`, providing restricted functionality:
+Within `$beforeEnter`, `$beforeUpdate` hooks and correspondent service hooks, a special version of `RouteMatch` is available as `NextRouteMatch`, providing restricted functionality:
 
 ```ts
 interface NextRouteMatch<TParamDict> {
