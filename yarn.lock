@@ -108,21 +108,23 @@
     lodash "^4.17.5"
     to-fast-properties "^2.0.0"
 
-"@magicspace/configs@^0.1.28":
-  version "0.1.29"
-  resolved "https://registry.npmjs.org/@magicspace/configs/-/configs-0.1.29.tgz#4d11dc655cc73b6bab94dfc6e4039c5ed9c9c1a0"
-  integrity sha512-XfvNnVhNvHmlGeJOJsq5hzbwJSxek9nievwCLbhIjATeGASFnofJsbkBErDLzWVOPaf7oS1Q1bMOLkz0NxOn5g==
+"@magicspace/configs@^0.1.43":
+  version "0.1.43"
+  resolved "https://registry.npmjs.org/@magicspace/configs/-/configs-0.1.43.tgz#27ca384a92fd7680bb27fb439d9a71032faf4c0d"
+  integrity sha512-mjvC9+KZPcpva5Fa5Gh0rvUUS3pkjRXZCUQ3cmwtVDP0iuefpVOEM6M5WZKaxTEHqhoTtOn+xc2aTjvFaBoiGg==
   dependencies:
-    "@magicspace/tslint-rules" "^0.1.25"
+    "@magicspace/tslint-rules" "^0.1.41"
     tslint-config-prettier "^1.10.0"
 
-"@magicspace/tslint-rules@^0.1.25":
-  version "0.1.25"
-  resolved "https://registry.npmjs.org/@magicspace/tslint-rules/-/tslint-rules-0.1.25.tgz#3a46e875ebcf882532aba3b5210ee5151fd4fa2e"
-  integrity sha512-6LsjeNIbbJiEljLizenChI/9eacolVZYMtP+zE9foiQCUkWq1P8UnsncVTjdYcJYeUDRJn9+2ZKvlmED+/tF1g==
+"@magicspace/tslint-rules@^0.1.41":
+  version "0.1.41"
+  resolved "https://registry.npmjs.org/@magicspace/tslint-rules/-/tslint-rules-0.1.41.tgz#200e36f56cadd89d40d81697956ff88786565bae"
+  integrity sha512-iAWCGGilUItYAK5qBArS74huX7YdAaEkE7u2OhALhFBxEwUBsyb/abllzwPfyHC7n0H2w8a5rHoq0caOsgJm+g==
   dependencies:
     lodash "^4.17.10"
+    module-lens "^0.1.3"
     resolve "^1.8.1"
+    tslang "^0.1.9"
     tsutils "^2.28.0"
 
 "@types/classnames@^2.2.6":
@@ -2449,6 +2451,11 @@ lodash@^4.13.1, lodash@^4.17.10, lodash@^4.17.4, lodash@^4.17.5:
   resolved "https://registry.npmjs.org/lodash/-/lodash-4.17.10.tgz#1b7793cf7259ea38fb3661d4d38b3260af8ae4e7"
   integrity sha512-UejweD1pDoXu+AD825lWwp4ZGtSwgnpZxb3JDViD7StjQz+Nb/6l093lx4OQ0foGWNRoc19mWy7BzL+UAK2iVg==
 
+lodash@^4.17.11:
+  version "4.17.11"
+  resolved "https://registry.npmjs.org/lodash/-/lodash-4.17.11.tgz#b39ea6229ef607ecd89e2c8df12536891cac9b8d"
+  integrity sha512-cQKh8igo5QUhZ7lg38DYWAxMvjSAKG0A8wGSVimP07SIUEK2UO+arSRKbRZWtelMtN5V0Hkwh5ryOto/SshYIg==
+
 longest@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/longest/-/longest-1.0.1.tgz#30a0b2da38f73770e8294a0d22e6625ed77d0097"
@@ -2638,6 +2645,13 @@ mock-require@^2.0.2:
   integrity sha1-HqpxqtIwE3c9En3H6Ro/u0g31g0=
   dependencies:
     caller-id "^0.1.0"
+
+module-lens@^0.1.3:
+  version "0.1.3"
+  resolved "https://registry.npmjs.org/module-lens/-/module-lens-0.1.3.tgz#4f078a653fdb9987421dac1ac0cdf786ff836417"
+  integrity sha512-ZlSMYskPR0fJwWeJlKJFcqUC0YnGg4coEGQrzLl6BQQ3c3zSPk94FOJLil2hMIO5Zqx4DdDXJhgDcyoXjjyBjQ==
+  dependencies:
+    lodash "^4.17.11"
 
 ms@2.0.0:
   version "2.0.0"

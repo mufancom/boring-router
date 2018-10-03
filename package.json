@@ -31,7 +31,7 @@
     "react": "^16.0.0"
   },
   "devDependencies": {
-    "@magicspace/configs": "^0.1.28",
+    "@magicspace/configs": "^0.1.43",
     "@types/classnames": "^2.2.6",
     "@types/history": "^4.7.0",
     "@types/jest": "^23.3.1",
