@@ -52,7 +52,7 @@ class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
   constructor(private match: AccountIdRouteMatch) {}
 
   @computed
-  get name() {
+  get name(): string {
     return `[${this.match.$params.accountId}]`;
   }
 
