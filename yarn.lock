@@ -3769,6 +3769,11 @@ ts-jest@^23.1.4:
     json5 "^0.5.0"
     lodash "^4.17.10"
 
+tslang@^0.1.10:
+  version "0.1.10"
+  resolved "https://registry.npmjs.org/tslang/-/tslang-0.1.10.tgz#1222bd91e62905f0e0a9e043f6ca3e36d59246ef"
+  integrity sha512-HaqfELxq+0or0CcLgVSYImZUivKvb6A8NNWcIkY/rQiCGhdL9H6wluQNdb5kE/2I6m5UDOvDnYQSTSGr4uggPw==
+
 tslang@^0.1.9:
   version "0.1.9"
   resolved "https://registry.npmjs.org/tslang/-/tslang-0.1.9.tgz#2ba1a65124849d66267f03cae65f440d1ea5df32"

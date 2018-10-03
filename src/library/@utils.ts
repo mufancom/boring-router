@@ -1,4 +1,5 @@
 import {Location} from 'history';
+import {ParamsType} from 'tslang';
 
 const FULFILLED_PROMISE = Promise.resolve();
 
@@ -33,4 +34,33 @@ export function isShallowlyEqual(left: any, right: any): boolean {
   }
 
   return true;
+}
+
+export type ToleratedReturnType<
+  TOriginalReturnType
+> = TOriginalReturnType extends Promise<infer T>
+  ? Promise<T | undefined> | undefined
+  : TOriginalReturnType | undefined;
+
+export function tolerate<T extends (...args: any[]) => any>(
+  fn: T,
+  ...args: ParamsType<T>
+): ToleratedReturnType<ReturnType<T>>;
+export function tolerate(fn: Function, ...args: unknown[]): unknown {
+  let ret: unknown;
+
+  try {
+    ret = fn(...args);
+  } catch (error) {
+    console.error(error);
+    return undefined;
+  }
+
+  if (!(ret instanceof Promise)) {
+    return ret;
+  }
+
+  return ret.catch(error => {
+    console.error(error);
+  });
 }

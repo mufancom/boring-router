@@ -53,7 +53,7 @@
   "dependencies": {
     "classnames": "^2.2.6",
     "hyphenate": "^0.2.4",
-    "tslang": "^0.1.9",
+    "tslang": "^0.1.10",
     "tslib": "^1.9.3"
   }
 }

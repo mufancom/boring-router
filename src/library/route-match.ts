@@ -7,7 +7,7 @@ import {
   OmitValueWithType,
 } from 'tslang';
 
-import {isPathPrefix} from './@utils';
+import {isPathPrefix, tolerate} from './@utils';
 import {RouteMatchEntry, RouteSource} from './router';
 
 export type NextRouteMatchType<TRouteMatch extends RouteMatch> = OmitValueOfKey<
@@ -349,7 +349,7 @@ export class RouteMatch<
   private _service: IRouteService | undefined;
 
   /** @internal */
-  private _servicePromise: Promise<IRouteService> | undefined;
+  private _servicePromise: Promise<IRouteService | undefined> | undefined;
 
   /** @internal */
   private _serviceFactory: RouteServiceFactory<any> | undefined;
@@ -510,7 +510,7 @@ export class RouteMatch<
   /** @internal */
   async _beforeLeave(): Promise<boolean> {
     for (let callback of this._beforeLeaveCallbacks) {
-      let result = callback();
+      let result = await tolerate(callback);
 
       if (result === false) {
         return false;
@@ -523,7 +523,7 @@ export class RouteMatch<
       return true;
     }
 
-    let result = service.beforeLeave();
+    let result = await tolerate(() => service!.beforeLeave!());
 
     if (result === false) {
       return false;
@@ -537,7 +537,7 @@ export class RouteMatch<
     let next = this._next;
 
     for (let callback of this._beforeEnterCallbacks) {
-      let result = await callback(next);
+      let result = await tolerate(callback, next);
 
       if (result === false) {
         return false;
@@ -550,7 +550,7 @@ export class RouteMatch<
       return true;
     }
 
-    let result = await service.beforeEnter(next);
+    let result = await tolerate(() => service!.beforeEnter!(next));
 
     if (result === false) {
       return false;
@@ -564,7 +564,7 @@ export class RouteMatch<
     let next = this._next;
 
     for (let callback of this._beforeUpdateCallbacks) {
-      let result = await callback(next);
+      let result = await tolerate(callback, next);
 
       if (result === false) {
         return false;
@@ -577,7 +577,7 @@ export class RouteMatch<
       return true;
     }
 
-    let result = await service.beforeUpdate(next);
+    let result = await tolerate(() => service!.beforeUpdate!(next));
 
     if (result === false) {
       return false;
@@ -589,52 +589,46 @@ export class RouteMatch<
   /** @internal */
   async _afterLeave(): Promise<void> {
     for (let callback of this._afterLeaveCallbacks) {
-      await callback();
+      await tolerate(callback);
     }
 
     let service = await this._getService();
 
-    if (!service) {
+    if (!service || !service.afterLeave) {
       return;
     }
 
-    if (service.afterLeave) {
-      await service.afterLeave();
-    }
+    await tolerate(() => service!.afterLeave!());
   }
 
   /** @internal */
   async _afterEnter(): Promise<void> {
     for (let callback of this._afterEnterCallbacks) {
-      await callback();
+      await tolerate(callback);
     }
 
     let service = await this._getService();
 
-    if (!service) {
+    if (!service || !service.afterEnter) {
       return;
     }
 
-    if (service.afterEnter) {
-      await service.afterEnter();
-    }
+    await tolerate(() => service!.afterEnter!());
   }
 
   /** @internal */
   async _afterUpdate(): Promise<void> {
     for (let callback of this._afterUpdateCallbacks) {
-      await callback();
+      await tolerate(callback);
     }
 
     let service = await this._getService();
 
-    if (!service) {
+    if (!service || !service.afterUpdate) {
       return;
     }
 
-    if (service.afterUpdate) {
-      await service.afterUpdate();
-    }
+    await tolerate(() => service!.afterUpdate!());
   }
 
   /** @internal */
@@ -662,7 +656,7 @@ export class RouteMatch<
       return undefined;
     }
 
-    let output = factory(this);
+    let output = tolerate(factory, this);
 
     if (output instanceof Promise) {
       return (this._servicePromise = output.then(service => {
