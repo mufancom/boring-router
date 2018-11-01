@@ -1,0 +1,41 @@
+{
+  "name": "boring-router",
+  "version": "0.3.1-alpha.0",
+  "description": "A light-weight, type-safe, yet reactive router service using MobX.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/makeflow/boring-router.git"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build:library": "rimraf bld/library && tsc -p src/library",
+    "typecheck:test": "tsc -p test",
+    "lint:library": "tslint -p src/library",
+    "lint:test": "tslint -p test",
+    "test:library": "yarn build:library && yarn lint:library && jest",
+    "test:test": "yarn typecheck:test && yarn lint:test",
+    "test": "yarn test:library && yarn test:test"
+  },
+  "main": "bld/library/index.js",
+  "types": "bld/library/index.d.ts",
+  "files": [
+    "bld/library",
+    "!*.js.map"
+  ],
+  "peerDependencies": {
+    "history": "^4.0.0",
+    "mobx": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/history": "^4.7.0",
+    "@types/jest": "^23.3.5",
+    "history": "^4.7.2",
+    "jest": "^23.6.0",
+    "mobx": "^5.5.0",
+    "ts-jest": "^23.10.4"
+  },
+  "dependencies": {
+    "hyphenate": "^0.2.4",
+    "tslang": "^0.1.10"
+  }
+}

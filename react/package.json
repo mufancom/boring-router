@@ -1,0 +1,47 @@
+{
+  "name": "boring-router-react",
+  "version": "0.3.1-alpha.0",
+  "description": "A light-weight, type-safe, yet reactive router service using MobX.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/makeflow/boring-router.git"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build:library": "rimraf bld/library && tsc -p src/library",
+    "typecheck:examples": "tsc -p examples/basic && tsc -p examples/exact && tsc -p examples/segment && tsc -p examples/query && tsc -p examples/route-component && tsc -p examples/multi-route-match",
+    "lint:library": "tslint -p src/library",
+    "lint:examples": "tslint -p examples/basic && tslint -p examples/exact && tslint -p examples/segment && tslint -p examples/query && tslint -p examples/route-component && tslint -p examples/multi-route-match",
+    "test:library": "yarn build:library && yarn lint:library",
+    "test:examples": "yarn typecheck:examples && yarn lint:examples",
+    "test": "yarn test:library && yarn test:examples"
+  },
+  "main": "bld/library/index.js",
+  "types": "bld/library/index.d.ts",
+  "files": [
+    "bld/library",
+    "!*.js.map"
+  ],
+  "peerDependencies": {
+    "boring-router": "^0.3.1-alpha.0",
+    "history": "^4.0.0",
+    "mobx": "^5.0.0",
+    "mobx-react": "^5.0.0",
+    "react": "^16.0.0"
+  },
+  "devDependencies": {
+    "@types/classnames": "^2.2.6",
+    "@types/history": "^4.7.0",
+    "@types/react": "^16.4.12",
+    "@types/react-dom": "^16.0.7",
+    "history": "^4.7.2",
+    "mobx": "^5.5.0",
+    "mobx-react": "^5.2.5",
+    "react": "^16.4.2",
+    "react-dom": "^16.4.2"
+  },
+  "dependencies": {
+    "classnames": "^2.2.6",
+    "tslang": "^0.1.10"
+  }
+}

@@ -20,14 +20,16 @@ There are multiple reasons pushing me to write Boring Router instead of sticking
 # peer dependencies
 yarn add history react mobx mobx-react
 
-# boring router package
+# boring router packages
 yarn add boring-router
+yarn add boring-router-react
 ```
 
 ## Usage
 
 ```tsx
-import {Link, Route, RouteMatch, Router} from 'boring-router';
+import {RouteMatch, Router} from 'boring-router';
+import {Link, Route} from 'boring-router-react';
 import {observer} from 'mobx-react';
 import {createBrowserHistory} from 'history';
 import React, {Component} from 'react';
