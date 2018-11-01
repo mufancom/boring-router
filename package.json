@@ -6,7 +6,7 @@
     "lerna:publish": "lerna publish prerelease --npm-tag latest --registry=https://registry.npmjs.org",
     "test:boring-router": "yarn workspace boring-router test",
     "test:boring-router-react": "yarn workspace boring-router-react test",
-    "test": "yarn test:boring-router && test:boring-router-react"
+    "test": "yarn test:boring-router && yarn test:boring-router-react"
   },
   "devDependencies": {
     "@magicspace/configs": "^0.1.43",
