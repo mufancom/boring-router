@@ -359,6 +359,7 @@ export class Router {
     let source = this._source;
     let matchingSource = this._matchingSource;
     let history = this._history;
+    let prefix = this._prefix;
 
     for (let [key, schema] of Object.entries(schemaDict)) {
       if (typeof schema === 'boolean') {
@@ -378,8 +379,6 @@ export class Router {
         query,
         exact,
       };
-
-      let prefix = this._prefix;
 
       let routeMatch = new RouteMatch(
         key,
