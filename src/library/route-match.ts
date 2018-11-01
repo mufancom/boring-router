@@ -100,6 +100,9 @@ abstract class RouteMatchShared<
   readonly $name: string;
 
   /** @internal */
+  protected _prefix: string;
+
+  /** @internal */
   protected _history: History;
 
   /** @internal */
@@ -116,12 +119,14 @@ abstract class RouteMatchShared<
 
   constructor(
     name: string,
+    prefix: string,
     source: RouteSource,
     parent: RouteMatchShared | undefined,
     history: History,
     {match, query}: RouteMatchSharedOptions,
   ) {
     this.$name = name;
+    this._prefix = prefix;
     this._source = source;
     this._parent = parent;
     this._history = history;
@@ -252,7 +257,7 @@ abstract class RouteMatchShared<
       ),
     ]).toString();
 
-    return `${path}${query ? `?${query}` : ''}`;
+    return `${this._prefix}${path}${query ? `?${query}` : ''}`;
   }
 
   /**
@@ -289,6 +294,7 @@ export class NextRouteMatch<
 
   constructor(
     name: string,
+    prefix: string,
     source: RouteSource,
     parent: RouteMatchShared<TParamDict> | undefined,
     origin: RouteMatch<TParamDict>,
@@ -296,7 +302,7 @@ export class NextRouteMatch<
     history: History,
     options: RouteMatchSharedOptions,
   ) {
-    super(name, source, parent, history, options);
+    super(name, prefix, source, parent, history, options);
 
     this._origin = origin;
 
@@ -373,13 +379,14 @@ export class RouteMatch<
 
   constructor(
     name: string,
+    prefix: string,
     source: RouteSource,
     parent: RouteMatch | undefined,
     extension: object,
     history: History,
     {exact, ...sharedOptions}: RouteMatchOptions,
   ) {
-    super(name, source, parent, history, sharedOptions);
+    super(name, prefix, source, parent, history, sharedOptions);
 
     for (let [key, defaultValue] of Object.entries(extension)) {
       Object.defineProperty(this, key, {

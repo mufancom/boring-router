@@ -95,6 +95,8 @@ export interface RouterOptions {
   segmentMatcher?: SegmentMatcherCallback;
   /** Default path on error. */
   default?: string;
+  /** Prefix of ref */
+  prefix?: string;
 }
 
 export class Router {
@@ -106,6 +108,9 @@ export class Router {
 
   /** @internal */
   private _default: Location;
+
+  /** @internal */
+  private _prefix: string;
 
   /** @internal */
   private _location: Location | undefined;
@@ -135,10 +140,11 @@ export class Router {
   private constructor(
     schema: RouteSchemaDict,
     history: History,
-    {segmentMatcher, default: defaultPath = '/'}: RouterOptions,
+    {segmentMatcher, default: defaultPath = '/', prefix = ''}: RouterOptions,
   ) {
     this._history = history;
     this._default = parsePath(defaultPath);
+    this._prefix = prefix;
 
     this._segmentMatcher = segmentMatcher || DEFAULT_SEGMENT_MATCHER_CALLBACK;
 
@@ -375,6 +381,7 @@ export class Router {
 
       let routeMatch = new RouteMatch(
         key,
+        this._prefix,
         source,
         parent instanceof RouteMatch ? parent : undefined,
         extension,
@@ -384,6 +391,7 @@ export class Router {
 
       let nextRouteMatch = new NextRouteMatch(
         key,
+        this._prefix,
         matchingSource,
         matchingParent,
         routeMatch,
