@@ -379,9 +379,11 @@ export class Router {
         exact,
       };
 
+      let prefix = this._prefix;
+
       let routeMatch = new RouteMatch(
         key,
-        this._prefix,
+        prefix,
         source,
         parent instanceof RouteMatch ? parent : undefined,
         extension,
@@ -391,7 +393,7 @@ export class Router {
 
       let nextRouteMatch = new NextRouteMatch(
         key,
-        this._prefix,
+        prefix,
         matchingSource,
         matchingParent,
         routeMatch,
