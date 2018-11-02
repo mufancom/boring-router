@@ -2,7 +2,7 @@ import hyphenate from 'hyphenate';
 import {observable} from 'mobx';
 
 import {isLocationEqual, isShallowlyEqual, parsePath, then} from './@utils';
-import {History, Location} from './history';
+import {IHistory, Location} from './history';
 import {
   GeneralQueryDict,
   NextRouteMatch,
@@ -101,7 +101,7 @@ export interface RouterOptions {
 
 export class Router {
   /** @internal */
-  private _history: History;
+  private _history: IHistory;
 
   /** @internal */
   private _segmentMatcher: SegmentMatcherCallback;
@@ -139,7 +139,7 @@ export class Router {
 
   private constructor(
     schema: RouteSchemaDict,
-    history: History,
+    history: IHistory,
     {segmentMatcher, default: defaultPath = '/', prefix = ''}: RouterOptions,
   ) {
     this._history = history;
@@ -423,7 +423,7 @@ export class Router {
 
   static create<TSchema extends RouteSchemaDict>(
     schema: TSchema,
-    history: History,
+    history: IHistory,
     options: RouterOptions = {},
   ): RouterType<TSchema> {
     return new Router(schema, history, options) as RouterType<TSchema>;
