@@ -23,13 +23,10 @@
     "!*.js.map"
   ],
   "peerDependencies": {
-    "history": "^4.0.0",
     "mobx": "^5.0.0"
   },
   "devDependencies": {
-    "@types/history": "^4.7.0",
     "@types/jest": "^23.3.5",
-    "history": "^4.7.2",
     "jest": "^23.6.0",
     "mobx": "^5.5.0",
     "ts-jest": "^23.10.4"

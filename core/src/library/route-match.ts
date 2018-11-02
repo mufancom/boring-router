@@ -1,4 +1,3 @@
-import {History} from 'history';
 import {computed, observable} from 'mobx';
 import {
   Dict,
@@ -8,6 +7,7 @@ import {
 } from 'tslang';
 
 import {isPathPrefix, tolerate} from './@utils';
+import {History} from './history';
 import {RouteMatchEntry, RouteSource} from './router';
 
 export type NextRouteMatchType<TRouteMatch extends RouteMatch> = OmitValueOfKey<

@@ -1,5 +1,6 @@
-import {Location} from 'history';
 import {ParamsType} from 'tslang';
+
+import {Location} from './history';
 
 const FULFILLED_PROMISE = Promise.resolve();
 
