@@ -1,59 +1,26 @@
 {
-  "name": "boring-router",
-  "version": "0.3.0-alpha.12",
-  "description": "A light-weight, type-safe, yet reactive router service using MobX.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/makeflow/boring-router.git"
-  },
+  "name": "boring-router-packages",
+  "private": true,
   "scripts": {
-    "build:library": "rimraf bld/library && tsc -p src/library",
-    "typecheck:test": "tsc -p test",
-    "typecheck:examples": "tsc -p examples/basic && tsc -p examples/exact && tsc -p examples/segment && tsc -p examples/query && tsc -p examples/route-component && tsc -p examples/multi-route-match",
-    "lint:library": "tslint -p src/library",
-    "lint:test": "tslint -p test",
-    "lint:examples": "tslint -p examples/basic && tslint -p examples/exact && tslint -p examples/segment && tslint -p examples/query && tslint -p examples/route-component && tslint -p examples/multi-route-match",
-    "test:library": "yarn build:library && yarn lint:library && jest",
-    "test:test": "yarn typecheck:test && yarn lint:test",
-    "test:examples": "yarn typecheck:examples && yarn lint:examples",
-    "test": "yarn test:library && yarn test:test && yarn test:examples"
-  },
-  "main": "bld/library/index.js",
-  "types": "bld/library/index.d.ts",
-  "files": [
-    "bld/library",
-    "!*.js.map"
-  ],
-  "peerDependencies": {
-    "history": "^4.0.0",
-    "mobx": "^5.0.0",
-    "mobx-react": "^5.0.0",
-    "react": "^16.0.0"
+    "link-global": "yarn workspace boring-router link && yarn workspace boring-router-react link",
+    "lerna:publish": "lerna publish prerelease --npm-tag next --registry=https://registry.npmjs.org",
+    "test:boring-router": "yarn workspace boring-router test",
+    "test:boring-router-react": "yarn workspace boring-router-react test",
+    "test": "yarn test:boring-router && yarn test:boring-router-react"
   },
   "devDependencies": {
-    "@magicspace/configs": "^0.1.43",
-    "@types/classnames": "^2.2.6",
-    "@types/history": "^4.7.0",
-    "@types/jest": "^23.3.5",
-    "@types/react": "^16.4.12",
-    "@types/react-dom": "^16.0.7",
-    "history": "^4.7.2",
-    "jest": "^23.6.0",
-    "mobx": "^5.5.0",
-    "mobx-react": "^5.2.5",
-    "prettier": "^1.13.7",
-    "react": "^16.4.2",
-    "react-dom": "^16.4.2",
+    "@magicspace/configs": "^0.1.46",
     "rimraf": "^2.6.2",
-    "ts-jest": "^23.10.4",
+    "lerna": "^3.4.3",
+    "prettier": "^1.11.1",
     "tslint": "^5.11.0",
     "tslint-language-service": "^0.9.9",
-    "typescript": "^3.0.1"
+    "typescript": "^3.1.6"
   },
-  "dependencies": {
-    "classnames": "^2.2.6",
-    "hyphenate": "^0.2.4",
-    "tslang": "^0.1.10",
-    "tslib": "^1.9.3"
+  "workspaces": {
+    "packages": [
+      "core",
+      "react"
+    ]
   }
 }

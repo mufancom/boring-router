@@ -1,0 +1,12 @@
+{
+  "extends": "../../../node_modules/@magicspace/configs/tsconfig.json",
+  "compilerOptions": {
+    "target": "es6",
+    "lib": ["esnext"],
+    "experimentalDecorators": true,
+    "declaration": true,
+
+    "rootDir": ".",
+    "outDir": "../../bld/library"
+  }
+}
