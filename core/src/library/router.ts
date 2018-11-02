@@ -1,8 +1,8 @@
 import hyphenate from 'hyphenate';
 import {observable} from 'mobx';
 
-import {isLocationEqual, isShallowlyEqual, then} from './@utils';
-import {History, Location, parsePath} from './history';
+import {isLocationEqual, isShallowlyEqual, parsePath, then} from './@utils';
+import {History, Location} from './history';
 import {
   GeneralQueryDict,
   NextRouteMatch,

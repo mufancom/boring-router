@@ -667,10 +667,10 @@
     npmlog "^4.1.2"
     write-file-atomic "^2.3.0"
 
-"@magicspace/configs@^0.1.43":
-  version "0.1.45"
-  resolved "https://registry.yarnpkg.com/@magicspace/configs/-/configs-0.1.45.tgz#26395ec958d03d4acd7ff8837362f3b11ee5c927"
-  integrity sha512-5UEERr67ywfQVR3vFl/RjHQ4huFekmM2mz00MblE2GSXbXCF6dz59Vzzm6asTq0tS96aqHJy3j8MjtGYLfibWw==
+"@magicspace/configs@^0.1.46":
+  version "0.1.46"
+  resolved "https://registry.yarnpkg.com/@magicspace/configs/-/configs-0.1.46.tgz#57b5324068a7eac9fcd0af2be0c8ba3f8bbd0435"
+  integrity sha512-JAuQvyjxYGX/7iAwTfiY0+EG7wV5loQuf8ZG1nrk7FAhMd6TfIP0xr+C23JmAj0W4zvIuDc95WrqnyL/T+Fo9Q==
   dependencies:
     "@magicspace/tslint-rules" "^0.1.41"
     tslint-config-prettier "^1.10.0"
