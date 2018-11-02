@@ -61,7 +61,7 @@ class AccountIdRouteService implements IRouteService<AccountIdRouteMatch> {
 
     this.timer = setInterval(() => {
       this.tick++;
-    }, 1000);
+    }, 1000) as any;
   }
 
   afterLeave(): void {

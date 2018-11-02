@@ -33,14 +33,17 @@ const router = Router.create(
 );
 
 router.account.$beforeEnter(() => {
-  return router.about.$ref({source: 'reaction'});
+  router.about.$push({source: 'reaction'});
 });
 
 router.profile
   .$beforeEnter(match => {
     console.info('before enter profile');
     console.info('before enter ref', match.$ref());
-    return match.$exact ? match.details.$ref() : undefined;
+
+    if (match.$exact) {
+      match.details.$push();
+    }
   })
   .$afterEnter(() => {
     console.info('after enter profile');
