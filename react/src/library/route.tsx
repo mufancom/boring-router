@@ -43,7 +43,7 @@ export class Route<TRouteMatch extends RouteMatch> extends Component<
         }
 
         if (typeof children === 'function') {
-          return children(firstMatch);
+          return (children as RouteFunctionChild<TRouteMatch>)(firstMatch);
         } else {
           return children;
         }
