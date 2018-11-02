@@ -14,7 +14,7 @@ export interface Location {
 
 export type LocationListener = (location: Location) => void;
 
-export interface History {
+export interface IHistory {
   location: Location;
   push(path: string): void;
   replace(location: string | LocationDescriptorObject): void;

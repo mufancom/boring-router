@@ -7,7 +7,7 @@ import {
 } from 'tslang';
 
 import {isPathPrefix, tolerate} from './@utils';
-import {History} from './history';
+import {IHistory} from './history';
 import {RouteMatchEntry, RouteSource} from './router';
 
 export type NextRouteMatchType<TRouteMatch extends RouteMatch> = OmitValueOfKey<
@@ -103,7 +103,7 @@ abstract class RouteMatchShared<
   protected _prefix: string;
 
   /** @internal */
-  protected _history: History;
+  protected _history: IHistory;
 
   /** @internal */
   protected _source: RouteSource;
@@ -122,7 +122,7 @@ abstract class RouteMatchShared<
     prefix: string,
     source: RouteSource,
     parent: RouteMatchShared | undefined,
-    history: History,
+    history: IHistory,
     {match, query}: RouteMatchSharedOptions,
   ) {
     this.$name = name;
@@ -299,7 +299,7 @@ export class NextRouteMatch<
     parent: RouteMatchShared<TParamDict> | undefined,
     origin: RouteMatch<TParamDict>,
     extension: object,
-    history: History,
+    history: IHistory,
     options: RouteMatchSharedOptions,
   ) {
     super(name, prefix, source, parent, history, options);
@@ -383,7 +383,7 @@ export class RouteMatch<
     source: RouteSource,
     parent: RouteMatch | undefined,
     extension: object,
-    history: History,
+    history: IHistory,
     {exact, ...sharedOptions}: RouteMatchOptions,
   ) {
     super(name, prefix, source, parent, history, sharedOptions);
