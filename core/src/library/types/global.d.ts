@@ -6,6 +6,8 @@ declare class URLSearchParams {
   [Symbol.iterator](): IterableIterator<[string, string]>;
 }
 
-declare namespace console {
-  function error(message?: any, ...optionalParams: any[]): void;
+interface Console {
+  error(message?: any, ...optionalParams: any[]): void;
 }
+
+declare var console: Console;

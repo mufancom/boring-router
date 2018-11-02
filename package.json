@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "link-global": "yarn workspace boring-router link && yarn workspace boring-router-react link",
-    "lerna:publish": "lerna publish prerelease --npm-tag latest --registry=https://registry.npmjs.org",
+    "lerna:publish": "lerna publish prerelease --npm-tag next --registry=https://registry.npmjs.org",
     "test:boring-router": "yarn workspace boring-router test",
     "test:boring-router-react": "yarn workspace boring-router-react test",
     "test": "yarn test:boring-router && yarn test:boring-router-react"
@@ -15,7 +15,7 @@
     "prettier": "^1.11.1",
     "tslint": "^5.11.0",
     "tslint-language-service": "^0.9.9",
-    "typescript": "^3.0.1"
+    "typescript": "^3.1.1"
   },
   "workspaces": {
     "packages": [
