@@ -9,7 +9,7 @@ export function then(handler: () => void): void {
   FULFILLED_PROMISE.then(handler);
 }
 
-export function isPathPrefix(path: string, prefix: string): boolean {
+export function testPathPrefix(path: string, prefix: string): boolean {
   return (
     path.startsWith(prefix) &&
     (path.length === prefix.length || path[prefix.length] === '/')

@@ -6,7 +6,7 @@ import {
   OmitValueWithType,
 } from 'tslang';
 
-import {isPathPrefix, tolerate} from './@utils';
+import {testPathPrefix, tolerate} from './@utils';
 import {IHistory} from './history';
 import {RouteMatchEntry, RouteSource} from './router';
 
@@ -465,7 +465,7 @@ export class RouteMatch<
       let pattern = this._matchPattern;
 
       if (typeof pattern === 'string') {
-        if (isPathPrefix(upperRest, pattern)) {
+        if (testPathPrefix(upperRest, pattern)) {
           segment = pattern;
           rest = upperRest.slice(pattern.length);
         } else {
@@ -478,7 +478,7 @@ export class RouteMatch<
         if (groups) {
           let matched = groups[0];
 
-          if (!isPathPrefix(upperRest, matched)) {
+          if (!testPathPrefix(upperRest, matched)) {
             throw new Error(
               `Invalid regular expression pattern, expecting rest of path to be started with "/" after match (matched ${JSON.stringify(
                 matched,

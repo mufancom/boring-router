@@ -1,7 +1,13 @@
 import hyphenate from 'hyphenate';
 import {observable} from 'mobx';
 
-import {isLocationEqual, isShallowlyEqual, parsePath, then} from './@utils';
+import {
+  isLocationEqual,
+  isShallowlyEqual,
+  parsePath,
+  testPathPrefix,
+  then,
+} from './@utils';
 import {IHistory, Location} from './history';
 import {
   GeneralQueryDict,
@@ -87,6 +93,8 @@ export interface RouteSource {
   queryDict: GeneralQueryDict;
 }
 
+export type RouterOnLeave = (path: string) => void;
+
 export interface RouterOptions {
   /**
    * A function to perform default schema field name to segment string
@@ -95,8 +103,10 @@ export interface RouterOptions {
   segmentMatcher?: SegmentMatcherCallback;
   /** Default path on error. */
   default?: string;
-  /** Prefix of ref */
+  /** Prefix for path. */
   prefix?: string;
+  /** Called when routing out current prefix. */
+  onLeave?: RouterOnLeave;
 }
 
 export class Router {
@@ -111,6 +121,9 @@ export class Router {
 
   /** @internal */
   private _prefix: string;
+
+  /** @internal */
+  private _onLeave?: RouterOnLeave;
 
   /** @internal */
   private _location: Location | undefined;
@@ -140,11 +153,17 @@ export class Router {
   private constructor(
     schema: RouteSchemaDict,
     history: IHistory,
-    {segmentMatcher, default: defaultPath = '/', prefix = ''}: RouterOptions,
+    {
+      segmentMatcher,
+      default: defaultPath = '/',
+      prefix = '',
+      onLeave,
+    }: RouterOptions,
   ) {
     this._history = history;
     this._default = parsePath(defaultPath);
     this._prefix = prefix;
+    this._onLeave = onLeave;
 
     this._segmentMatcher = segmentMatcher || DEFAULT_SEGMENT_MATCHER_CALLBACK;
 
@@ -191,7 +210,21 @@ export class Router {
       {} as GeneralQueryDict,
     );
 
-    let routeMatchEntries = this._match(this, pathname) || [];
+    let prefix = this._prefix;
+
+    if (!testPathPrefix(pathname, prefix)) {
+      let onLeave = this._onLeave;
+
+      if (onLeave) {
+        onLeave(pathname);
+      }
+
+      return;
+    }
+
+    let pathWithoutPrefix = pathname.slice(prefix.length);
+
+    let routeMatchEntries = this._match(this, pathWithoutPrefix) || [];
 
     let matchToMatchEntryMap = new Map(
       routeMatchEntries.map(
