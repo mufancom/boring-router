@@ -222,7 +222,7 @@ export class Router {
       return;
     }
 
-    let pathWithoutPrefix = pathname.slice(prefix.length);
+    let pathWithoutPrefix = pathname.slice(prefix.length) || '/';
 
     let routeMatchEntries = this._match(this, pathWithoutPrefix) || [];
 
