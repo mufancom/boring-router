@@ -1,5 +1,5 @@
 import {RouteMatch} from 'boring-router';
-import {observable} from 'mobx';
+import {action, observable} from 'mobx';
 import {observer} from 'mobx-react';
 import React, {Component, MouseEvent, ReactNode} from 'react';
 import {EmptyObjectPatch} from 'tslang';
@@ -36,6 +36,7 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     );
   }
 
+  @action
   private onMouseEnter = (): void => {
     let {to, params, preserveQuery} = this.props;
 

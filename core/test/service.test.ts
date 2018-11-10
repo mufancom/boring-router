@@ -1,5 +1,5 @@
 import {createMemoryHistory} from 'history';
-import {computed, observable} from 'mobx';
+import {computed, configure, observable} from 'mobx';
 
 import {
   IRouteService,
@@ -9,6 +9,10 @@ import {
 } from '../bld/library';
 
 import {nap} from './@utils';
+
+configure({
+  enforceActions: 'observed',
+});
 
 let history = createMemoryHistory();
 

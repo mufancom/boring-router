@@ -1,4 +1,4 @@
-import {computed, observable} from 'mobx';
+import {action, computed, observable} from 'mobx';
 import {
   Dict,
   EmptyObjectPatch,
@@ -639,6 +639,7 @@ export class RouteMatch<
   }
 
   /** @internal */
+  @action
   _update(matched: boolean, exactlyMatched: boolean): void {
     this._matched = matched;
     this._exactlyMatched = exactlyMatched;

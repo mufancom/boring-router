@@ -1,5 +1,5 @@
 import hyphenate from 'hyphenate';
-import {observable} from 'mobx';
+import {observable, runInAction} from 'mobx';
 
 import {
   isLocationEqual,
@@ -232,9 +232,11 @@ export class Router {
       ),
     );
 
-    Object.assign(this._matchingSource, {
-      matchToMatchEntryMap,
-      queryDict,
+    runInAction(() => {
+      Object.assign(this._matchingSource, {
+        matchToMatchEntryMap,
+        queryDict,
+      });
     });
 
     // Prepare previous/next match set
@@ -298,7 +300,9 @@ export class Router {
 
     this._location = nextLocation;
 
-    Object.assign(this._source, this._matchingSource);
+    runInAction(() => {
+      Object.assign(this._source, this._matchingSource);
+    });
 
     // Update
 

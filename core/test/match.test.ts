@@ -1,8 +1,13 @@
 import {createMemoryHistory} from 'history';
+import {configure} from 'mobx';
 
 import {RouteMatch, Router} from '../bld/library';
 
 import {nap} from './@utils';
+
+configure({
+  enforceActions: 'observed',
+});
 
 let history = createMemoryHistory();
 
