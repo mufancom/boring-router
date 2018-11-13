@@ -95,6 +95,8 @@ export interface RouteSource {
 
 export type RouterOnLeave = (path: string) => void;
 
+export type RouterOnChange = (from: Location | undefined, to: Location) => void;
+
 export interface RouterOptions {
   /**
    * A function to perform default schema field name to segment string
@@ -107,6 +109,8 @@ export interface RouterOptions {
   prefix?: string;
   /** Called when routing out current prefix. */
   onLeave?: RouterOnLeave;
+  /** Called when route changes */
+  onChange?: RouterOnChange;
 }
 
 export class Router {
@@ -124,6 +128,9 @@ export class Router {
 
   /** @internal */
   private _onLeave?: RouterOnLeave;
+
+  /** @internal */
+  private _onChange?: RouterOnChange;
 
   /** @internal */
   private _location: Location | undefined;
@@ -158,12 +165,14 @@ export class Router {
       default: defaultPath = '/',
       prefix = '',
       onLeave,
+      onChange,
     }: RouterOptions,
   ) {
     this._history = history;
     this._default = parsePath(defaultPath);
     this._prefix = prefix;
     this._onLeave = onLeave;
+    this._onChange = onChange;
 
     this._segmentMatcher = segmentMatcher || DEFAULT_SEGMENT_MATCHER_CALLBACK;
 
@@ -329,6 +338,10 @@ export class Router {
       } else {
         await match._afterEnter();
       }
+    }
+
+    if (this._onChange) {
+      this._onChange(location, nextLocation);
     }
   };
 
