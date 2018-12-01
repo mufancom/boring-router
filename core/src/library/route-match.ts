@@ -40,9 +40,9 @@ export type RouteBeforeUpdate<TRouteMatch extends RouteMatch = RouteMatch> = (
  */
 export type RouteBeforeLeave = () => Promise<boolean | void> | boolean | void;
 
-export type RouteAfterEnter = () => Promise<void> | void;
-export type RouteAfterUpdate = () => Promise<void> | void;
-export type RouteAfterLeave = () => Promise<void> | void;
+export type RouteAfterEnter = () => void;
+export type RouteAfterUpdate = () => void;
+export type RouteAfterLeave = () => void;
 
 export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
@@ -581,50 +581,47 @@ export class RouteMatch<
 
   /** @internal */
   async _afterLeave(): Promise<void> {
-    await Promise.all([
-      ...this._afterLeaveCallbacks.map(callback => tolerate(callback)),
-      (async () => {
-        let service = await this._getService();
+    for (let callback of this._afterLeaveCallbacks) {
+      tolerate(callback);
+    }
 
-        if (!service || !service.afterLeave) {
-          return;
-        }
+    let service = await this._getService();
 
-        await tolerate(() => service!.afterLeave!());
-      })(),
-    ]);
+    if (!service || !service.afterLeave) {
+      return;
+    }
+
+    tolerate(() => service!.afterLeave!());
   }
 
   /** @internal */
   async _afterEnter(): Promise<void> {
-    await Promise.all([
-      ...this._afterEnterCallbacks.map(callback => tolerate(callback)),
-      (async () => {
-        let service = await this._getService();
+    for (let callback of this._afterEnterCallbacks) {
+      tolerate(callback);
+    }
 
-        if (!service || !service.afterEnter) {
-          return;
-        }
+    let service = await this._getService();
 
-        await tolerate(() => service!.afterEnter!());
-      })(),
-    ]);
+    if (!service || !service.afterEnter) {
+      return;
+    }
+
+    tolerate(() => service!.afterEnter!());
   }
 
   /** @internal */
   async _afterUpdate(): Promise<void> {
-    await Promise.all([
-      ...this._afterUpdateCallbacks.map(callback => tolerate(callback)),
-      (async () => {
-        let service = await this._getService();
+    for (let callback of this._afterUpdateCallbacks) {
+      tolerate(callback);
+    }
 
-        if (!service || !service.afterUpdate) {
-          return;
-        }
+    let service = await this._getService();
 
-        await tolerate(() => service!.afterUpdate!());
-      })(),
-    ]);
+    if (!service || !service.afterUpdate) {
+      return;
+    }
+
+    tolerate(() => service!.afterUpdate!());
   }
 
   /** @internal */
