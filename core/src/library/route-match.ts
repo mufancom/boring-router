@@ -421,6 +421,11 @@ export class RouteMatch<
     return this;
   }
 
+  $beforeUpdate(callback: RouteBeforeUpdate<this>): this {
+    this._beforeUpdateCallbacks.push(callback as RouteBeforeUpdate);
+    return this;
+  }
+
   $beforeLeave(callback: RouteBeforeLeave): this {
     this._beforeLeaveCallbacks.push(callback);
     return this;
@@ -428,6 +433,11 @@ export class RouteMatch<
 
   $afterEnter(callback: RouteAfterEnter): this {
     this._afterEnterCallbacks.push(callback);
+    return this;
+  }
+
+  $afterUpdate(callback: RouteAfterUpdate): this {
+    this._afterUpdateCallbacks.push(callback);
     return this;
   }
 
