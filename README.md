@@ -178,7 +178,7 @@ class App extends Component {
 
   ```tsx
   router.account.$beforeEnter(() => {
-    return router.about.$ref();
+    router.about.$push();
   });
   ```
 
@@ -270,6 +270,79 @@ interface NextRouteMatch<TParamDict> {
   $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
   $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
 }
+```
+
+## Hooks
+
+Boring Router provides 6 hooks: `$beforeEnter`, `$afterEnter`; `$beforeUpdate`, `$afterUpdate`; `$beforeLeave`, `$afterLeave`. When a route changing is happening, those hooks are called with the following order:
+
+- `$beforeLeave`
+- `$beforeEnter` / `$beforeUpdate`
+- Update route matching.
+- `$afterLeave`
+- `$afterEnter` / `$afterUpdate`
+
+The 3 "before" hooks accept `false` as return value to cancel the route change. You can also `$push` or `$replace` directly within those hooks (which will cancel current route change as well).
+
+The hook callbacks of `$beforeEnter` and `$beforeUpdate` provides a `NextRouteMatch` object which looks like a lite `RouteMatch`, with which you can retrieve parameters and change the location via `$push` and `$replace`.
+
+## Service
+
+Service is a combination of hooks and route match extension provider.
+
+Check out the following example:
+
+```ts
+type AccountIdRouteMatch = typeof router.account.accountId;
+
+class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
+  // Match the property `account` with `$extension.account`.
+  @observable
+  account!: Account;
+
+  constructor(private match: AccountIdRouteMatch) {}
+
+  // Match the property `name` with `$extension.name`.
+  @computed
+  get name(): string {
+    return `[${this.match.$params.accountId}]`;
+  }
+
+  beforeEnter({
+    $params: {accountId},
+  }: NextRouteMatchType<AccountIdRouteMatch>): void {
+    this.account = new Account(accountId);
+  }
+
+  beforeUpdate(match: NextRouteMatchType<AccountIdRouteMatch>): void {
+    this.beforeEnter(match);
+  }
+
+  afterLeave(): void {
+    this.account = undefined!;
+  }
+}
+
+let router = Router.create(
+  {
+    accountId: {
+      $match: RouteMatch.segment,
+      // Define extension defaults with types
+      $extension: {
+        account: undefined! as Account,
+        name: undefined! as string,
+      },
+    },
+  },
+  history,
+);
+
+// Method `$service` accepts an asynchronous function as well.
+router.accountId.$service(match => new AccountRouteService(match));
+
+// Access the extension:
+router.accountId.account;
+router.accountId.name;
 ```
 
 ## License
