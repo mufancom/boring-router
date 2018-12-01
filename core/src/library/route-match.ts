@@ -523,126 +523,108 @@ export class RouteMatch<
 
   /** @internal */
   async _beforeLeave(): Promise<boolean> {
-    for (let callback of this._beforeLeaveCallbacks) {
-      let result = await tolerate(callback);
+    let results = await Promise.all([
+      ...this._beforeLeaveCallbacks.map(callback => tolerate(callback)),
+      (async () => {
+        let service = await this._getService();
 
-      if (result === false) {
-        return false;
-      }
-    }
+        if (!service || !service.beforeLeave) {
+          return undefined;
+        }
 
-    let service = await this._getService();
+        return tolerate(() => service!.beforeLeave!());
+      })(),
+    ]);
 
-    if (!service || !service.beforeLeave) {
-      return true;
-    }
-
-    let result = await tolerate(() => service!.beforeLeave!());
-
-    if (result === false) {
-      return false;
-    }
-
-    return true;
+    return !results.some(result => result === false);
   }
 
   /** @internal */
   async _beforeEnter(): Promise<boolean> {
     let next = this._next;
 
-    for (let callback of this._beforeEnterCallbacks) {
-      let result = await tolerate(callback, next);
+    let results = await Promise.all([
+      ...this._beforeEnterCallbacks.map(callback => tolerate(callback, next)),
+      (async () => {
+        let service = await this._getService();
 
-      if (result === false) {
-        return false;
-      }
-    }
+        if (!service || !service.beforeEnter) {
+          return undefined;
+        }
 
-    let service = await this._getService();
+        return tolerate(() => service!.beforeEnter!(next));
+      })(),
+    ]);
 
-    if (!service || !service.beforeEnter) {
-      return true;
-    }
-
-    let result = await tolerate(() => service!.beforeEnter!(next));
-
-    if (result === false) {
-      return false;
-    }
-
-    return true;
+    return !results.some(result => result === false);
   }
 
   /** @internal */
   async _beforeUpdate(): Promise<boolean> {
     let next = this._next;
 
-    for (let callback of this._beforeUpdateCallbacks) {
-      let result = await tolerate(callback, next);
+    let results = await Promise.all([
+      ...this._beforeUpdateCallbacks.map(callback => tolerate(callback, next)),
+      (async () => {
+        let service = await this._getService();
 
-      if (result === false) {
-        return false;
-      }
-    }
+        if (!service || !service.beforeUpdate) {
+          return undefined;
+        }
 
-    let service = await this._getService();
+        return tolerate(() => service!.beforeUpdate!(next));
+      })(),
+    ]);
 
-    if (!service || !service.beforeUpdate) {
-      return true;
-    }
-
-    let result = await tolerate(() => service!.beforeUpdate!(next));
-
-    if (result === false) {
-      return false;
-    }
-
-    return true;
+    return !results.some(result => result === false);
   }
 
   /** @internal */
   async _afterLeave(): Promise<void> {
-    for (let callback of this._afterLeaveCallbacks) {
-      await tolerate(callback);
-    }
+    await Promise.all([
+      ...this._afterLeaveCallbacks.map(callback => tolerate(callback)),
+      (async () => {
+        let service = await this._getService();
 
-    let service = await this._getService();
+        if (!service || !service.afterLeave) {
+          return;
+        }
 
-    if (!service || !service.afterLeave) {
-      return;
-    }
-
-    await tolerate(() => service!.afterLeave!());
+        await tolerate(() => service!.afterLeave!());
+      })(),
+    ]);
   }
 
   /** @internal */
   async _afterEnter(): Promise<void> {
-    for (let callback of this._afterEnterCallbacks) {
-      await tolerate(callback);
-    }
+    await Promise.all([
+      ...this._afterEnterCallbacks.map(callback => tolerate(callback)),
+      (async () => {
+        let service = await this._getService();
 
-    let service = await this._getService();
+        if (!service || !service.afterEnter) {
+          return;
+        }
 
-    if (!service || !service.afterEnter) {
-      return;
-    }
-
-    await tolerate(() => service!.afterEnter!());
+        await tolerate(() => service!.afterEnter!());
+      })(),
+    ]);
   }
 
   /** @internal */
   async _afterUpdate(): Promise<void> {
-    for (let callback of this._afterUpdateCallbacks) {
-      await tolerate(callback);
-    }
+    await Promise.all([
+      ...this._afterUpdateCallbacks.map(callback => tolerate(callback)),
+      (async () => {
+        let service = await this._getService();
 
-    let service = await this._getService();
+        if (!service || !service.afterUpdate) {
+          return;
+        }
 
-    if (!service || !service.afterUpdate) {
-      return;
-    }
-
-    await tolerate(() => service!.afterUpdate!());
+        await tolerate(() => service!.afterUpdate!());
+      })(),
+    ]);
   }
 
   /** @internal */
