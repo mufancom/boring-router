@@ -488,16 +488,13 @@ export class RouteMatch<
         if (groups) {
           let matched = groups[0];
 
-          if (!testPathPrefix(upperRest, matched)) {
-            throw new Error(
-              `Invalid regular expression pattern, expecting rest of path to be started with "/" after match (matched ${JSON.stringify(
-                matched,
-              )} out of ${JSON.stringify(upperRest)})`,
-            );
+          if (testPathPrefix(upperRest, matched)) {
+            segment = matched;
+            rest = upperRest.slice(matched.length);
+          } else {
+            segment = undefined;
+            rest = '';
           }
-
-          segment = matched;
-          rest = upperRest.slice(matched.length);
         } else {
           segment = undefined;
           rest = '';

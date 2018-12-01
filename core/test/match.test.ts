@@ -36,6 +36,16 @@ let router = Router.create(
         },
       },
     },
+    multiple: {
+      $children: {
+        number: {
+          $match: /\d+/,
+        },
+        mixed: {
+          $match: RouteMatch.segment,
+        },
+      },
+    },
     notFound: {
       $match: RouteMatch.rest,
     },
@@ -158,4 +168,35 @@ test('should match `account.id.billings`', async () => {
   expect(router.account.id.billings.$ref({}, true)).toBe(
     '/account/123/billings?callback=%2Fredirect',
   );
+});
+
+test('should match multiple.number', async () => {
+  history.push('/multiple/123');
+
+  await nap();
+
+  expect(router.multiple.number.$matched).toBe(true);
+  expect(router.multiple.number.$exact).toBe(true);
+
+  expect(router.multiple.mixed.$matched).toBe(false);
+});
+
+test('should match multiple.mixed', async () => {
+  history.push('/multiple/123abc');
+
+  await nap();
+
+  expect(router.multiple.mixed.$matched).toBe(true);
+  expect(router.multiple.mixed.$exact).toBe(true);
+
+  expect(router.multiple.number.$matched).toBe(false);
+
+  history.push('/multiple/abc123');
+
+  await nap();
+
+  expect(router.multiple.mixed.$matched).toBe(true);
+  expect(router.multiple.mixed.$exact).toBe(true);
+
+  expect(router.multiple.number.$matched).toBe(false);
 });
