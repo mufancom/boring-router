@@ -65,77 +65,6 @@ class App extends Component {
 }
 ```
 
-## Schema
-
-Boring Router defines routes via a tree-structure schema:
-
-```ts
-type RouteSchemaDict = Dict<RouteSchema | boolean>;
-
-interface RouteSchema {
-  $match?: string | RegExp;
-  $query?: Dict<boolean>;
-  $children?: RouteSchemaDict;
-}
-```
-
-Two pre-defined `$match` regular expressions are available as `RouteMatch.segment` (`/[^/]+/`) and `RouteMatch.rest` (`/.+/`).
-
-A `schema` wrapper function is available to make TypeScript intellisense happier for separated schema definition:
-
-```ts
-function schema<T extends RouteSchemaDict>(schema: T): T;
-```
-
-## Route match
-
-The value of expression like `router.account` in the usage example above is a `RouteMatch`, and it has the following reactive properties and methods:
-
-```ts
-interface RouteMatch<TParamDict> {
-  $name: string;
-
-  $matched: boolean;
-  $exact: boolean;
-
-  $params: TParamDict;
-
-  $ref(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
-  $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
-  $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
-
-  $beforeEnter(callback: RouteMatchBeforeEnter<this>): this;
-  $afterEnter(callback: RouteMatchAfterEnter): this;
-
-  $beforeUpdate(callback: RouteMatchBeforeUpdate<this>): this;
-  $afterUpdate(callback: RouteMatchAfterUpdate): this;
-
-  $beforeLeave(callback: RouteMatchBeforeLeave): this;
-  $afterLeave(callback: RouteMatchAfterLeave): this;
-
-  $service(factory: RouteMatchServiceFactory<this>): this;
-
-  static segment: RegExp;
-  static rest: RegExp;
-}
-```
-
-Within `$beforeEnter`, `$beforeUpdate` hooks and correspondent service hooks, a special version of `RouteMatch` is available as `NextRouteMatch`, providing restricted functionality:
-
-```ts
-interface NextRouteMatch<TParamDict> {
-  $name: string;
-
-  $exact: boolean;
-
-  $params: TParamDict;
-
-  $ref(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
-  $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
-  $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
-}
-```
-
 ## Examples
 
 ### Example list
@@ -270,6 +199,77 @@ yarn build
 yarn global add parcel
 
 parcel examples/[name]/index.html
+```
+
+## Schema
+
+Boring Router defines routes via a tree-structure schema:
+
+```ts
+type RouteSchemaDict = Dict<RouteSchema | boolean>;
+
+interface RouteSchema {
+  $match?: string | RegExp;
+  $query?: Dict<boolean>;
+  $children?: RouteSchemaDict;
+}
+```
+
+Two pre-defined `$match` regular expressions are available as `RouteMatch.segment` (`/[^/]+/`) and `RouteMatch.rest` (`/.+/`).
+
+A `schema` wrapper function is available to make TypeScript intellisense happier for separated schema definition:
+
+```ts
+function schema<T extends RouteSchemaDict>(schema: T): T;
+```
+
+## Route match
+
+The value of expression like `router.account` in the usage example above is a `RouteMatch`, and it has the following reactive properties and methods:
+
+```ts
+interface RouteMatch<TParamDict> {
+  $name: string;
+
+  $matched: boolean;
+  $exact: boolean;
+
+  $params: TParamDict;
+
+  $ref(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
+  $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
+  $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
+
+  $beforeEnter(callback: RouteMatchBeforeEnter<this>): this;
+  $afterEnter(callback: RouteMatchAfterEnter): this;
+
+  $beforeUpdate(callback: RouteMatchBeforeUpdate<this>): this;
+  $afterUpdate(callback: RouteMatchAfterUpdate): this;
+
+  $beforeLeave(callback: RouteMatchBeforeLeave): this;
+  $afterLeave(callback: RouteMatchAfterLeave): this;
+
+  $service(factory: RouteMatchServiceFactory<this>): this;
+
+  static segment: RegExp;
+  static rest: RegExp;
+}
+```
+
+Within `$beforeEnter`, `$beforeUpdate` hooks and correspondent service hooks, a special version of `RouteMatch` is available as `NextRouteMatch`, providing restricted functionality:
+
+```ts
+interface NextRouteMatch<TParamDict> {
+  $name: string;
+
+  $exact: boolean;
+
+  $params: TParamDict;
+
+  $ref(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
+  $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
+  $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
+}
 ```
 
 ## License
