@@ -270,7 +270,12 @@ export class Router {
         continue;
       }
 
-      if (isShallowlyEqual(match._pathSegments, match._next._pathSegments)) {
+      let nextMatch = match._next;
+
+      if (
+        isShallowlyEqual(match._pathSegments, nextMatch._pathSegments) &&
+        match.$exact === nextMatch.$exact
+      ) {
         enteringAndUpdatingMatchSet.delete(match);
       }
     }

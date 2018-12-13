@@ -20,6 +20,12 @@ let router = Router.create(
     redirect: true,
     revert: true,
     persist: true,
+    parent: {
+      $exact: true,
+      $children: {
+        nested: true,
+      },
+    },
   },
   history,
 );
@@ -41,6 +47,11 @@ router.revert.$beforeEnter(revertBeforeEnter).$afterEnter(revertAfterEnter);
 let persistBeforeLeave = jest.fn(() => false);
 
 router.persist.$beforeLeave(persistBeforeLeave);
+
+let parentBeforeEnter = jest.fn();
+let parentBeforeUpdate = jest.fn();
+
+router.parent.$beforeEnter(parentBeforeEnter).$beforeUpdate(parentBeforeUpdate);
 
 let aboutBeforeEnter = jest.fn();
 let aboutAfterEnter = jest.fn();
@@ -85,6 +96,21 @@ test('should revert navigation from `about` to `revert` by `revert.$beforeEnter`
   expect(aboutAfterEnter).not.toHaveBeenCalled();
   expect(aboutBeforeLeave).toHaveBeenCalled();
   expect(aboutAfterLeave).not.toHaveBeenCalled();
+});
+
+test('should trigger `parent.$beforeUpdate` on `$exact` change', async () => {
+  history.push('/parent/nested');
+
+  await nap();
+
+  expect(parentBeforeEnter).toHaveBeenCalled();
+  expect(parentBeforeUpdate).not.toHaveBeenCalled();
+
+  history.push('/parent');
+
+  await nap();
+
+  expect(parentBeforeUpdate).toHaveBeenCalled();
 });
 
 test('should revert navigation from `persist` to `about` by `persist.$beforeLeave`', async () => {
