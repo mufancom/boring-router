@@ -44,6 +44,12 @@ export type RouteAfterEnter = () => void;
 export type RouteAfterUpdate = () => void;
 export type RouteAfterLeave = () => void;
 
+export type RouteInterceptCallback<
+  TRouteMatch extends RouteMatch = RouteMatch
+> = (
+  next: NextRouteMatchType<TRouteMatch>,
+) => Promise<boolean | void> | boolean | void;
+
 export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
 ) => IRouteService<TRouteMatch> | Promise<IRouteService<TRouteMatch>>;
@@ -443,6 +449,13 @@ export class RouteMatch<
 
   $afterLeave(callback: RouteAfterLeave): this {
     this._afterLeaveCallbacks.push(callback);
+    return this;
+  }
+
+  $intercept(callback: RouteInterceptCallback): this {
+    this._beforeEnterCallbacks.push(callback);
+    this._beforeUpdateCallbacks.push(callback);
+
     return this;
   }
 
