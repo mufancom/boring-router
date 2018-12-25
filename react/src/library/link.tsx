@@ -1,10 +1,13 @@
 import {RouteMatch} from 'boring-router';
 import {action, observable} from 'mobx';
 import {observer} from 'mobx-react';
-import React, {Component, MouseEvent, ReactNode} from 'react';
+import React, {Component, HTMLAttributes, MouseEvent, ReactNode} from 'react';
 import {EmptyObjectPatch} from 'tslang';
 
-export interface LinkProps<TRouteMatch extends RouteMatch> {
+import {composeEventHandler} from './@utils';
+
+export interface LinkProps<TRouteMatch extends RouteMatch>
+  extends HTMLAttributes<HTMLAnchorElement> {
   className?: string;
   to: TRouteMatch;
   params?: TRouteMatch extends RouteMatch<infer TParamDict>
@@ -23,31 +26,49 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
   private href = 'javascript:;';
 
   render(): ReactNode {
-    let {className, children} = this.props;
+    let {
+      className,
+      to,
+      params,
+      preserveQuery,
+      replace,
+      onMouseEnter,
+      onFocus,
+      onClick,
+      ...props
+    } = this.props;
 
     return (
       <a
         className={className}
         href={this.href}
-        onMouseEnter={this.onMouseEnter}
-        onClick={this.onClick}
-        children={children}
+        onMouseEnter={composeEventHandler([onMouseEnter, this.onMouseEnter])}
+        onFocus={composeEventHandler([onFocus, this.onFocus])}
+        onClick={composeEventHandler([onClick, this.onClick], true)}
+        {...props}
       />
     );
   }
 
   @action
   private onMouseEnter = (): void => {
-    let {to, params, preserveQuery} = this.props;
+    this.updateHref();
+  };
 
-    try {
-      this.href = to.$ref(params, preserveQuery);
-    } catch (error) {
-      this.href = 'javascript:;';
-    }
+  @action
+  private onFocus = (): void => {
+    this.updateHref();
   };
 
   private onClick = (event: MouseEvent): void => {
+    if (
+      event.ctrlKey ||
+      event.metaKey ||
+      event.button === 1 /* middle button */
+    ) {
+      return;
+    }
+
     event.preventDefault();
 
     let {to, params, preserveQuery, replace} = this.props;
@@ -58,4 +79,14 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
       to.$push(params, preserveQuery);
     }
   };
+
+  private updateHref(): void {
+    let {to, params, preserveQuery} = this.props;
+
+    try {
+      this.href = to.$ref(params, preserveQuery);
+    } catch (error) {
+      this.href = 'javascript:;';
+    }
+  }
 }
