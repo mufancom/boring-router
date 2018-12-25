@@ -19,8 +19,8 @@
   "main": "bld/library/index.js",
   "types": "bld/library/index.d.ts",
   "files": [
-    "bld/library",
-    "!*.js.map"
+    "src/library/**/*.ts",
+    "bld/library"
   ],
   "peerDependencies": {
     "mobx": "^5.0.0"
