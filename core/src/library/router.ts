@@ -221,6 +221,7 @@ export class Router {
 
     let prefix = this._prefix;
 
+    // parallel routes process start
     if (!testPathPrefix(pathname, prefix)) {
       let onLeave = this._onLeave;
 
@@ -234,6 +235,8 @@ export class Router {
     let pathWithoutPrefix = pathname.slice(prefix.length) || '/';
 
     let routeMatchEntries = this._match(this, pathWithoutPrefix) || [];
+
+    // parallel routes process end
 
     let matchToMatchEntryMap = new Map(
       routeMatchEntries.map(
@@ -421,18 +424,22 @@ export class Router {
         schema = {};
       }
 
+      let parentGroup = '$group' in parent ? parent.$group : undefined;
+
       let {
         $match: match = this._segmentMatcher(key),
         $query: query,
         $exact: exact = false,
         $children: children,
         $extension: extension = {},
+        $group: group = parentGroup,
       } = schema;
 
       let options: RouteMatchOptions = {
         match,
         query,
         exact,
+        group,
       };
 
       let routeMatch = new RouteMatch(

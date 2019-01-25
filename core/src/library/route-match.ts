@@ -90,6 +90,7 @@ export interface RouteMatchUpdateResult {
 export interface RouteMatchSharedOptions {
   match: string | RegExp;
   query: Dict<boolean> | undefined;
+  group?: string;
 }
 
 export interface RouteMatchOptions extends RouteMatchSharedOptions {
@@ -104,6 +105,8 @@ abstract class RouteMatchShared<
    * schema.
    */
   readonly $name: string;
+
+  readonly $group?: string;
 
   /** @internal */
   protected _prefix: string;
@@ -129,9 +132,10 @@ abstract class RouteMatchShared<
     source: RouteSource,
     parent: RouteMatchShared | undefined,
     history: IHistory,
-    {match, query}: RouteMatchSharedOptions,
+    {match, query, group}: RouteMatchSharedOptions,
   ) {
     this.$name = name;
+    this.$group = group;
     this._prefix = prefix;
     this._source = source;
     this._parent = parent;
