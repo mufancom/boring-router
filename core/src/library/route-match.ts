@@ -81,6 +81,11 @@ export type GeneralSegmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
 
+export interface RouteMatchParallelWhitelist {
+  groups?: string[];
+  matches?: RouteMatch[];
+}
+
 /** @internal */
 export interface RouteMatchUpdateResult {
   pathSegmentDict: GeneralSegmentDict;
@@ -387,6 +392,9 @@ export class RouteMatch<
   /** @internal */
   _next!: NextRouteMatch<TParamDict>;
 
+  /** @internal */
+  _parallel: RouteMatchParallelWhitelist | undefined;
+
   constructor(
     name: string,
     prefix: string,
@@ -471,6 +479,10 @@ export class RouteMatch<
     this._serviceFactory = factory;
 
     return this;
+  }
+
+  $parallel(whitelist: RouteMatchParallelWhitelist): void {
+    this._parallel = whitelist;
   }
 
   /** @internal */

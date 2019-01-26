@@ -231,10 +231,7 @@ export class Router {
 
     let prefix = this._prefix;
 
-    // parallel routes process start
-
-    let matchEntryMapBuilder = new ParallelMatchEntryMapBuilder();
-
+    // Process primary route path
     if (!testPathPrefix(pathname, prefix)) {
       let onLeave = this._onLeave;
 
@@ -247,8 +244,14 @@ export class Router {
 
     let pathWithoutPrefix = pathname.slice(prefix.length) || '/';
 
-    let paths = [pathWithoutPrefix];
+    let pathInfos = [
+      {
+        path: pathWithoutPrefix,
+        group: 'primary',
+      },
+    ];
 
+    // Extract group route paths in query
     for (let group of this._groups) {
       let key = `_${group}`;
 
@@ -259,19 +262,60 @@ export class Router {
       let path = queryDict[key];
 
       if (path) {
-        paths.push(path);
+        pathInfos.push({path, group});
       }
     }
 
-    for (let path of paths) {
+    // Match parallel routes
+    let matchToMatchEntryMap = new Map<RouteMatch, RouteMatchEntry>();
+    let groupToMatchSetMap = new Map<string, Set<RouteMatch>>();
+
+    for (let {path, group} of pathInfos) {
       let routeMatchEntries = this._match(this, path) || [];
 
-      matchEntryMapBuilder.add(routeMatchEntries);
+      for (let entry of routeMatchEntries) {
+        let {match} = entry;
+
+        if (match.$group !== group) {
+          throw new Error("Path's group does not match query key");
+        }
+
+        matchToMatchEntryMap.set(match, entry);
+
+        let matchSet = groupToMatchSetMap.get(group);
+
+        if (!matchSet) {
+          matchSet = new Set<RouteMatch>();
+          groupToMatchSetMap.set(group, matchSet);
+        }
+
+        matchSet.add(match);
+      }
     }
 
-    let matchToMatchEntryMap = matchEntryMapBuilder.build();
+    // Check specified parallel whitelist
 
-    // parallel routes process end
+    for (let match of matchToMatchEntryMap.keys()) {
+      let whitelist = match._parallel;
+
+      if (!whitelist) {
+        continue;
+      }
+
+      let {groups = [], matches = []} = whitelist;
+
+      for (let [group, matchSet] of groupToMatchSetMap) {
+        if (groups.includes(group) || !matchSet) {
+          continue;
+        }
+
+        for (let matchInGroup of matchSet) {
+          if (!matches.includes(matchInGroup)) {
+            throw new Error('Whitelist match failed');
+          }
+        }
+      }
+    }
 
     runInAction(() => {
       Object.assign(this._matchingSource, {
@@ -528,25 +572,5 @@ export class Router {
     options: RouterOptions = {},
   ): RouterType<TSchema> {
     return new Router(schema, history, options) as RouterType<TSchema>;
-  }
-}
-
-export class ParallelMatchEntryMapBuilder {
-  /** @internal */
-  private _routeMatchEntryMap: Map<RouteMatch, RouteMatchEntry>;
-
-  constructor() {
-    this._routeMatchEntryMap = new Map<RouteMatch, RouteMatchEntry>();
-  }
-
-  add(entries: RouteMatchEntry[]): void {
-    for (let entry of entries) {
-      // TODO(dizy): check if parallelable
-      this._routeMatchEntryMap.set(entry.match, entry);
-    }
-  }
-
-  build(): Map<RouteMatch, RouteMatchEntry> {
-    return this._routeMatchEntryMap;
   }
 }
