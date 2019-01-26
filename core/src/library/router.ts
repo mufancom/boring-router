@@ -299,6 +299,8 @@ export class Router {
     let primaryMatchEntries = groupToMatchEntriesMap.get(undefined);
 
     if (primaryMatchEntries) {
+      let matchEntries: RouteMatchEntry[] = [];
+
       let primaryMatch = primaryMatchEntries[0].match;
 
       let whitelist = primaryMatch._parallel;
@@ -310,11 +312,15 @@ export class Router {
           let [{match}] = entries;
 
           if (!group || groups.includes(group) || matches.includes(match)) {
-            for (let entry of entries) {
-              matchToMatchEntryMap.set(entry.match, entry);
-            }
+            matchEntries = matchEntries.concat(entries);
           }
         }
+      } else {
+        matchEntries = matchEntries.concat(...groupToMatchEntriesMap.values());
+      }
+
+      for (let entry of matchEntries) {
+        matchToMatchEntryMap.set(entry.match, entry);
       }
     }
 
