@@ -265,16 +265,25 @@ abstract class RouteMatchShared<
 
     let primaryPath: string;
     let {pathDict} = this._source;
+    let newGroup = false;
 
     if (!this.$group) {
       primaryPath = path;
     } else {
       primaryPath = pathDict._;
+      newGroup = !(this.$group in pathDict);
     }
 
     let groupQueryEntries = Object.entries(pathDict)
       .filter(([group]) => group !== '_')
-      .map(([group, path]) => [`_${group}`, path]);
+      .map(([group, oldPath]) => [
+        `_${group}`,
+        group === this.$group ? path : oldPath,
+      ]);
+
+    if (newGroup && this.$group) {
+      groupQueryEntries.push([`_${this.$group}`, path]);
+    }
 
     let query = new URLSearchParams([
       ...groupQueryEntries,

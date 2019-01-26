@@ -13,7 +13,9 @@ const router = Router.create(
     default: {
       $match: '',
     },
-    account: true,
+    account: {
+      $group: 'popup',
+    },
     about: true,
     notFound: {
       $match: RouteMatch.rest,
