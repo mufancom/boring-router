@@ -111,7 +111,7 @@ abstract class RouteMatchShared<
    */
   readonly $name: string;
 
-  readonly $group?: string;
+  readonly $group: string | undefined;
 
   /** @internal */
   protected _prefix: string;
@@ -482,6 +482,57 @@ export class RouteMatch<
   }
 
   $parallel(whitelist: RouteMatchParallelWhitelist): void {
+    if (this.$group) {
+      throw new Error('Parallel whitelist can only be set for primary routes');
+    }
+
+    let {groups = [], matches = []} = whitelist;
+
+    let parent = this._parent;
+
+    if (parent instanceof RouteMatch && parent._parallel) {
+      let {
+        groups: groupsOfParent = [],
+        matches: matchesOfParent = [],
+      } = parent._parallel;
+
+      let isGroupsSubsetOfParent = groups.every(group =>
+        groupsOfParent.includes(group),
+      );
+
+      if (!isGroupsSubsetOfParent) {
+        throw new Error(
+          "Parallel group whitelist can only be a subset of its parent's",
+        );
+      }
+
+      let isMatchesSubsetOfParent = matches.every(match =>
+        matchesOfParent.includes(match),
+      );
+
+      if (!isMatchesSubsetOfParent) {
+        throw new Error(
+          "Parallel match whitelist can only be a subset of its parent's",
+        );
+      }
+    }
+
+    let children = this._children || [];
+
+    for (let child of children) {
+      if (
+        child._parallel &&
+        parent instanceof RouteMatch &&
+        parent._parallel !== child._parallel
+      ) {
+        throw new Error(
+          'Parallel whitelist can only be specified in a top-down fashion',
+        );
+      }
+
+      child.$parallel(whitelist);
+    }
+
     this._parallel = whitelist;
   }
 

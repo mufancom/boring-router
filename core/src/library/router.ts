@@ -15,7 +15,12 @@ import {
   RouteMatch,
   RouteMatchOptions,
 } from './route-match';
-import {RouteSchemaDict} from './schema';
+import {
+  RouteRootSchema,
+  RouteRootSchemaDict,
+  RouteSchema,
+  RouteSchemaDict,
+} from './schema';
 
 export type SegmentMatcherCallback = (key: string) => string;
 
@@ -166,7 +171,7 @@ export class Router {
   _groups: Set<string>;
 
   private constructor(
-    schema: RouteSchemaDict,
+    schema: RouteRootSchemaDict,
     history: IHistory,
     {
       segmentMatcher,
@@ -247,7 +252,7 @@ export class Router {
     let pathInfos = [
       {
         path: pathWithoutPrefix,
-        group: 'primary',
+        group: undefined as string | undefined,
       },
     ];
 
@@ -267,51 +272,47 @@ export class Router {
     }
 
     // Match parallel routes
-    let matchToMatchEntryMap = new Map<RouteMatch, RouteMatchEntry>();
-    let groupToMatchSetMap = new Map<string, Set<RouteMatch>>();
+    let groupToMatchEntriesMap = new Map<
+      string | undefined,
+      RouteMatchEntry[]
+    >();
 
     for (let {path, group} of pathInfos) {
       let routeMatchEntries = this._match(this, path) || [];
 
-      for (let entry of routeMatchEntries) {
-        let {match} = entry;
-
-        if (match.$group !== group) {
-          throw new Error("Path's group does not match query key");
-        }
-
-        matchToMatchEntryMap.set(match, entry);
-
-        let matchSet = groupToMatchSetMap.get(group);
-
-        if (!matchSet) {
-          matchSet = new Set<RouteMatch>();
-          groupToMatchSetMap.set(group, matchSet);
-        }
-
-        matchSet.add(match);
-      }
-    }
-
-    // Check specified parallel whitelist
-
-    for (let match of matchToMatchEntryMap.keys()) {
-      let whitelist = match._parallel;
-
-      if (!whitelist) {
+      if (!routeMatchEntries.length) {
         continue;
       }
 
-      let {groups = [], matches = []} = whitelist;
+      let [{match}] = routeMatchEntries;
 
-      for (let [group, matchSet] of groupToMatchSetMap) {
-        if (groups.includes(group) || !matchSet) {
-          continue;
-        }
+      if (match.$group !== group) {
+        continue;
+      }
 
-        for (let matchInGroup of matchSet) {
-          if (!matches.includes(matchInGroup)) {
-            throw new Error('Whitelist match failed');
+      groupToMatchEntriesMap.set(group, routeMatchEntries);
+    }
+
+    // Check primary match parallel whitelist
+    let matchToMatchEntryMap = new Map<RouteMatch, RouteMatchEntry>();
+
+    let primaryMatchEntries = groupToMatchEntriesMap.get(undefined);
+
+    if (primaryMatchEntries) {
+      let primaryMatch = primaryMatchEntries[0].match;
+
+      let whitelist = primaryMatch._parallel;
+
+      if (whitelist) {
+        let {groups = [], matches = []} = whitelist;
+
+        for (let [group, entries] of groupToMatchEntriesMap) {
+          let [{match}] = entries;
+
+          if (!group || groups.includes(group) || matches.includes(match)) {
+            for (let entry of entries) {
+              matchToMatchEntryMap.set(entry.match, entry);
+            }
           }
         }
       }
@@ -481,9 +482,9 @@ export class Router {
 
   /** @internal */
   private _build(
-    schemaDict: RouteSchemaDict,
+    schemaDict: RouteRootSchemaDict | RouteSchemaDict,
     parent: RouteMatch | Router,
-    groupSet: Set<string>,
+    groupSet: Set<string> | undefined,
     matchingParent?: NextRouteMatch,
   ): RouteMatch[] {
     let routeMatches: RouteMatch[] = [];
@@ -493,16 +494,15 @@ export class Router {
     let history = this._history;
     let prefix = this._prefix;
 
-    for (let [key, schema] of Object.entries(schemaDict)) {
+    for (let [key, schema] of Object.entries(schemaDict) as [
+      string,
+      boolean | RouteRootSchema | RouteSchema
+    ][]) {
       if (typeof schema === 'boolean') {
         schema = {};
       }
 
-      if (schema.$group) {
-        groupSet.add(schema.$group);
-      }
-
-      let parentGroup = '$group' in parent ? parent.$group : undefined;
+      let group = '$group' in parent ? parent.$group : undefined;
 
       let {
         $match: match = this._segmentMatcher(key),
@@ -510,8 +510,15 @@ export class Router {
         $exact: exact = false,
         $children: children,
         $extension: extension = {},
-        $group: group = parentGroup,
       } = schema;
+
+      if ('$group' in schema) {
+        group = schema.$group;
+      }
+
+      if (groupSet && group) {
+        groupSet.add(group);
+      }
 
       let options: RouteMatchOptions = {
         match,
@@ -558,7 +565,7 @@ export class Router {
       routeMatch._children = this._build(
         children,
         routeMatch,
-        groupSet,
+        undefined,
         nextRouteMatch,
       );
     }
@@ -566,7 +573,7 @@ export class Router {
     return routeMatches;
   }
 
-  static create<TSchema extends RouteSchemaDict>(
+  static create<TSchema extends RouteRootSchemaDict>(
     schema: TSchema,
     history: IHistory,
     options: RouterOptions = {},
