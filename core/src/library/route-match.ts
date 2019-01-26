@@ -241,7 +241,7 @@ abstract class RouteMatchShared<
    */
   $ref(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
-    preserveQuery = false,
+    preserveQuery = !!this.$group,
   ): string {
     let segmentDict = this._pathSegments;
     let sourceQueryDict = this._source.queryDict;
@@ -263,7 +263,21 @@ abstract class RouteMatchShared<
       })
       .join('');
 
+    let primaryPath: string;
+    let {pathDict} = this._source;
+
+    if (!this.$group) {
+      primaryPath = path;
+    } else {
+      primaryPath = pathDict._;
+    }
+
+    let groupQueryEntries = Object.entries(pathDict)
+      .filter(([group]) => group !== '_')
+      .map(([group, path]) => [`_${group}`, path]);
+
     let query = new URLSearchParams([
+      ...groupQueryEntries,
       ...(preserveQuery
         ? (Object.entries(sourceQueryDict) as [string, string][])
         : []),
@@ -272,7 +286,7 @@ abstract class RouteMatchShared<
       ),
     ]).toString();
 
-    return `${this._prefix}${path}${query ? `?${query}` : ''}`;
+    return `${this._prefix}${primaryPath}${query ? `?${query}` : ''}`;
   }
 
   /**

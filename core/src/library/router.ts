@@ -1,5 +1,6 @@
 import hyphenate from 'hyphenate';
 import {observable, runInAction} from 'mobx';
+import {Dict} from 'tslang';
 
 import {
   isLocationEqual,
@@ -96,6 +97,7 @@ export interface RouteMatchEntry {
 export interface RouteSource {
   matchToMatchEntryMap: Map<RouteMatch, RouteMatchEntry>;
   queryDict: GeneralQueryDict;
+  pathDict: Dict<string>;
 }
 
 export type RouterOnLeave = (path: string) => void;
@@ -152,6 +154,7 @@ export class Router {
   private _source: RouteSource = observable({
     matchToMatchEntryMap: new Map(),
     queryDict: {},
+    pathDict: {},
   });
 
   /** @internal */
@@ -159,6 +162,7 @@ export class Router {
   private _matchingSource: RouteSource = observable({
     matchToMatchEntryMap: new Map(),
     queryDict: {},
+    pathDict: {},
   });
 
   /** @internal */
@@ -236,6 +240,8 @@ export class Router {
 
     let prefix = this._prefix;
 
+    let pathDict: Dict<string> = {};
+
     // Process primary route path
     if (!testPathPrefix(pathname, prefix)) {
       let onLeave = this._onLeave;
@@ -255,6 +261,7 @@ export class Router {
         group: undefined as string | undefined,
       },
     ];
+    pathDict._ = pathWithoutPrefix;
 
     // Extract group route paths in query
     for (let group of this._groups) {
@@ -268,7 +275,10 @@ export class Router {
 
       if (path) {
         pathInfos.push({path, group});
+        pathDict[group] = path;
       }
+
+      delete queryDict[key];
     }
 
     // Match parallel routes
@@ -328,6 +338,7 @@ export class Router {
       Object.assign(this._matchingSource, {
         matchToMatchEntryMap,
         queryDict,
+        pathDict,
       });
     });
 
