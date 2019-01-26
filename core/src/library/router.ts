@@ -113,6 +113,11 @@ export interface RouterOptions {
   onChange?: RouterOnChange;
 }
 
+export interface RouterBuildResult {
+  matches: RouteMatch[];
+  groups: string[];
+}
+
 export class Router {
   /** @internal */
   private _history: IHistory;
@@ -157,6 +162,9 @@ export class Router {
   /** @internal */
   _children: RouteMatch[];
 
+  /** @internal */
+  _groups: Set<string>;
+
   private constructor(
     schema: RouteSchemaDict,
     history: IHistory,
@@ -176,7 +184,9 @@ export class Router {
 
     this._segmentMatcher = segmentMatcher || DEFAULT_SEGMENT_MATCHER_CALLBACK;
 
-    this._children = this._build(schema, this);
+    this._groups = new Set<string>();
+
+    this._children = this._build(schema, this, this._groups);
 
     then(() => {
       history.listen(this._onLocationChange);
@@ -222,6 +232,9 @@ export class Router {
     let prefix = this._prefix;
 
     // parallel routes process start
+
+    let matchEntryMapBuilder = new ParallelMatchEntryMapBuilder();
+
     if (!testPathPrefix(pathname, prefix)) {
       let onLeave = this._onLeave;
 
@@ -234,15 +247,31 @@ export class Router {
 
     let pathWithoutPrefix = pathname.slice(prefix.length) || '/';
 
-    let routeMatchEntries = this._match(this, pathWithoutPrefix) || [];
+    let paths = [pathWithoutPrefix];
+
+    for (let group of this._groups) {
+      let key = `_${group}`;
+
+      if (!(key in queryDict)) {
+        continue;
+      }
+
+      let path = queryDict[key];
+
+      if (path) {
+        paths.push(path);
+      }
+    }
+
+    for (let path of paths) {
+      let routeMatchEntries = this._match(this, path) || [];
+
+      matchEntryMapBuilder.add(routeMatchEntries);
+    }
+
+    let matchToMatchEntryMap = matchEntryMapBuilder.build();
 
     // parallel routes process end
-
-    let matchToMatchEntryMap = new Map(
-      routeMatchEntries.map(
-        (entry): [RouteMatch, RouteMatchEntry] => [entry.match, entry],
-      ),
-    );
 
     runInAction(() => {
       Object.assign(this._matchingSource, {
@@ -410,6 +439,7 @@ export class Router {
   private _build(
     schemaDict: RouteSchemaDict,
     parent: RouteMatch | Router,
+    groupSet: Set<string>,
     matchingParent?: NextRouteMatch,
   ): RouteMatch[] {
     let routeMatches: RouteMatch[] = [];
@@ -422,6 +452,10 @@ export class Router {
     for (let [key, schema] of Object.entries(schemaDict)) {
       if (typeof schema === 'boolean') {
         schema = {};
+      }
+
+      if (schema.$group) {
+        groupSet.add(schema.$group);
       }
 
       let parentGroup = '$group' in parent ? parent.$group : undefined;
@@ -477,7 +511,12 @@ export class Router {
         continue;
       }
 
-      routeMatch._children = this._build(children, routeMatch, nextRouteMatch);
+      routeMatch._children = this._build(
+        children,
+        routeMatch,
+        groupSet,
+        nextRouteMatch,
+      );
     }
 
     return routeMatches;
@@ -489,5 +528,25 @@ export class Router {
     options: RouterOptions = {},
   ): RouterType<TSchema> {
     return new Router(schema, history, options) as RouterType<TSchema>;
+  }
+}
+
+export class ParallelMatchEntryMapBuilder {
+  /** @internal */
+  private _routeMatchEntryMap: Map<RouteMatch, RouteMatchEntry>;
+
+  constructor() {
+    this._routeMatchEntryMap = new Map<RouteMatch, RouteMatchEntry>();
+  }
+
+  add(entries: RouteMatchEntry[]): void {
+    for (let entry of entries) {
+      // TODO(dizy): check if parallelable
+      this._routeMatchEntryMap.set(entry.match, entry);
+    }
+  }
+
+  build(): Map<RouteMatch, RouteMatchEntry> {
+    return this._routeMatchEntryMap;
   }
 }
