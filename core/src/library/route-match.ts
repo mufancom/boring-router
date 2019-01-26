@@ -320,6 +320,12 @@ abstract class RouteMatchShared<
     this._history.replace(ref);
   }
 
+  $leave(): void {
+    if (!this.$group) {
+      throw new Error('Cannot leave primary route group');
+    }
+  }
+
   /** @internal */
   abstract _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined;
 }

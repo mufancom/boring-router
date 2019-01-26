@@ -28,7 +28,12 @@ const router = Router.create(
       $group: 'sidebar',
     },
     news: true,
-    about: true,
+    about: {
+      $exact: true,
+      $children: {
+        test: true,
+      },
+    },
     contact: true,
     notFound: {
       $match: RouteMatch.rest,
@@ -39,6 +44,12 @@ const router = Router.create(
 
 router.about.$parallel({matches: [router.cart]});
 router.contact.$parallel({groups: ['popup']});
+
+router.about.$beforeEnter(match => {
+  if (match.$exact) {
+    match.test.$push();
+  }
+});
 
 @observer
 export class App extends Component {
@@ -81,7 +92,7 @@ export class App extends Component {
               height: 200,
             }}
           >
-            <p>Account page</p>
+            <p>Account popup</p>
             <Route match={router.account} exact={true}>
               <p>
                 <Link to={router.account.login}>Login</Link>
@@ -112,7 +123,7 @@ export class App extends Component {
               height: 200,
             }}
           >
-            <p>Profile page</p>
+            <p>Profile popup</p>
             <p>
               <Link to={router.account}>Account</Link>
             </p>
@@ -128,7 +139,7 @@ export class App extends Component {
               height: 200,
             }}
           >
-            <p>Cart page</p>
+            <p>Cart sidebar</p>
           </div>
         </Route>
         <Route match={router.news}>
