@@ -219,7 +219,7 @@ export class Router {
   /**
    * Generates a string reference that can be used for history navigation.
    */
-  $ref({leaves = [], preserveQuery = false}: RouterRefOptions): string {
+  $ref({leaves = [], preserveQuery = true}: RouterRefOptions): string {
     if (leaves === '*') {
       let allGroups = Array.from(this._source.pathMap.keys()).filter(
         (group): group is string => group !== undefined,
