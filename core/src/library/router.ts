@@ -95,7 +95,10 @@ export interface RouteMatchEntry {
 }
 
 export interface RouteSource {
-  matchToMatchEntryMap: Map<RouteMatch, RouteMatchEntry>;
+  groupToMatchToMatchEntryMapMap: Map<
+    string | undefined,
+    Map<RouteMatch, RouteMatchEntry>
+  >;
   queryDict: GeneralQueryDict;
   pathDict: Dict<string>;
 }
@@ -152,7 +155,7 @@ export class Router {
 
   /** @internal */
   private _source: RouteSource = observable({
-    matchToMatchEntryMap: new Map(),
+    groupToMatchToMatchEntryMapMap: new Map(),
     queryDict: {},
     pathDict: {},
   });
@@ -160,7 +163,7 @@ export class Router {
   /** @internal */
   @observable
   private _matchingSource: RouteSource = observable({
-    matchToMatchEntryMap: new Map(),
+    groupToMatchToMatchEntryMapMap: new Map(),
     queryDict: {},
     pathDict: {},
   });
@@ -304,47 +307,85 @@ export class Router {
     }
 
     // Check primary match parallel whitelist
-    let matchToMatchEntryMap = new Map<RouteMatch, RouteMatchEntry>();
+    let groupToMatchToMatchEntryMapMap = new Map<
+      string | undefined,
+      Map<RouteMatch, RouteMatchEntry>
+    >();
 
     let primaryMatchEntries = groupToMatchEntriesMap.get(undefined);
 
     if (primaryMatchEntries) {
-      let matchEntries: RouteMatchEntry[] = [];
-
       let primaryMatch = primaryMatchEntries[0].match;
 
       let whitelist = primaryMatch._parallel;
 
-      if (whitelist) {
-        let {groups = [], matches = []} = whitelist;
+      let {groups = [], matches = []} = whitelist || {};
 
-        for (let [group, entries] of groupToMatchEntriesMap) {
-          let [{match}] = entries;
+      for (let [group, entries] of groupToMatchEntriesMap) {
+        let [{match}] = entries;
 
-          if (!group || groups.includes(group) || matches.includes(match)) {
-            matchEntries = matchEntries.concat(entries);
-          }
+        if (
+          !whitelist ||
+          !group ||
+          groups.includes(group) ||
+          matches.includes(match)
+        ) {
+          groupToMatchToMatchEntryMapMap.set(
+            group,
+            new Map(
+              entries.map(
+                (entry): [RouteMatch, RouteMatchEntry] => [entry.match, entry],
+              ),
+            ),
+          );
         }
-      } else {
-        matchEntries = matchEntries.concat(...groupToMatchEntriesMap.values());
-      }
-
-      for (let entry of matchEntries) {
-        matchToMatchEntryMap.set(entry.match, entry);
       }
     }
 
     runInAction(() => {
       Object.assign(this._matchingSource, {
-        matchToMatchEntryMap,
+        groupToMatchToMatchEntryMapMap,
         queryDict,
         pathDict,
       });
     });
 
+    let updatePromises: Promise<void>[] = [];
+
+    for (let group of groupToMatchToMatchEntryMapMap.keys()) {
+      let matchToMatchEntryMap = groupToMatchToMatchEntryMapMap.get(group);
+
+      if (!matchToMatchEntryMap) {
+        throw new Error('Unexpected undefined `matchToMatchEntryMap`');
+      }
+
+      updatePromises.push(
+        this._update(nextLocation, group, matchToMatchEntryMap),
+      );
+    }
+
+    await Promise.all(updatePromises);
+
+    if (this._onChange) {
+      this._onChange(location, nextLocation);
+    }
+  };
+
+  /** @internal */
+  private async _update(
+    nextLocation: Location,
+    group: string | undefined,
+    matchToMatchEntryMap: Map<RouteMatch, RouteMatchEntry>,
+  ): Promise<void> {
     // Prepare previous/next match set
 
-    let previousMatchToMatchEntryMap = this._source.matchToMatchEntryMap;
+    let previousMatchToMatchEntryMap = this._source.groupToMatchToMatchEntryMapMap.get(
+      group,
+    );
+
+    if (!previousMatchToMatchEntryMap) {
+      throw new Error('Unexpected undefined `previousMatchToMatchEntryMap`');
+    }
 
     let previousMatchSet = new Set(previousMatchToMatchEntryMap.keys());
     let nextMatchSet = new Set(matchToMatchEntryMap.keys());
@@ -438,11 +479,7 @@ export class Router {
         await match._afterEnter();
       }
     }
-
-    if (this._onChange) {
-      this._onChange(location, nextLocation);
-    }
-  };
+  }
 
   /** @internal */
   private _isNextLocationOutDated(location: Location): boolean {

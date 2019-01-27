@@ -742,7 +742,15 @@ export class RouteMatch<
 
   /** @internal */
   _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined {
-    return source.matchToMatchEntryMap.get(this);
+    let matchToMatchEntryMap = source.groupToMatchToMatchEntryMapMap.get(
+      this.$group,
+    );
+
+    if (!matchToMatchEntryMap) {
+      return undefined;
+    }
+
+    return matchToMatchEntryMap.get(this);
   }
 
   /** @internal */
