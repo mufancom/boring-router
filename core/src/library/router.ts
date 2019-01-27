@@ -1,6 +1,5 @@
 import hyphenate from 'hyphenate';
 import {observable, runInAction} from 'mobx';
-import {Dict} from 'tslang';
 
 import {
   isLocationEqual,
@@ -119,13 +118,20 @@ export interface RouterOptions {
   prefix?: string;
   /** Called when routing out current prefix. */
   onLeave?: RouterOnLeave;
-  /** Called when route changes */
+  /** Called when route changes. */
   onChange?: RouterOnChange;
 }
 
 export interface RouterBuildResult {
   matches: RouteMatch[];
   groups: string[];
+}
+
+export interface RouterRefOptions {
+  /** Parallel route group(s) to leave. Set to '*' to leave all. */
+  leaves?: string | string[];
+  /** Whether to preserve values in current query string. */
+  preserveQuery?: boolean;
 }
 
 export class Router {
@@ -204,6 +210,66 @@ export class Router {
       history.listen(this._onLocationChange);
       this._onLocationChange(history.location);
     });
+  }
+
+  /**
+   * Generates a string reference that can be used for history navigation.
+   */
+  $ref({leaves = [], preserveQuery = true}: RouterRefOptions): string {
+    if (leaves === '*') {
+      let allGroups = Array.from(this._source.pathMap.keys()).filter(
+        (group): group is string => group !== undefined,
+      );
+
+      leaves = [...allGroups];
+    } else if (!Array.isArray(leaves)) {
+      leaves = [leaves];
+    }
+
+    let {pathMap, queryDict: sourceQueryDict} = this._source;
+
+    let primaryPath = pathMap.get(undefined)!;
+
+    let groupQueryEntries = Array.from(pathMap.entries())
+      .filter(
+        ([group, path]) =>
+          group !== undefined && path && !(leaves as string[]).includes(group),
+      )
+      .map(([group, path]): [string, string] => [`_${group}`, path]);
+
+    let groupPathQuery = encodeURI(
+      groupQueryEntries.map(([key, value]) => `${key}=${value}`).join('&'),
+    );
+
+    let normalQuery = new URLSearchParams([
+      ...(preserveQuery
+        ? (Object.entries(sourceQueryDict) as [string, string][])
+        : []),
+    ]).toString();
+
+    let query = groupPathQuery
+      ? normalQuery
+        ? `${groupPathQuery}&${normalQuery}`
+        : groupPathQuery
+      : normalQuery;
+
+    return `${this._prefix}${primaryPath}${query ? `?${query}` : ''}`;
+  }
+
+  /**
+   * Perform a `history.push()` with `this.$ref(options)`.
+   */
+  $push(options: RouterRefOptions): void {
+    let ref = this.$ref(options);
+    this._history.push(ref);
+  }
+
+  /**
+   * Perform a `history.replace()` with `this.$ref(options)`.
+   */
+  $replace(options: RouterRefOptions): void {
+    let ref = this.$ref(options);
+    this._history.replace(ref);
   }
 
   /** @internal */

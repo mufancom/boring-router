@@ -244,7 +244,7 @@ abstract class RouteMatchShared<
     preserveQuery = !!this.$group,
   ): string {
     let segmentDict = this._pathSegments;
-    let sourceQueryDict = this._source.queryDict;
+    let {pathMap, queryDict: sourceQueryDict} = this._source;
 
     let paramKeySet = new Set(Object.keys(params));
 
@@ -264,7 +264,6 @@ abstract class RouteMatchShared<
       .join('');
 
     let primaryPath: string;
-    let {pathMap} = this._source;
     let newGroup = false;
 
     let group = this.$group;
@@ -277,7 +276,10 @@ abstract class RouteMatchShared<
     }
 
     let groupQueryEntries = Array.from(pathMap.entries())
-      .filter(([group]) => group !== undefined)
+      .filter(
+        ([group, oldPath]) =>
+          group !== undefined && (oldPath || group === this.$group),
+      )
       .map(
         ([group, oldPath]): [string, string] => [
           `_${group}`,
@@ -331,12 +333,6 @@ abstract class RouteMatchShared<
   ): void {
     let ref = this.$ref(params, preserveQuery);
     this._history.replace(ref);
-  }
-
-  $leave(): void {
-    if (!this.$group) {
-      throw new Error('Cannot leave primary route group');
-    }
   }
 
   /** @internal */
@@ -525,7 +521,7 @@ export class RouteMatch<
 
   $parallel(whitelist: RouteMatchParallelWhitelist): void {
     if (this.$group) {
-      throw new Error('Parallel whitelist can only be set for primary routes');
+      throw new Error('Parallel whitelist can only be set on primary routes');
     }
 
     let {groups = [], matches = []} = whitelist;

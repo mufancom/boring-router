@@ -92,7 +92,17 @@ export class App extends Component {
               height: 200,
             }}
           >
-            <p>Account popup</p>
+            <p>
+              Account popup{' '}
+              <a
+                href="javascript:void(0);"
+                onClick={() => {
+                  router.$replace({leaves: 'popup'});
+                }}
+              >
+                x
+              </a>
+            </p>
             <Route match={router.account} exact={true}>
               <p>
                 <Link to={router.account.login}>Login</Link>
@@ -123,7 +133,17 @@ export class App extends Component {
               height: 200,
             }}
           >
-            <p>Profile popup</p>
+            <p>
+              Profile popup{' '}
+              <a
+                href="javascript:void(0);"
+                onClick={() => {
+                  router.$replace({leaves: 'popup'});
+                }}
+              >
+                x
+              </a>
+            </p>
             <p>
               <Link to={router.account}>Account</Link>
             </p>
@@ -139,7 +159,17 @@ export class App extends Component {
               height: 200,
             }}
           >
-            <p>Cart sidebar</p>
+            <p>
+              Cart sidebar{' '}
+              <a
+                href="javascript:void(0);"
+                onClick={() => {
+                  router.$replace({leaves: 'sidebar'});
+                }}
+              >
+                x
+              </a>
+            </p>
           </div>
         </Route>
         <Route match={router.news}>
