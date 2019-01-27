@@ -100,7 +100,7 @@ export interface RouteSource {
     Map<RouteMatch, RouteMatchEntry>
   >;
   queryDict: GeneralQueryDict;
-  pathDict: Dict<string>;
+  pathMap: Map<string | undefined, string>;
 }
 
 export type RouterOnLeave = (path: string) => void;
@@ -157,7 +157,7 @@ export class Router {
   private _source: RouteSource = observable({
     groupToMatchToMatchEntryMapMap: new Map(),
     queryDict: {},
-    pathDict: {},
+    pathMap: new Map(),
   });
 
   /** @internal */
@@ -165,7 +165,7 @@ export class Router {
   private _matchingSource: RouteSource = observable({
     groupToMatchToMatchEntryMapMap: new Map(),
     queryDict: {},
-    pathDict: {},
+    pathMap: new Map(),
   });
 
   /** @internal */
@@ -243,7 +243,7 @@ export class Router {
 
     let prefix = this._prefix;
 
-    let pathDict: Dict<string> = {};
+    let pathMap = new Map<string | undefined, string>();
 
     // Process primary route path
     if (!testPathPrefix(pathname, prefix)) {
@@ -264,7 +264,7 @@ export class Router {
         group: undefined as string | undefined,
       },
     ];
-    pathDict._ = pathWithoutPrefix;
+    pathMap.set(undefined, pathWithoutPrefix);
 
     // Extract group route paths in query
     for (let group of this._groups) {
@@ -278,7 +278,7 @@ export class Router {
 
       if (path) {
         pathInfos.push({path, group});
-        pathDict[group] = path;
+        pathMap.set(group, path);
       }
 
       delete queryDict[key];
@@ -346,18 +346,17 @@ export class Router {
       Object.assign(this._matchingSource, {
         groupToMatchToMatchEntryMapMap,
         queryDict,
-        pathDict,
+        pathMap,
       });
     });
 
     let updatePromises: Promise<void>[] = [];
 
-    for (let group of groupToMatchToMatchEntryMapMap.keys()) {
-      let matchToMatchEntryMap = groupToMatchToMatchEntryMapMap.get(group);
+    let groupSet = new Set([...pathMap.keys(), ...this._source.pathMap.keys()]);
 
-      if (!matchToMatchEntryMap) {
-        throw new Error('Unexpected undefined `matchToMatchEntryMap`');
-      }
+    for (let group of groupSet) {
+      let matchToMatchEntryMap =
+        groupToMatchToMatchEntryMapMap.get(group) || new Map();
 
       updatePromises.push(
         this._update(nextLocation, group, matchToMatchEntryMap),
@@ -384,7 +383,11 @@ export class Router {
     );
 
     if (!previousMatchToMatchEntryMap) {
-      throw new Error('Unexpected undefined `previousMatchToMatchEntryMap`');
+      previousMatchToMatchEntryMap = new Map();
+      this._source.groupToMatchToMatchEntryMapMap.set(
+        group,
+        previousMatchToMatchEntryMap,
+      );
     }
 
     let previousMatchSet = new Set(previousMatchToMatchEntryMap.keys());
@@ -450,7 +453,20 @@ export class Router {
     this._location = nextLocation;
 
     runInAction(() => {
-      Object.assign(this._source, this._matchingSource);
+      let source = this._source;
+      let matchingSource = this._matchingSource;
+
+      source.queryDict = matchingSource.queryDict;
+
+      let path = matchingSource.pathMap.get(group)!;
+
+      source.pathMap.set(group, path);
+
+      let matchToMatchEntryMap = matchingSource.groupToMatchToMatchEntryMapMap.get(
+        group,
+      )!;
+
+      source.groupToMatchToMatchEntryMapMap.set(group, matchToMatchEntryMap);
     });
 
     // Update

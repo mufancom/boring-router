@@ -264,29 +264,36 @@ abstract class RouteMatchShared<
       .join('');
 
     let primaryPath: string;
-    let {pathDict} = this._source;
+    let {pathMap} = this._source;
     let newGroup = false;
 
-    if (!this.$group) {
+    let group = this.$group;
+
+    if (!group) {
       primaryPath = path;
     } else {
-      primaryPath = pathDict._;
-      newGroup = !(this.$group in pathDict);
+      primaryPath = pathMap.get(undefined)!;
+      newGroup = !pathMap.has(group);
     }
 
-    let groupQueryEntries = Object.entries(pathDict)
-      .filter(([group]) => group !== '_')
-      .map(([group, oldPath]) => [
-        `_${group}`,
-        group === this.$group ? path : oldPath,
-      ]);
+    let groupQueryEntries = Array.from(pathMap.entries())
+      .filter(([group]) => group !== undefined)
+      .map(
+        ([group, oldPath]): [string, string] => [
+          `_${group}`,
+          group === this.$group ? path : oldPath,
+        ],
+      );
 
     if (newGroup && this.$group) {
       groupQueryEntries.push([`_${this.$group}`, path]);
     }
 
-    let query = new URLSearchParams([
-      ...groupQueryEntries,
+    let groupPathQuery = encodeURI(
+      groupQueryEntries.map(([key, value]) => `${key}=${value}`).join('&'),
+    );
+
+    let normalQuery = new URLSearchParams([
       ...(preserveQuery
         ? (Object.entries(sourceQueryDict) as [string, string][])
         : []),
@@ -294,6 +301,12 @@ abstract class RouteMatchShared<
         (key): [string, string] => [key, params[key]!],
       ),
     ]).toString();
+
+    let query = groupPathQuery
+      ? normalQuery
+        ? `${groupPathQuery}&${normalQuery}`
+        : groupPathQuery
+      : normalQuery;
 
     return `${this._prefix}${primaryPath}${query ? `?${query}` : ''}`;
   }
