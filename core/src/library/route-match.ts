@@ -252,13 +252,13 @@ abstract class RouteMatchShared<
    */
   $ref(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
-    options: boolean | RouterMatchRefOptions = true,
+    options: boolean | RouterMatchRefOptions = !!this.$group,
   ): string {
     let leave: boolean;
     let preserveQuery: boolean;
 
     if (typeof options === 'object') {
-      ({leave = false, preserveQuery = true} = options);
+      ({leave = false, preserveQuery = !!this.$group} = options);
     } else {
       leave = false;
 
