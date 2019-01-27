@@ -128,9 +128,13 @@ export interface RouterBuildResult {
 }
 
 export interface RouterRefOptions {
-  /** Parallel route group(s) to leave. Set to '*' to leave all. */
+  /**
+   * Parallel route group(s) to leave. Set to `'*'` to leave all.
+   */
   leaves?: string | string[];
-  /** Whether to preserve values in current query string. */
+  /**
+   * Whether to preserve values in current query string.
+   */
   preserveQuery?: boolean;
 }
 

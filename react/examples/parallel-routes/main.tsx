@@ -60,9 +60,13 @@ export class App extends Component {
         <Route match={router.default}>
           <p>Home page</p>
           <div>
-            <Link to={router.account}>Account</Link>
+            <Link to={router.account} toggle>
+              Account
+            </Link>
             &nbsp;|&nbsp;
-            <Link to={router.profile}>Profile</Link>
+            <Link to={router.profile} toggle>
+              Profile
+            </Link>
           </div>
           <div>
             <Link to={router.cart}>Cart</Link>
@@ -162,7 +166,7 @@ export class App extends Component {
             <p>
               Cart sidebar{' '}
               <a
-                href="javascript:void(0);"
+                href="javascript:;"
                 onClick={() => {
                   router.$replace({leaves: 'sidebar'});
                 }}

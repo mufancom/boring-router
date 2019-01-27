@@ -102,6 +102,17 @@ export interface RouteMatchOptions extends RouteMatchSharedOptions {
   exact: boolean;
 }
 
+export interface RouterMatchRefOptions {
+  /**
+   * Whether to leave this match's group.
+   */
+  leave?: boolean;
+  /**
+   * Whether to preserve values in current query string.
+   */
+  preserveQuery?: boolean;
+}
+
 abstract class RouteMatchShared<
   TParamDict extends GeneralParamDict = GeneralParamDict
 > {
@@ -237,12 +248,23 @@ abstract class RouteMatchShared<
    * Generates a string reference that can be used for history navigation.
    * @param params A dictionary of the combination of query string and
    * segments.
-   * @param preserveQuery Whether to preserve values in current query string.
+   * @param options boolean: whether to preserve values in current query string.
    */
   $ref(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
-    preserveQuery = !!this.$group,
+    options: boolean | RouterMatchRefOptions = true,
   ): string {
+    let leave: boolean;
+    let preserveQuery: boolean;
+
+    if (typeof options === 'object') {
+      ({leave = false, preserveQuery = true} = options);
+    } else {
+      leave = false;
+
+      preserveQuery = options;
+    }
+
     let segmentDict = this._pathSegments;
     let {pathMap, queryDict: sourceQueryDict} = this._source;
 
@@ -278,7 +300,9 @@ abstract class RouteMatchShared<
     let groupQueryEntries = Array.from(pathMap.entries())
       .filter(
         ([group, oldPath]) =>
-          group !== undefined && (oldPath || group === this.$group),
+          group !== undefined &&
+          !(group === this.$group && leave) &&
+          (oldPath || group === this.$group),
       )
       .map(
         ([group, oldPath]): [string, string] => [
@@ -287,7 +311,7 @@ abstract class RouteMatchShared<
         ],
       );
 
-    if (newGroup && this.$group) {
+    if (newGroup && this.$group && !leave) {
       groupQueryEntries.push([`_${this.$group}`, path]);
     }
 
@@ -319,8 +343,16 @@ abstract class RouteMatchShared<
   $push(
     params?: Partial<TParamDict> & EmptyObjectPatch,
     preserveQuery?: boolean,
+  ): void;
+  $push(
+    params: Partial<TParamDict> & EmptyObjectPatch,
+    options?: RouterMatchRefOptions,
+  ): void;
+  $push(
+    params?: Partial<TParamDict> & EmptyObjectPatch,
+    options?: boolean | RouterMatchRefOptions,
   ): void {
-    let ref = this.$ref(params, preserveQuery);
+    let ref = this.$ref(params, options);
     this._history.push(ref);
   }
 
@@ -330,8 +362,16 @@ abstract class RouteMatchShared<
   $replace(
     params?: Partial<TParamDict> & EmptyObjectPatch,
     preserveQuery?: boolean,
+  ): void;
+  $replace(
+    params: Partial<TParamDict> & EmptyObjectPatch,
+    options?: RouterMatchRefOptions,
+  ): void;
+  $replace(
+    params?: Partial<TParamDict> & EmptyObjectPatch,
+    options?: boolean | RouterMatchRefOptions,
   ): void {
-    let ref = this.$ref(params, preserveQuery);
+    let ref = this.$ref(params, options);
     this._history.replace(ref);
   }
 
