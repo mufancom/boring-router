@@ -1,12 +1,43 @@
-import {ParamsType} from 'tslang';
+import {Dict} from 'tslang';
 
 import {Location} from './history';
 
 const FULFILLED_PROMISE = Promise.resolve();
 
+const _hasOwnProperty = Object.prototype.hasOwnProperty;
+
 export function then(handler: () => void): void {
   // tslint:disable-next-line:no-floating-promises
   FULFILLED_PROMISE.then(handler);
+}
+
+export function hasOwnProperty(object: object, name: string): boolean {
+  return _hasOwnProperty.call(object, name);
+}
+
+export function buildRef(
+  prefix: string,
+  pathMap: Map<string | undefined, string>,
+  queryDict: Dict<string>,
+): string {
+  let primaryPath = pathMap.get(undefined)!;
+
+  let pathQuery = encodeURI(
+    Array.from(pathMap)
+      .filter(([group]) => group !== undefined)
+      .map(([group, path]) => `_${group}=${path}`)
+      .join('&'),
+  );
+
+  let normalQuery = new URLSearchParams(Object.entries(queryDict)).toString();
+
+  let query = pathQuery
+    ? normalQuery
+      ? `${pathQuery}&${normalQuery}`
+      : pathQuery
+    : normalQuery;
+
+  return `${prefix}${primaryPath}${query ? `?${query}` : ''}`;
 }
 
 export function testPathPrefix(path: string, prefix: string): boolean {
@@ -45,7 +76,7 @@ export type ToleratedReturnType<
 
 export function tolerate<T extends (...args: any[]) => any>(
   fn: T,
-  ...args: ParamsType<T>
+  ...args: Parameters<T>
 ): ToleratedReturnType<ReturnType<T>>;
 export function tolerate(fn: Function, ...args: unknown[]): unknown {
   let ret: unknown;

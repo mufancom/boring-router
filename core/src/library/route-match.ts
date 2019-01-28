@@ -6,7 +6,7 @@ import {
   OmitValueWithType,
 } from 'tslang';
 
-import {testPathPrefix, tolerate} from './@utils';
+import {buildRef, testPathPrefix, tolerate} from './@utils';
 import {IHistory} from './history';
 import {RouteMatchEntry, RouteSource} from './router';
 
@@ -81,6 +81,11 @@ export type GeneralSegmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
 
+export interface RouteMatchParallelOptions {
+  groups?: string[];
+  matches?: RouteMatch[];
+}
+
 /** @internal */
 export interface RouteMatchUpdateResult {
   pathSegmentDict: GeneralSegmentDict;
@@ -90,10 +95,22 @@ export interface RouteMatchUpdateResult {
 export interface RouteMatchSharedOptions {
   match: string | RegExp;
   query: Dict<boolean> | undefined;
+  group: string | undefined;
 }
 
 export interface RouteMatchOptions extends RouteMatchSharedOptions {
   exact: boolean;
+}
+
+export interface RouterMatchRefOptions {
+  /**
+   * Whether to leave this match's group.
+   */
+  leave?: boolean;
+  /**
+   * Whether to preserve values in current query string.
+   */
+  preserveQuery?: boolean;
 }
 
 abstract class RouteMatchShared<
@@ -104,6 +121,11 @@ abstract class RouteMatchShared<
    * schema.
    */
   readonly $name: string;
+
+  /**
+   * Group of this `RouteMatch`, specified in the root route.
+   */
+  readonly $group: string | undefined;
 
   /** @internal */
   protected _prefix: string;
@@ -129,9 +151,10 @@ abstract class RouteMatchShared<
     source: RouteSource,
     parent: RouteMatchShared | undefined,
     history: IHistory,
-    {match, query}: RouteMatchSharedOptions,
+    {match, query, group}: RouteMatchSharedOptions,
   ) {
     this.$name = name;
+    this.$group = group;
     this._prefix = prefix;
     this._source = source;
     this._parent = parent;
@@ -228,63 +251,89 @@ abstract class RouteMatchShared<
    * Generates a string reference that can be used for history navigation.
    * @param params A dictionary of the combination of query string and
    * segments.
-   * @param preserveQuery Whether to preserve values in current query string.
+   * @param options Shortcut to `preserveQuery` if its a boolean instead of an
+   * options object.
    */
   $ref(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
-    preserveQuery = false,
+    options?: boolean | RouterMatchRefOptions,
   ): string {
-    let segmentDict = this._pathSegments;
-    let sourceQueryDict = this._source.queryDict;
+    let leave: boolean;
+    let preserveQuery: boolean;
+
+    let group = this.$group;
+
+    if (typeof options === 'object') {
+      ({leave = false, preserveQuery = typeof group === 'string'} = options);
+    } else {
+      leave = false;
+      preserveQuery =
+        options === undefined ? typeof group === 'string' : options;
+    }
 
     let paramKeySet = new Set(Object.keys(params));
+    let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
 
-    let path = Object.keys(segmentDict)
-      .map(key => {
-        paramKeySet.delete(key);
+    let pathMap = new Map(sourcePathMap);
 
-        let param = params[key];
-        let segment = typeof param === 'string' ? param : segmentDict[key];
+    if (leave) {
+      if (group === undefined) {
+        throw new Error('Cannot leave the primary route');
+      }
 
-        if (typeof segment !== 'string') {
-          throw new Error(`Parameter "${key}" is required`);
-        }
+      pathMap.delete(group);
+    } else {
+      let segmentDict = this._pathSegments;
 
-        return `/${segment}`;
-      })
-      .join('');
+      let path = Object.keys(segmentDict)
+        .map(key => {
+          paramKeySet.delete(key);
 
-    let query = new URLSearchParams([
-      ...(preserveQuery
-        ? (Object.entries(sourceQueryDict) as [string, string][])
-        : []),
-      ...Array.from(paramKeySet).map(
-        (key): [string, string] => [key, params[key]!],
+          let param = params[key];
+          let segment = typeof param === 'string' ? param : segmentDict[key];
+
+          if (typeof segment !== 'string') {
+            throw new Error(`Parameter "${key}" is required`);
+          }
+
+          return `/${segment}`;
+        })
+        .join('');
+
+      pathMap.set(group, path);
+    }
+
+    return buildRef(this._prefix, pathMap, {
+      ...(preserveQuery ? (sourceQueryDict as Dict<string>) : undefined),
+      ...Array.from(paramKeySet).reduce(
+        (dict, key) => {
+          dict[key] = params[key]!;
+          return dict;
+        },
+        {} as Dict<string>,
       ),
-    ]).toString();
-
-    return `${this._prefix}${path}${query ? `?${query}` : ''}`;
+    });
   }
 
   /**
-   * Perform a `history.push()` with `this.$ref(params, preserveQuery)`.
+   * Perform a `history.push()` with `this.$ref(params, options)`.
    */
   $push(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    preserveQuery?: boolean,
+    options?: boolean | RouterMatchRefOptions,
   ): void {
-    let ref = this.$ref(params, preserveQuery);
+    let ref = this.$ref(params, options);
     this._history.push(ref);
   }
 
   /**
-   * Perform a `history.replace()` with `this.$ref(params, preserveQuery)`.
+   * Perform a `history.replace()` with `this.$ref(params, options)`.
    */
   $replace(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    preserveQuery?: boolean,
+    options?: boolean | RouterMatchRefOptions,
   ): void {
-    let ref = this.$ref(params, preserveQuery);
+    let ref = this.$ref(params, options);
     this._history.replace(ref);
   }
 
@@ -383,6 +432,9 @@ export class RouteMatch<
   /** @internal */
   _next!: NextRouteMatch<TParamDict>;
 
+  /** @internal */
+  _parallel: RouteMatchParallelOptions | undefined;
+
   constructor(
     name: string,
     prefix: string,
@@ -467,6 +519,61 @@ export class RouteMatch<
     this._serviceFactory = factory;
 
     return this;
+  }
+
+  $parallel(whitelist: RouteMatchParallelOptions): void {
+    if (this.$group) {
+      throw new Error('Parallel whitelist can only be set on primary routes');
+    }
+
+    let {groups = [], matches = []} = whitelist;
+
+    let parent = this._parent;
+
+    if (parent instanceof RouteMatch && parent._parallel) {
+      let {
+        groups: groupsOfParent = [],
+        matches: matchesOfParent = [],
+      } = parent._parallel;
+
+      let isGroupsSubsetOfParent = groups.every(group =>
+        groupsOfParent.includes(group),
+      );
+
+      if (!isGroupsSubsetOfParent) {
+        throw new Error(
+          "Parallel group whitelist can only be a subset of its parent's",
+        );
+      }
+
+      let isMatchesSubsetOfParent = matches.every(match =>
+        matchesOfParent.includes(match),
+      );
+
+      if (!isMatchesSubsetOfParent) {
+        throw new Error(
+          "Parallel match whitelist can only be a subset of its parent's",
+        );
+      }
+    }
+
+    let children = this._children || [];
+
+    for (let child of children) {
+      if (
+        child._parallel &&
+        parent instanceof RouteMatch &&
+        parent._parallel !== child._parallel
+      ) {
+        throw new Error(
+          'Parallel whitelist can only be specified in a top-down fashion',
+        );
+      }
+
+      child.$parallel(whitelist);
+    }
+
+    this._parallel = whitelist;
   }
 
   /** @internal */
@@ -646,7 +753,11 @@ export class RouteMatch<
 
   /** @internal */
   _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined {
-    return source.matchToMatchEntryMap.get(this);
+    let matchToMatchEntryMap = source.groupToMatchToMatchEntryMapMap.get(
+      this.$group,
+    );
+
+    return matchToMatchEntryMap && matchToMatchEntryMap.get(this);
   }
 
   /** @internal */

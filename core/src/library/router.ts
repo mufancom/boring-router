@@ -1,7 +1,10 @@
 import hyphenate from 'hyphenate';
 import {observable, runInAction} from 'mobx';
+import {Dict} from 'tslang';
 
 import {
+  buildRef,
+  hasOwnProperty,
   isLocationEqual,
   isShallowlyEqual,
   parsePath,
@@ -15,7 +18,12 @@ import {
   RouteMatch,
   RouteMatchOptions,
 } from './route-match';
-import {RouteSchemaDict} from './schema';
+import {
+  RouteRootSchema,
+  RouteRootSchemaDict,
+  RouteSchema,
+  RouteSchemaDict,
+} from './schema';
 
 export type SegmentMatcherCallback = (key: string) => string;
 
@@ -89,8 +97,12 @@ export interface RouteMatchEntry {
 }
 
 export interface RouteSource {
-  matchToMatchEntryMap: Map<RouteMatch, RouteMatchEntry>;
+  groupToMatchToMatchEntryMapMap: Map<
+    string | undefined,
+    Map<RouteMatch, RouteMatchEntry>
+  >;
   queryDict: GeneralQueryDict;
+  pathMap: Map<string | undefined, string>;
 }
 
 export type RouterOnLeave = (path: string) => void;
@@ -109,8 +121,19 @@ export interface RouterOptions {
   prefix?: string;
   /** Called when routing out current prefix. */
   onLeave?: RouterOnLeave;
-  /** Called when route changes */
+  /** Called when route changes. */
   onChange?: RouterOnChange;
+}
+
+export interface RouterRefOptions {
+  /**
+   * Parallel route group(s) to leave. Set to `'*'` to leave all.
+   */
+  leaves?: string | string[];
+  /**
+   * Whether to preserve values in current query string.
+   */
+  preserveQuery?: boolean;
 }
 
 export class Router {
@@ -140,15 +163,17 @@ export class Router {
 
   /** @internal */
   private _source: RouteSource = observable({
-    matchToMatchEntryMap: new Map(),
+    groupToMatchToMatchEntryMapMap: new Map(),
     queryDict: {},
+    pathMap: new Map(),
   });
 
   /** @internal */
   @observable
   private _matchingSource: RouteSource = observable({
-    matchToMatchEntryMap: new Map(),
+    groupToMatchToMatchEntryMapMap: new Map(),
     queryDict: {},
+    pathMap: new Map(),
   });
 
   /** @internal */
@@ -157,8 +182,11 @@ export class Router {
   /** @internal */
   _children: RouteMatch[];
 
+  /** @internal */
+  _groupSet: Set<string>;
+
   private constructor(
-    schema: RouteSchemaDict,
+    schema: RouteRootSchemaDict,
     history: IHistory,
     {
       segmentMatcher,
@@ -178,10 +206,58 @@ export class Router {
 
     this._children = this._build(schema, this);
 
+    this._groupSet = new Set(
+      this._children
+        .map(match => match.$group)
+        .filter((group): group is string => typeof group === 'string'),
+    );
+
     then(() => {
       history.listen(this._onLocationChange);
       this._onLocationChange(history.location);
     });
+  }
+
+  /**
+   * Generates a string reference that can be used for history navigation.
+   */
+  $ref({leaves = [], preserveQuery = true}: RouterRefOptions): string {
+    let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
+    let pathMap: Map<string | undefined, string>;
+
+    if (leaves === '*') {
+      pathMap = new Map([[undefined, sourcePathMap.get(undefined)!]]);
+    } else {
+      if (typeof leaves === 'string') {
+        leaves = [leaves];
+      }
+
+      pathMap = new Map(sourcePathMap);
+
+      for (let group of leaves) {
+        pathMap.delete(group);
+      }
+    }
+
+    return buildRef(this._prefix, pathMap, {
+      ...(preserveQuery ? (sourceQueryDict as Dict<string>) : undefined),
+    });
+  }
+
+  /**
+   * Perform a `history.push()` with `this.$ref(options)`.
+   */
+  $push(options: RouterRefOptions): void {
+    let ref = this.$ref(options);
+    this._history.push(ref);
+  }
+
+  /**
+   * Perform a `history.replace()` with `this.$ref(options)`.
+   */
+  $replace(options: RouterRefOptions): void {
+    let ref = this.$ref(options);
+    this._history.replace(ref);
   }
 
   /** @internal */
@@ -221,6 +297,9 @@ export class Router {
 
     let prefix = this._prefix;
 
+    let pathMap = new Map<string | undefined, string>();
+
+    // Process primary route path
     if (!testPathPrefix(pathname, prefix)) {
       let onLeave = this._onLeave;
 
@@ -233,24 +312,130 @@ export class Router {
 
     let pathWithoutPrefix = pathname.slice(prefix.length) || '/';
 
-    let routeMatchEntries = this._match(this, pathWithoutPrefix) || [];
+    pathMap.set(undefined, pathWithoutPrefix);
 
-    let matchToMatchEntryMap = new Map(
-      routeMatchEntries.map(
-        (entry): [RouteMatch, RouteMatchEntry] => [entry.match, entry],
-      ),
-    );
+    // Extract group route paths in query
+    for (let group of this._groupSet) {
+      let key = `_${group}`;
+
+      if (!hasOwnProperty(queryDict, key)) {
+        continue;
+      }
+
+      let path = queryDict[key];
+
+      if (path) {
+        pathMap.set(group, path);
+      }
+
+      delete queryDict[key];
+    }
+
+    // Match parallel routes
+    let groupToMatchEntriesMap = new Map<
+      string | undefined,
+      RouteMatchEntry[]
+    >();
+
+    for (let [group, path] of pathMap) {
+      let routeMatchEntries = this._match(this, path) || [];
+
+      if (!routeMatchEntries.length) {
+        continue;
+      }
+
+      let [{match}] = routeMatchEntries;
+
+      if (match.$group !== group) {
+        continue;
+      }
+
+      groupToMatchEntriesMap.set(group, routeMatchEntries);
+    }
+
+    // Check primary match parallel options
+    let groupToMatchToMatchEntryMapMap = new Map<
+      string | undefined,
+      Map<RouteMatch, RouteMatchEntry>
+    >();
+
+    let primaryMatchEntries = groupToMatchEntriesMap.get(undefined);
+
+    if (primaryMatchEntries) {
+      let primaryMatch = primaryMatchEntries[0].match;
+
+      let options = primaryMatch._parallel;
+
+      let {groups = [], matches = []} = options || {};
+
+      for (let [group, entries] of groupToMatchEntriesMap) {
+        let [{match}] = entries;
+
+        if (
+          !group ||
+          !options ||
+          groups.includes(group) ||
+          matches.includes(match)
+        ) {
+          groupToMatchToMatchEntryMapMap.set(
+            group,
+            new Map(
+              entries.map(
+                (entry): [RouteMatch, RouteMatchEntry] => [entry.match, entry],
+              ),
+            ),
+          );
+        }
+      }
+    }
 
     runInAction(() => {
       Object.assign(this._matchingSource, {
-        matchToMatchEntryMap,
+        groupToMatchToMatchEntryMapMap,
         queryDict,
+        pathMap,
       });
     });
 
+    let updatePromises: Promise<void>[] = [];
+
+    let groupSet = new Set([...pathMap.keys(), ...this._source.pathMap.keys()]);
+
+    for (let group of groupSet) {
+      let matchToMatchEntryMap =
+        groupToMatchToMatchEntryMapMap.get(group) || new Map();
+
+      updatePromises.push(
+        this._update(nextLocation, group, matchToMatchEntryMap),
+      );
+    }
+
+    await Promise.all(updatePromises);
+
+    if (this._onChange) {
+      this._onChange(location, nextLocation);
+    }
+  };
+
+  /** @internal */
+  private async _update(
+    nextLocation: Location,
+    group: string | undefined,
+    matchToMatchEntryMap: Map<RouteMatch, RouteMatchEntry>,
+  ): Promise<void> {
     // Prepare previous/next match set
 
-    let previousMatchToMatchEntryMap = this._source.matchToMatchEntryMap;
+    let previousMatchToMatchEntryMap = this._source.groupToMatchToMatchEntryMapMap.get(
+      group,
+    );
+
+    if (!previousMatchToMatchEntryMap) {
+      previousMatchToMatchEntryMap = new Map();
+      this._source.groupToMatchToMatchEntryMapMap.set(
+        group,
+        previousMatchToMatchEntryMap,
+      );
+    }
 
     let previousMatchSet = new Set(previousMatchToMatchEntryMap.keys());
     let nextMatchSet = new Set(matchToMatchEntryMap.keys());
@@ -315,7 +500,24 @@ export class Router {
     this._location = nextLocation;
 
     runInAction(() => {
-      Object.assign(this._source, this._matchingSource);
+      let source = this._source;
+      let matchingSource = this._matchingSource;
+
+      source.queryDict = matchingSource.queryDict;
+
+      let path = matchingSource.pathMap.get(group)!;
+
+      if (path) {
+        source.pathMap.set(group, path);
+      } else {
+        source.pathMap.delete(group);
+      }
+
+      let matchToMatchEntryMap = matchingSource.groupToMatchToMatchEntryMapMap.get(
+        group,
+      )!;
+
+      source.groupToMatchToMatchEntryMapMap.set(group, matchToMatchEntryMap);
     });
 
     // Update
@@ -344,11 +546,7 @@ export class Router {
         await match._afterEnter();
       }
     }
-
-    if (this._onChange) {
-      this._onChange(location, nextLocation);
-    }
-  };
+  }
 
   /** @internal */
   private _isNextLocationOutDated(location: Location): boolean {
@@ -405,7 +603,7 @@ export class Router {
 
   /** @internal */
   private _build(
-    schemaDict: RouteSchemaDict,
+    schemaDict: RouteRootSchemaDict | RouteSchemaDict,
     parent: RouteMatch | Router,
     matchingParent?: NextRouteMatch,
   ): RouteMatch[] {
@@ -416,10 +614,15 @@ export class Router {
     let history = this._history;
     let prefix = this._prefix;
 
-    for (let [key, schema] of Object.entries(schemaDict)) {
+    for (let [key, schema] of Object.entries(schemaDict) as [
+      string,
+      boolean | RouteRootSchema | RouteSchema
+    ][]) {
       if (typeof schema === 'boolean') {
         schema = {};
       }
+
+      let group = '$group' in parent ? parent.$group : undefined;
 
       let {
         $match: match = this._segmentMatcher(key),
@@ -429,10 +632,15 @@ export class Router {
         $extension: extension = {},
       } = schema;
 
+      if ('$group' in schema) {
+        group = schema.$group;
+      }
+
       let options: RouteMatchOptions = {
         match,
         query,
         exact,
+        group,
       };
 
       let routeMatch = new RouteMatch(
@@ -476,7 +684,7 @@ export class Router {
     return routeMatches;
   }
 
-  static create<TSchema extends RouteSchemaDict>(
+  static create<TSchema extends RouteRootSchemaDict>(
     schema: TSchema,
     history: IHistory,
     options: RouterOptions = {},

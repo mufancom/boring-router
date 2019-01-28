@@ -8,10 +8,12 @@
   },
   "license": "MIT",
   "scripts": {
+    "tsc": "tsc",
+    "tslint": "tslint",
     "build:library": "rimraf bld/library && tsc -p src/library",
-    "typecheck:examples": "tsc -p examples/basic && tsc -p examples/exact && tsc -p examples/segment && tsc -p examples/query && tsc -p examples/route-component && tsc -p examples/multi-route-match",
+    "typecheck:examples": "./scripts/typecheck-examples.sh",
     "lint:library": "tslint -p src/library",
-    "lint:examples": "tslint -p examples/basic && tslint -p examples/exact && tslint -p examples/segment && tslint -p examples/query && tslint -p examples/route-component && tslint -p examples/multi-route-match",
+    "lint:examples": "./scripts/typecheck-examples.sh",
     "test:library": "yarn build:library && yarn lint:library",
     "test:examples": "yarn typecheck:examples && yarn lint:examples",
     "test": "yarn test:library && yarn test:examples"
@@ -23,24 +25,20 @@
     "bld/library"
   ],
   "peerDependencies": {
-    "boring-router": "^0.3.0",
-    "mobx": "^5.0.0",
-    "mobx-react": "^5.0.0",
-    "react": "^16.0.0"
+    "boring-router": "^0.3.0-alpha.0",
+    "mobx": "5",
+    "mobx-react": "5",
+    "react": "16"
   },
   "devDependencies": {
     "@types/classnames": "^2.2.6",
     "@types/history": "^4.7.2",
-    "@types/react": "^16.4.12",
-    "@types/react-dom": "^16.0.7",
+    "@types/react-dom": "^16.0.11",
     "history": "^4.7.2",
-    "mobx": "^5.5.0",
-    "mobx-react": "^5.2.5",
-    "react": "^16.4.2",
-    "react-dom": "^16.4.2"
+    "react-dom": "^16.7.0"
   },
   "dependencies": {
     "classnames": "^2.2.6",
-    "tslang": "^0.1.10"
+    "tslang": "^0.1.12"
   }
 }

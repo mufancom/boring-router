@@ -15,6 +15,8 @@ export interface LinkProps<TRouteMatch extends RouteMatch>
     : never;
   preserveQuery?: boolean;
   replace?: boolean;
+  toggle?: boolean;
+  leave?: boolean;
   children: ReactNode;
 }
 
@@ -32,6 +34,7 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
       params,
       preserveQuery,
       replace,
+      toggle,
       onMouseEnter,
       onFocus,
       onClick,
@@ -71,12 +74,23 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
 
     event.preventDefault();
 
-    let {to, params, preserveQuery, replace} = this.props;
+    let {
+      to,
+      params,
+      preserveQuery,
+      replace,
+      toggle = false,
+      leave,
+    } = this.props;
+
+    if (leave === undefined) {
+      leave = toggle && to.$matched;
+    }
 
     if (replace) {
-      to.$replace(params, preserveQuery);
+      to.$replace(params, {preserveQuery, leave});
     } else {
-      to.$push(params, preserveQuery);
+      to.$push(params, {preserveQuery, leave});
     }
   };
 

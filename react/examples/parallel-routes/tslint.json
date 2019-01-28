@@ -1,0 +1,6 @@
+{
+  "extends": [
+    "@magicspace/configs/tslint-prettier",
+    "@magicspace/configs/tslint-override-dev"
+  ]
+}

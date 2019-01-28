@@ -1,8 +1,8 @@
 {
-  "extends": "../../node_modules/@magicspace/configs/tsconfig.json",
+  "extends": "@magicspace/configs/tsconfig.json",
   "compilerOptions": {
     "lib": ["esnext", "dom", "dom.iterable"],
-    "types": ["node", "jest"],
+    "types": ["jest"],
     "experimentalDecorators": true,
 
     "rootDir": ".",
