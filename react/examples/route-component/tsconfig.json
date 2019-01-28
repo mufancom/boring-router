@@ -1,5 +1,5 @@
 {
-  "extends": "../../../node_modules/@magicspace/configs/tsconfig.json",
+  "extends": "@magicspace/configs/tsconfig.json",
   "compilerOptions": {
     "target": "es6",
     "lib": ["esnext", "dom", "dom.iterable"],

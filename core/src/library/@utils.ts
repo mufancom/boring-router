@@ -1,5 +1,3 @@
-import {ParamsType} from 'tslang';
-
 import {Location} from './history';
 
 const FULFILLED_PROMISE = Promise.resolve();
@@ -45,7 +43,7 @@ export type ToleratedReturnType<
 
 export function tolerate<T extends (...args: any[]) => any>(
   fn: T,
-  ...args: ParamsType<T>
+  ...args: Parameters<T>
 ): ToleratedReturnType<ReturnType<T>>;
 export function tolerate(fn: Function, ...args: unknown[]): unknown {
   let ret: unknown;
