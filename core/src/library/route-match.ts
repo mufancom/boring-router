@@ -127,6 +127,8 @@ abstract class RouteMatchShared<
    */
   readonly $group: string | undefined;
 
+  readonly $parent: RouteMatchShared | undefined;
+
   /** @internal */
   protected _prefix: string;
 
@@ -135,9 +137,6 @@ abstract class RouteMatchShared<
 
   /** @internal */
   protected _source: RouteSource;
-
-  /** @internal */
-  protected _parent: RouteMatchShared | undefined;
 
   /** @internal */
   protected _matchPattern: string | RegExp;
@@ -155,9 +154,9 @@ abstract class RouteMatchShared<
   ) {
     this.$name = name;
     this.$group = group;
+    this.$parent = parent;
     this._prefix = prefix;
     this._source = source;
-    this._parent = parent;
     this._history = history;
 
     if (match instanceof RegExp && match.global) {
@@ -194,7 +193,7 @@ abstract class RouteMatchShared<
   /** @internal */
   @computed
   protected get _paramSegments(): GeneralSegmentDict {
-    let parent = this._parent;
+    let parent = this.$parent;
     let upperSegmentDict = parent && parent._paramSegments;
 
     let matchPattern = this._matchPattern;
@@ -211,7 +210,7 @@ abstract class RouteMatchShared<
   /** @internal */
   @computed
   get _pathSegments(): GeneralSegmentDict {
-    let parent = this._parent;
+    let parent = this.$parent;
     let upperSegmentDict = parent && parent._pathSegments;
 
     let matchPattern = this._matchPattern;
@@ -344,6 +343,8 @@ abstract class RouteMatchShared<
 export class NextRouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict
 > extends RouteMatchShared<TParamDict> {
+  readonly $parent: NextRouteMatch | undefined;
+
   /** @internal */
   private _origin: RouteMatch<TParamDict>;
 
@@ -387,6 +388,8 @@ export class NextRouteMatch<
 export class RouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict
 > extends RouteMatchShared<TParamDict> {
+  readonly $parent: RouteMatch | undefined;
+
   /** @internal */
   private _beforeEnterCallbacks: RouteBeforeEnter[] = [];
 
@@ -528,7 +531,7 @@ export class RouteMatch<
 
     let {groups = [], matches = []} = whitelist;
 
-    let parent = this._parent;
+    let parent = this.$parent;
 
     if (parent instanceof RouteMatch && parent._parallel) {
       let {
@@ -546,9 +549,26 @@ export class RouteMatch<
         );
       }
 
-      let isMatchesSubsetOfParent = matches.every(match =>
-        matchesOfParent.includes(match),
-      );
+      let isMatchesSubsetOfParent = matches.every(match => {
+        if (
+          typeof match.$group === 'string' &&
+          groupsOfParent.includes(match.$group)
+        ) {
+          return true;
+        }
+
+        let cursor: RouteMatch | undefined = match;
+
+        while (cursor) {
+          if (matchesOfParent.includes(cursor)) {
+            return true;
+          }
+
+          cursor = cursor.$parent;
+        }
+
+        return false;
+      });
 
       if (!isMatchesSubsetOfParent) {
         throw new Error(
@@ -559,11 +579,12 @@ export class RouteMatch<
 
     let children = this._children || [];
 
+    this._parallel = whitelist;
+
     for (let child of children) {
       if (
         child._parallel &&
-        parent instanceof RouteMatch &&
-        parent._parallel !== child._parallel
+        (!parent || parent._parallel !== child._parallel)
       ) {
         throw new Error(
           'Parallel whitelist can only be specified in a top-down fashion',
@@ -572,8 +593,6 @@ export class RouteMatch<
 
       child.$parallel(whitelist);
     }
-
-    this._parallel = whitelist;
   }
 
   /** @internal */
@@ -664,7 +683,9 @@ export class RouteMatch<
     let next = this._next;
 
     let results = await Promise.all([
-      ...this._beforeEnterCallbacks.map(callback => tolerate(callback, next)),
+      ...this._beforeEnterCallbacks.map(callback =>
+        tolerate(callback, next as NextRouteMatchType<RouteMatch>),
+      ),
       (async () => {
         let service = await this._getService();
 
@@ -672,7 +693,9 @@ export class RouteMatch<
           return undefined;
         }
 
-        return tolerate(() => service!.beforeEnter!(next));
+        return tolerate(() =>
+          service!.beforeEnter!(next as NextRouteMatchType<RouteMatch>),
+        );
       })(),
     ]);
 
@@ -684,7 +707,9 @@ export class RouteMatch<
     let next = this._next;
 
     let results = await Promise.all([
-      ...this._beforeUpdateCallbacks.map(callback => tolerate(callback, next)),
+      ...this._beforeUpdateCallbacks.map(callback =>
+        tolerate(callback, next as NextRouteMatchType<RouteMatch>),
+      ),
       (async () => {
         let service = await this._getService();
 
@@ -692,7 +717,9 @@ export class RouteMatch<
           return undefined;
         }
 
-        return tolerate(() => service!.beforeUpdate!(next));
+        return tolerate(() =>
+          service!.beforeUpdate!(next as NextRouteMatchType<RouteMatch>),
+        );
       })(),
     ]);
 
@@ -760,8 +787,7 @@ export class RouteMatch<
     return matchToMatchEntryMap && matchToMatchEntryMap.get(this);
   }
 
-  /** @internal */
-  private async _getService(): Promise<IRouteService | undefined> {
+  async _getService(): Promise<IRouteService | undefined> {
     let serviceOrServicePromise = this._service || this._servicePromise;
 
     if (serviceOrServicePromise) {
