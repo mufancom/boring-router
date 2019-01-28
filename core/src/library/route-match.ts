@@ -6,7 +6,7 @@ import {
   OmitValueWithType,
 } from 'tslang';
 
-import {testPathPrefix, tolerate} from './@utils';
+import {buildRef, testPathPrefix, tolerate} from './@utils';
 import {IHistory} from './history';
 import {RouteMatchEntry, RouteSource} from './router';
 
@@ -81,7 +81,7 @@ export type GeneralSegmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
 
-export interface RouteMatchParallelWhitelist {
+export interface RouteMatchParallelOptions {
   groups?: string[];
   matches?: RouteMatch[];
 }
@@ -95,7 +95,7 @@ export interface RouteMatchUpdateResult {
 export interface RouteMatchSharedOptions {
   match: string | RegExp;
   query: Dict<boolean> | undefined;
-  group?: string;
+  group: string | undefined;
 }
 
 export interface RouteMatchOptions extends RouteMatchSharedOptions {
@@ -122,6 +122,9 @@ abstract class RouteMatchShared<
    */
   readonly $name: string;
 
+  /**
+   * Group of this `RouteMatch`, specified in the root route.
+   */
   readonly $group: string | undefined;
 
   /** @internal */
@@ -248,106 +251,73 @@ abstract class RouteMatchShared<
    * Generates a string reference that can be used for history navigation.
    * @param params A dictionary of the combination of query string and
    * segments.
-   * @param options boolean: whether to preserve values in current query string.
+   * @param options Shortcut to `preserveQuery` if its a boolean instead of an
+   * options object.
    */
   $ref(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
-    options: boolean | RouterMatchRefOptions = !!this.$group,
+    options?: boolean | RouterMatchRefOptions,
   ): string {
     let leave: boolean;
     let preserveQuery: boolean;
 
-    if (typeof options === 'object') {
-      ({leave = false, preserveQuery = !!this.$group} = options);
-    } else {
-      leave = false;
-
-      preserveQuery = options;
-    }
-
-    let segmentDict = this._pathSegments;
-    let {pathMap, queryDict: sourceQueryDict} = this._source;
-
-    let paramKeySet = new Set(Object.keys(params));
-
-    let path = Object.keys(segmentDict)
-      .map(key => {
-        paramKeySet.delete(key);
-
-        let param = params[key];
-        let segment = typeof param === 'string' ? param : segmentDict[key];
-
-        if (typeof segment !== 'string') {
-          throw new Error(`Parameter "${key}" is required`);
-        }
-
-        return `/${segment}`;
-      })
-      .join('');
-
-    let primaryPath: string;
-    let newGroup = false;
-
     let group = this.$group;
 
-    if (!group) {
-      primaryPath = path;
+    if (typeof options === 'object') {
+      ({leave = false, preserveQuery = typeof group === 'string'} = options);
     } else {
-      primaryPath = pathMap.get(undefined)!;
-      newGroup = !pathMap.has(group);
+      leave = false;
+      preserveQuery =
+        options === undefined ? typeof group === 'string' : options;
     }
 
-    let groupQueryEntries = Array.from(pathMap.entries())
-      .filter(
-        ([group, oldPath]) =>
-          group !== undefined &&
-          !(group === this.$group && leave) &&
-          (oldPath || group === this.$group),
-      )
-      .map(
-        ([group, oldPath]): [string, string] => [
-          `_${group}`,
-          group === this.$group ? path : oldPath,
-        ],
-      );
+    let paramKeySet = new Set(Object.keys(params));
+    let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
 
-    if (newGroup && this.$group && !leave) {
-      groupQueryEntries.push([`_${this.$group}`, path]);
+    let pathMap = new Map(sourcePathMap);
+
+    if (leave) {
+      if (group === undefined) {
+        throw new Error('Cannot leave the primary route');
+      }
+
+      pathMap.delete(group);
+    } else {
+      let segmentDict = this._pathSegments;
+
+      let path = Object.keys(segmentDict)
+        .map(key => {
+          paramKeySet.delete(key);
+
+          let param = params[key];
+          let segment = typeof param === 'string' ? param : segmentDict[key];
+
+          if (typeof segment !== 'string') {
+            throw new Error(`Parameter "${key}" is required`);
+          }
+
+          return `/${segment}`;
+        })
+        .join('');
+
+      pathMap.set(group, path);
     }
 
-    let groupPathQuery = encodeURI(
-      groupQueryEntries.map(([key, value]) => `${key}=${value}`).join('&'),
-    );
-
-    let normalQuery = new URLSearchParams([
-      ...(preserveQuery
-        ? (Object.entries(sourceQueryDict) as [string, string][])
-        : []),
-      ...Array.from(paramKeySet).map(
-        (key): [string, string] => [key, params[key]!],
+    return buildRef(this._prefix, pathMap, {
+      ...(preserveQuery ? (sourceQueryDict as Dict<string>) : undefined),
+      ...Array.from(paramKeySet).reduce(
+        (dict, key) => {
+          dict[key] = params[key]!;
+          return dict;
+        },
+        {} as Dict<string>,
       ),
-    ]).toString();
-
-    let query = groupPathQuery
-      ? normalQuery
-        ? `${groupPathQuery}&${normalQuery}`
-        : groupPathQuery
-      : normalQuery;
-
-    return `${this._prefix}${primaryPath}${query ? `?${query}` : ''}`;
+    });
   }
 
   /**
-   * Perform a `history.push()` with `this.$ref(params, preserveQuery)`.
+   * Perform a `history.push()` with `this.$ref(params, options)`.
    */
-  $push(
-    params?: Partial<TParamDict> & EmptyObjectPatch,
-    preserveQuery?: boolean,
-  ): void;
-  $push(
-    params: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouterMatchRefOptions,
-  ): void;
   $push(
     params?: Partial<TParamDict> & EmptyObjectPatch,
     options?: boolean | RouterMatchRefOptions,
@@ -357,16 +327,8 @@ abstract class RouteMatchShared<
   }
 
   /**
-   * Perform a `history.replace()` with `this.$ref(params, preserveQuery)`.
+   * Perform a `history.replace()` with `this.$ref(params, options)`.
    */
-  $replace(
-    params?: Partial<TParamDict> & EmptyObjectPatch,
-    preserveQuery?: boolean,
-  ): void;
-  $replace(
-    params: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouterMatchRefOptions,
-  ): void;
   $replace(
     params?: Partial<TParamDict> & EmptyObjectPatch,
     options?: boolean | RouterMatchRefOptions,
@@ -471,7 +433,7 @@ export class RouteMatch<
   _next!: NextRouteMatch<TParamDict>;
 
   /** @internal */
-  _parallel: RouteMatchParallelWhitelist | undefined;
+  _parallel: RouteMatchParallelOptions | undefined;
 
   constructor(
     name: string,
@@ -559,7 +521,7 @@ export class RouteMatch<
     return this;
   }
 
-  $parallel(whitelist: RouteMatchParallelWhitelist): void {
+  $parallel(whitelist: RouteMatchParallelOptions): void {
     if (this.$group) {
       throw new Error('Parallel whitelist can only be set on primary routes');
     }
@@ -795,11 +757,7 @@ export class RouteMatch<
       this.$group,
     );
 
-    if (!matchToMatchEntryMap) {
-      return undefined;
-    }
-
-    return matchToMatchEntryMap.get(this);
+    return matchToMatchEntryMap && matchToMatchEntryMap.get(this);
   }
 
   /** @internal */

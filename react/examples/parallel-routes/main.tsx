@@ -63,7 +63,7 @@ export class App extends Component {
             <Link to={router.account} toggle>
               Account
             </Link>
-            &nbsp;|&nbsp;
+            {' | '}
             <Link to={router.profile} toggle>
               Profile
             </Link>
@@ -75,10 +75,10 @@ export class App extends Component {
             <Link to={router.news}>News</Link>
           </div>
           <div>
-            <Link to={router.about}>About(With Cart)</Link>
+            <Link to={router.about}>About (With Cart)</Link>
           </div>
           <div>
-            <Link to={router.contact}>Contact(With 'popup' Group)</Link>
+            <Link to={router.contact}>Contact (With 'popup' Group)</Link>
           </div>
           <div>
             <Link to={router.notFound} params={{notFound: 'boring'}}>

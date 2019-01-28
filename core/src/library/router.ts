@@ -1,7 +1,10 @@
 import hyphenate from 'hyphenate';
 import {observable, runInAction} from 'mobx';
+import {Dict} from 'tslang';
 
 import {
+  buildRef,
+  hasOwnProperty,
   isLocationEqual,
   isShallowlyEqual,
   parsePath,
@@ -122,11 +125,6 @@ export interface RouterOptions {
   onChange?: RouterOnChange;
 }
 
-export interface RouterBuildResult {
-  matches: RouteMatch[];
-  groups: string[];
-}
-
 export interface RouterRefOptions {
   /**
    * Parallel route group(s) to leave. Set to `'*'` to leave all.
@@ -185,7 +183,7 @@ export class Router {
   _children: RouteMatch[];
 
   /** @internal */
-  _groups: Set<string>;
+  _groupSet: Set<string>;
 
   private constructor(
     schema: RouteRootSchemaDict,
@@ -206,9 +204,13 @@ export class Router {
 
     this._segmentMatcher = segmentMatcher || DEFAULT_SEGMENT_MATCHER_CALLBACK;
 
-    this._groups = new Set<string>();
+    this._children = this._build(schema, this);
 
-    this._children = this._build(schema, this, this._groups);
+    this._groupSet = new Set(
+      this._children
+        .map(match => match.$group)
+        .filter((group): group is string => typeof group === 'string'),
+    );
 
     then(() => {
       history.listen(this._onLocationChange);
@@ -220,44 +222,26 @@ export class Router {
    * Generates a string reference that can be used for history navigation.
    */
   $ref({leaves = [], preserveQuery = true}: RouterRefOptions): string {
-    if (leaves === '*') {
-      let allGroups = Array.from(this._source.pathMap.keys()).filter(
-        (group): group is string => group !== undefined,
-      );
+    let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
+    let pathMap: Map<string | undefined, string>;
 
-      leaves = [...allGroups];
-    } else if (!Array.isArray(leaves)) {
-      leaves = [leaves];
+    if (leaves === '*') {
+      pathMap = new Map([[undefined, sourcePathMap.get(undefined)!]]);
+    } else {
+      if (typeof leaves === 'string') {
+        leaves = [leaves];
+      }
+
+      pathMap = new Map(sourcePathMap);
+
+      for (let group of leaves) {
+        pathMap.delete(group);
+      }
     }
 
-    let {pathMap, queryDict: sourceQueryDict} = this._source;
-
-    let primaryPath = pathMap.get(undefined)!;
-
-    let groupQueryEntries = Array.from(pathMap.entries())
-      .filter(
-        ([group, path]) =>
-          group !== undefined && path && !(leaves as string[]).includes(group),
-      )
-      .map(([group, path]): [string, string] => [`_${group}`, path]);
-
-    let groupPathQuery = encodeURI(
-      groupQueryEntries.map(([key, value]) => `${key}=${value}`).join('&'),
-    );
-
-    let normalQuery = new URLSearchParams([
-      ...(preserveQuery
-        ? (Object.entries(sourceQueryDict) as [string, string][])
-        : []),
-    ]).toString();
-
-    let query = groupPathQuery
-      ? normalQuery
-        ? `${groupPathQuery}&${normalQuery}`
-        : groupPathQuery
-      : normalQuery;
-
-    return `${this._prefix}${primaryPath}${query ? `?${query}` : ''}`;
+    return buildRef(this._prefix, pathMap, {
+      ...(preserveQuery ? (sourceQueryDict as Dict<string>) : undefined),
+    });
   }
 
   /**
@@ -328,26 +312,19 @@ export class Router {
 
     let pathWithoutPrefix = pathname.slice(prefix.length) || '/';
 
-    let pathInfos = [
-      {
-        path: pathWithoutPrefix,
-        group: undefined as string | undefined,
-      },
-    ];
     pathMap.set(undefined, pathWithoutPrefix);
 
     // Extract group route paths in query
-    for (let group of this._groups) {
+    for (let group of this._groupSet) {
       let key = `_${group}`;
 
-      if (!(key in queryDict)) {
+      if (!hasOwnProperty(queryDict, key)) {
         continue;
       }
 
       let path = queryDict[key];
 
       if (path) {
-        pathInfos.push({path, group});
         pathMap.set(group, path);
       }
 
@@ -360,7 +337,7 @@ export class Router {
       RouteMatchEntry[]
     >();
 
-    for (let {path, group} of pathInfos) {
+    for (let [group, path] of pathMap) {
       let routeMatchEntries = this._match(this, path) || [];
 
       if (!routeMatchEntries.length) {
@@ -376,7 +353,7 @@ export class Router {
       groupToMatchEntriesMap.set(group, routeMatchEntries);
     }
 
-    // Check primary match parallel whitelist
+    // Check primary match parallel options
     let groupToMatchToMatchEntryMapMap = new Map<
       string | undefined,
       Map<RouteMatch, RouteMatchEntry>
@@ -387,16 +364,16 @@ export class Router {
     if (primaryMatchEntries) {
       let primaryMatch = primaryMatchEntries[0].match;
 
-      let whitelist = primaryMatch._parallel;
+      let options = primaryMatch._parallel;
 
-      let {groups = [], matches = []} = whitelist || {};
+      let {groups = [], matches = []} = options || {};
 
       for (let [group, entries] of groupToMatchEntriesMap) {
         let [{match}] = entries;
 
         if (
-          !whitelist ||
           !group ||
+          !options ||
           groups.includes(group) ||
           matches.includes(match)
         ) {
@@ -530,7 +507,11 @@ export class Router {
 
       let path = matchingSource.pathMap.get(group)!;
 
-      source.pathMap.set(group, path);
+      if (path) {
+        source.pathMap.set(group, path);
+      } else {
+        source.pathMap.delete(group);
+      }
 
       let matchToMatchEntryMap = matchingSource.groupToMatchToMatchEntryMapMap.get(
         group,
@@ -624,7 +605,6 @@ export class Router {
   private _build(
     schemaDict: RouteRootSchemaDict | RouteSchemaDict,
     parent: RouteMatch | Router,
-    groupSet: Set<string> | undefined,
     matchingParent?: NextRouteMatch,
   ): RouteMatch[] {
     let routeMatches: RouteMatch[] = [];
@@ -654,10 +634,6 @@ export class Router {
 
       if ('$group' in schema) {
         group = schema.$group;
-      }
-
-      if (groupSet && group) {
-        groupSet.add(group);
       }
 
       let options: RouteMatchOptions = {
@@ -702,12 +678,7 @@ export class Router {
         continue;
       }
 
-      routeMatch._children = this._build(
-        children,
-        routeMatch,
-        undefined,
-        nextRouteMatch,
-      );
+      routeMatch._children = this._build(children, routeMatch, nextRouteMatch);
     }
 
     return routeMatches;
