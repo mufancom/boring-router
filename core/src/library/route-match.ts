@@ -127,6 +127,9 @@ abstract class RouteMatchShared<
    */
   readonly $group: string | undefined;
 
+  /**
+   * Parent of this route match.
+   */
   readonly $parent: RouteMatchShared | undefined;
 
   /** @internal */
@@ -524,62 +527,65 @@ export class RouteMatch<
     return this;
   }
 
-  $parallel(whitelist: RouteMatchParallelOptions): void {
+  $parallel(options: RouteMatchParallelOptions): void {
     if (this.$group) {
       throw new Error('Parallel whitelist can only be set on primary routes');
     }
 
-    let {groups = [], matches = []} = whitelist;
+    let {groups = [], matches = []} = options;
 
     let parent = this.$parent;
 
     if (parent instanceof RouteMatch && parent._parallel) {
       let {
-        groups: groupsOfParent = [],
-        matches: matchesOfParent = [],
+        groups: parentGroups = [],
+        matches: parentMatches = [],
       } = parent._parallel;
 
-      let isGroupsSubsetOfParent = groups.every(group =>
-        groupsOfParent.includes(group),
+      let parentGroupSet = new Set(parentGroups);
+      let parentMatchSet = new Set(parentMatches);
+
+      let groupsBeingSubsetOfParents = groups.every(group =>
+        parentGroupSet.has(group),
       );
 
-      if (!isGroupsSubsetOfParent) {
+      if (!groupsBeingSubsetOfParents) {
         throw new Error(
-          "Parallel group whitelist can only be a subset of its parent's",
+          "Parallel group can only be a subset of its parent's groups",
         );
       }
 
-      let isMatchesSubsetOfParent = matches.every(match => {
+      let matchesBeingSubsetOfParents = matches.every(match => {
         if (
           typeof match.$group === 'string' &&
-          groupsOfParent.includes(match.$group)
+          parentGroupSet.has(match.$group)
         ) {
           return true;
         }
 
-        let cursor: RouteMatch | undefined = match;
+        let current: RouteMatch | undefined = match;
 
-        while (cursor) {
-          if (matchesOfParent.includes(cursor)) {
+        while (current) {
+          if (parentMatchSet.has(current)) {
             return true;
           }
 
-          cursor = cursor.$parent;
+          current = current.$parent;
         }
 
         return false;
       });
 
-      if (!isMatchesSubsetOfParent) {
+      if (!matchesBeingSubsetOfParents) {
         throw new Error(
-          "Parallel match whitelist can only be a subset of its parent's",
+          "Parallel match can only be a subset of its parent's matches",
         );
       }
     }
 
-    let children = this._children || [];
+    this._parallel = options;
 
-    this._parallel = whitelist;
+    let children = this._children || [];
 
     for (let child of children) {
       if (
@@ -587,11 +593,11 @@ export class RouteMatch<
         (!parent || parent._parallel !== child._parallel)
       ) {
         throw new Error(
-          'Parallel whitelist can only be specified in a top-down fashion',
+          'Parallel options can only be specified in a top-down fashion',
         );
       }
 
-      child.$parallel(whitelist);
+      child.$parallel(options);
     }
   }
 
