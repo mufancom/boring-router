@@ -793,7 +793,8 @@ export class RouteMatch<
     return matchToMatchEntryMap && matchToMatchEntryMap.get(this);
   }
 
-  async _getService(): Promise<IRouteService | undefined> {
+  /** @internal */
+  private async _getService(): Promise<IRouteService | undefined> {
     let serviceOrServicePromise = this._service || this._servicePromise;
 
     if (serviceOrServicePromise) {
