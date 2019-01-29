@@ -221,7 +221,7 @@ export class Router {
   /**
    * Generates a string reference that can be used for history navigation.
    */
-  $ref({leaves = [], preserveQuery = true}: RouterRefOptions): string {
+  $ref({leaves = [], preserveQuery = true}: RouterRefOptions = {}): string {
     let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
     let pathMap: Map<string | undefined, string>;
 
@@ -247,7 +247,7 @@ export class Router {
   /**
    * Perform a `history.push()` with `this.$ref(options)`.
    */
-  $push(options: RouterRefOptions): void {
+  $push(options?: RouterRefOptions): void {
     let ref = this.$ref(options);
     this._history.push(ref);
   }
@@ -255,7 +255,7 @@ export class Router {
   /**
    * Perform a `history.replace()` with `this.$ref(options)`.
    */
-  $replace(options: RouterRefOptions): void {
+  $replace(options?: RouterRefOptions): void {
     let ref = this.$ref(options);
     this._history.replace(ref);
   }
@@ -362,20 +362,19 @@ export class Router {
     let primaryMatchEntries = groupToMatchEntriesMap.get(undefined);
 
     if (primaryMatchEntries) {
-      let primaryMatch = primaryMatchEntries[0].match;
+      let primaryMatch =
+        primaryMatchEntries[primaryMatchEntries.length - 1].match;
 
       let options = primaryMatch._parallel;
 
       let {groups = [], matches = []} = options || {};
 
       for (let [group, entries] of groupToMatchEntriesMap) {
-        let [{match}] = entries;
-
         if (
           !group ||
           !options ||
           groups.includes(group) ||
-          matches.includes(match)
+          entries.some(({match}) => matches.includes(match))
         ) {
           groupToMatchToMatchEntryMapMap.set(
             group,

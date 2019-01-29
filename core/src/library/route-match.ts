@@ -127,6 +127,11 @@ abstract class RouteMatchShared<
    */
   readonly $group: string | undefined;
 
+  /**
+   * Parent of this route match.
+   */
+  readonly $parent: RouteMatchShared | undefined;
+
   /** @internal */
   protected _prefix: string;
 
@@ -135,9 +140,6 @@ abstract class RouteMatchShared<
 
   /** @internal */
   protected _source: RouteSource;
-
-  /** @internal */
-  protected _parent: RouteMatchShared | undefined;
 
   /** @internal */
   protected _matchPattern: string | RegExp;
@@ -155,9 +157,9 @@ abstract class RouteMatchShared<
   ) {
     this.$name = name;
     this.$group = group;
+    this.$parent = parent;
     this._prefix = prefix;
     this._source = source;
-    this._parent = parent;
     this._history = history;
 
     if (match instanceof RegExp && match.global) {
@@ -194,7 +196,7 @@ abstract class RouteMatchShared<
   /** @internal */
   @computed
   protected get _paramSegments(): GeneralSegmentDict {
-    let parent = this._parent;
+    let parent = this.$parent;
     let upperSegmentDict = parent && parent._paramSegments;
 
     let matchPattern = this._matchPattern;
@@ -211,7 +213,7 @@ abstract class RouteMatchShared<
   /** @internal */
   @computed
   get _pathSegments(): GeneralSegmentDict {
-    let parent = this._parent;
+    let parent = this.$parent;
     let upperSegmentDict = parent && parent._pathSegments;
 
     let matchPattern = this._matchPattern;
@@ -344,6 +346,8 @@ abstract class RouteMatchShared<
 export class NextRouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict
 > extends RouteMatchShared<TParamDict> {
+  readonly $parent: NextRouteMatch | undefined;
+
   /** @internal */
   private _origin: RouteMatch<TParamDict>;
 
@@ -387,6 +391,8 @@ export class NextRouteMatch<
 export class RouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict
 > extends RouteMatchShared<TParamDict> {
+  readonly $parent: RouteMatch | undefined;
+
   /** @internal */
   private _beforeEnterCallbacks: RouteBeforeEnter[] = [];
 
@@ -521,59 +527,78 @@ export class RouteMatch<
     return this;
   }
 
-  $parallel(whitelist: RouteMatchParallelOptions): void {
+  $parallel(options: RouteMatchParallelOptions): void {
     if (this.$group) {
       throw new Error('Parallel whitelist can only be set on primary routes');
     }
 
-    let {groups = [], matches = []} = whitelist;
+    let {groups = [], matches = []} = options;
 
-    let parent = this._parent;
+    let parent = this.$parent;
 
     if (parent instanceof RouteMatch && parent._parallel) {
       let {
-        groups: groupsOfParent = [],
-        matches: matchesOfParent = [],
+        groups: parentGroups = [],
+        matches: parentMatches = [],
       } = parent._parallel;
 
-      let isGroupsSubsetOfParent = groups.every(group =>
-        groupsOfParent.includes(group),
+      let parentGroupSet = new Set(parentGroups);
+      let parentMatchSet = new Set(parentMatches);
+
+      let groupsBeingSubsetOfParents = groups.every(group =>
+        parentGroupSet.has(group),
       );
 
-      if (!isGroupsSubsetOfParent) {
+      if (!groupsBeingSubsetOfParents) {
         throw new Error(
-          "Parallel group whitelist can only be a subset of its parent's",
+          "Parallel group can only be a subset of its parent's groups",
         );
       }
 
-      let isMatchesSubsetOfParent = matches.every(match =>
-        matchesOfParent.includes(match),
-      );
+      let matchesBeingSubsetOfParents = matches.every(match => {
+        if (
+          typeof match.$group === 'string' &&
+          parentGroupSet.has(match.$group)
+        ) {
+          return true;
+        }
 
-      if (!isMatchesSubsetOfParent) {
+        let current: RouteMatch | undefined = match;
+
+        while (current) {
+          if (parentMatchSet.has(current)) {
+            return true;
+          }
+
+          current = current.$parent;
+        }
+
+        return false;
+      });
+
+      if (!matchesBeingSubsetOfParents) {
         throw new Error(
-          "Parallel match whitelist can only be a subset of its parent's",
+          "Parallel match can only be a subset of its parent's matches",
         );
       }
     }
+
+    this._parallel = options;
 
     let children = this._children || [];
 
     for (let child of children) {
       if (
         child._parallel &&
-        parent instanceof RouteMatch &&
-        parent._parallel !== child._parallel
+        (!parent || parent._parallel !== child._parallel)
       ) {
         throw new Error(
-          'Parallel whitelist can only be specified in a top-down fashion',
+          'Parallel options can only be specified in a top-down fashion',
         );
       }
 
-      child.$parallel(whitelist);
+      child.$parallel(options);
     }
-
-    this._parallel = whitelist;
   }
 
   /** @internal */
@@ -664,7 +689,9 @@ export class RouteMatch<
     let next = this._next;
 
     let results = await Promise.all([
-      ...this._beforeEnterCallbacks.map(callback => tolerate(callback, next)),
+      ...this._beforeEnterCallbacks.map(callback =>
+        tolerate(callback, next as NextRouteMatchType<RouteMatch>),
+      ),
       (async () => {
         let service = await this._getService();
 
@@ -672,7 +699,9 @@ export class RouteMatch<
           return undefined;
         }
 
-        return tolerate(() => service!.beforeEnter!(next));
+        return tolerate(() =>
+          service!.beforeEnter!(next as NextRouteMatchType<RouteMatch>),
+        );
       })(),
     ]);
 
@@ -684,7 +713,9 @@ export class RouteMatch<
     let next = this._next;
 
     let results = await Promise.all([
-      ...this._beforeUpdateCallbacks.map(callback => tolerate(callback, next)),
+      ...this._beforeUpdateCallbacks.map(callback =>
+        tolerate(callback, next as NextRouteMatchType<RouteMatch>),
+      ),
       (async () => {
         let service = await this._getService();
 
@@ -692,7 +723,9 @@ export class RouteMatch<
           return undefined;
         }
 
-        return tolerate(() => service!.beforeUpdate!(next));
+        return tolerate(() =>
+          service!.beforeUpdate!(next as NextRouteMatchType<RouteMatch>),
+        );
       })(),
     ]);
 
