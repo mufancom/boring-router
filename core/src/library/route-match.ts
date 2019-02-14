@@ -108,6 +108,10 @@ export interface RouterMatchRefOptions {
    */
   leave?: boolean;
   /**
+   * Parallel route groups to leave.
+   */
+  leaves?: string[];
+  /**
    * Whether to preserve values in current query string.
    */
   preserveQuery?: boolean;
@@ -261,14 +265,20 @@ abstract class RouteMatchShared<
     options?: boolean | RouterMatchRefOptions,
   ): string {
     let leave: boolean;
+    let leaves: string[];
     let preserveQuery: boolean;
 
     let group = this.$group;
 
     if (typeof options === 'object') {
-      ({leave = false, preserveQuery = typeof group === 'string'} = options);
+      ({
+        leave = false,
+        preserveQuery = typeof group === 'string',
+        leaves = [],
+      } = options);
     } else {
       leave = false;
+      leaves = [];
       preserveQuery =
         options === undefined ? typeof group === 'string' : options;
     }
@@ -277,6 +287,10 @@ abstract class RouteMatchShared<
     let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
 
     let pathMap = new Map(sourcePathMap);
+
+    for (let item of leaves) {
+      pathMap.delete(item);
+    }
 
     if (leave) {
       if (group === undefined) {
