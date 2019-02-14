@@ -108,13 +108,13 @@ export interface RouterMatchRefOptions {
    */
   leave?: boolean;
   /**
+   * Parallel route groups to leave.
+   */
+  leaves?: string[];
+  /**
    * Whether to preserve values in current query string.
    */
   preserveQuery?: boolean;
-  /**
-   * Whether to leave parallel-routes
-   */
-  leaves?: string[];
 }
 
 abstract class RouteMatchShared<
