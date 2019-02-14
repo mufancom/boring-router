@@ -425,3 +425,43 @@ test("should leave and visit group 'sidebar' and 'popup' again", async () => {
 
   expect(router.$ref()).toBe('/account?_popup=/invite&_sidebar=/friends');
 });
+
+test('should leave parallel route when push a new route', async () => {
+  router.account.$push();
+
+  await nap();
+
+  router.friends.$push();
+
+  await nap();
+
+  router.invite.$push();
+
+  await nap();
+
+  expect(router.account.$matched).toBe(true);
+  expect(router.friends.$matched).toBe(true);
+  expect(router.invite.$matched).toBe(true);
+
+  router.default.$push({}, {leaves: ['popup']});
+
+  await nap();
+
+  expect(router.default.$matched).toBe(true);
+  expect(router.friends.$matched).toBe(true);
+  expect(router.invite.$matched).toBe(false);
+
+  router.account.$push({}, {leaves: ['sidebar']});
+
+  await nap();
+
+  router.invite.$push();
+
+  await nap();
+
+  expect(router.account.$matched).toBe(true);
+  expect(router.friends.$matched).toBe(false);
+  expect(router.invite.$matched).toBe(true);
+
+  expect(router.$ref()).toBe('/account?_popup=/invite');
+});
