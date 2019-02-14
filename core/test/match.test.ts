@@ -426,7 +426,7 @@ test("should leave and visit group 'sidebar' and 'popup' again", async () => {
   expect(router.$ref()).toBe('/account?_popup=/invite&_sidebar=/friends');
 });
 
-test('should leave parallel route when push a new route', async () => {
+test("should leave parallel routes by 'leaves' options when push a new route", async () => {
   router.account.$push();
 
   await nap();
