@@ -95,7 +95,7 @@ export interface RouteMatchOptions extends RouteMatchSharedOptions {
   exact: boolean;
 }
 
-export interface RouterMatchRefOptions {
+export interface RouterMatchRefOptions<TGroupName extends string> {
   /**
    * Whether to leave this match's group.
    */
@@ -103,7 +103,7 @@ export interface RouterMatchRefOptions {
   /**
    * Parallel route groups to leave.
    */
-  leaves?: string[];
+  leaves?: TGroupName[];
   /**
    * Whether to preserve values in current query string.
    */
@@ -111,7 +111,8 @@ export interface RouterMatchRefOptions {
 }
 
 abstract class RouteMatchShared<
-  TParamDict extends GeneralParamDict = GeneralParamDict
+  TParamDict extends GeneralParamDict = GeneralParamDict,
+  TGroupName extends string = string
 > {
   /**
    * Name of this `RouteMatch`, correspondent to the field name of route
@@ -122,7 +123,7 @@ abstract class RouteMatchShared<
   /**
    * Group of this `RouteMatch`, specified in the root route.
    */
-  readonly $group: string | undefined;
+  readonly $group: TGroupName | undefined;
 
   /**
    * Parent of this route match.
@@ -153,7 +154,7 @@ abstract class RouteMatchShared<
     {match, query, group}: RouteMatchSharedOptions,
   ) {
     this.$name = name;
-    this.$group = group;
+    this.$group = group as TGroupName;
     this.$parent = parent;
     this._prefix = prefix;
     this._source = source;
@@ -255,7 +256,7 @@ abstract class RouteMatchShared<
    */
   $ref(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
-    options?: boolean | RouterMatchRefOptions,
+    options?: boolean | RouterMatchRefOptions<TGroupName>,
   ): string {
     let leave: boolean;
     let leaves: string[];
@@ -329,7 +330,7 @@ abstract class RouteMatchShared<
    */
   $push(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: boolean | RouterMatchRefOptions,
+    options?: boolean | RouterMatchRefOptions<TGroupName>,
   ): void {
     let ref = this.$ref(params, options);
     this._history.push(ref);
@@ -340,7 +341,7 @@ abstract class RouteMatchShared<
    */
   $replace(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: boolean | RouterMatchRefOptions,
+    options?: boolean | RouterMatchRefOptions<TGroupName>,
   ): void {
     let ref = this.$ref(params, options);
     this._history.replace(ref);
@@ -351,8 +352,9 @@ abstract class RouteMatchShared<
 }
 
 export class NextRouteMatch<
-  TParamDict extends GeneralParamDict = GeneralParamDict
-> extends RouteMatchShared<TParamDict> {
+  TParamDict extends GeneralParamDict = GeneralParamDict,
+  TGroupName extends string = string
+> extends RouteMatchShared<TParamDict, TGroupName> {
   readonly $parent: NextRouteMatch | undefined;
 
   /** @internal */
@@ -399,8 +401,9 @@ export class RouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict,
   TNextRouteMatch extends NextRouteMatch<TParamDict> = NextRouteMatch<
     TParamDict
-  >
-> extends RouteMatchShared<TParamDict> {
+  >,
+  TGroupName extends string = string
+> extends RouteMatchShared<TParamDict, TGroupName> {
   readonly $parent: RouteMatch | undefined;
 
   readonly $next!: TNextRouteMatch;

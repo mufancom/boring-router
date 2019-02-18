@@ -62,74 +62,113 @@ export type RouteMatchExtensionType<
 
 export type RouteMatchSegmentType<
   TRouteSchemaDict,
-  TSegmentKey extends string
+  TSegmentKey extends string,
+  TGroupName extends string
 > = {
   [K in Extract<keyof TRouteSchemaDict, string>]: RouteMatchType<
     TRouteSchemaDict[K],
-    TSegmentKey | FilterRouteMatchNonStringSegment<TRouteSchemaDict[K], K>
+    TSegmentKey | FilterRouteMatchNonStringSegment<TRouteSchemaDict[K], K>,
+    TGroupName
   >
 };
 
 type __RouteMatchType<
-  TParamDict extends Dict<string | undefined>,
-  TNextRouteMatchSegmentDict
+  TRouteSchema,
+  TSegmentKey extends string,
+  TGroupName extends string,
+  TParamDict extends Dict<string | undefined>
 > = RouteMatch<
   TParamDict,
-  NextRouteMatch<TParamDict> & TNextRouteMatchSegmentDict
->;
+  NextRouteMatch<TParamDict, TGroupName> &
+    NextRouteMatchSegmentType<
+      NestedRouteSchemaDictType<TRouteSchema>,
+      TSegmentKey,
+      TGroupName
+    >,
+  TGroupName
+> &
+  RouteMatchSegmentType<
+    NestedRouteSchemaDictType<TRouteSchema>,
+    TSegmentKey,
+    TGroupName
+  > &
+  RouteMatchExtensionType<TRouteSchema>;
 
 export type RouteMatchType<
   TRouteSchema,
-  TSegmentKey extends string
+  TSegmentKey extends string,
+  TGroupName extends string
 > = __RouteMatchType<
-  Record<
-    Extract<keyof RouteQuerySchemaType<TRouteSchema>, string>,
-    string | undefined
-  > &
-    {[K in TSegmentKey]: string},
-  NextRouteMatchSegmentType<
-    NestedRouteSchemaDictType<TRouteSchema>,
-    TSegmentKey
-  >
-> &
-  RouteMatchSegmentType<NestedRouteSchemaDictType<TRouteSchema>, TSegmentKey> &
-  RouteMatchExtensionType<TRouteSchema>;
-
-export type NextRouteMatchSegmentType<
-  TRouteSchemaDict,
-  TSegmentKey extends string
-> = {
-  [K in Extract<keyof TRouteSchemaDict, string>]: NextRouteMatchType<
-    TRouteSchemaDict[K],
-    TSegmentKey | FilterRouteMatchNonStringSegment<TRouteSchemaDict[K], K>
-  >
-};
-
-export type NextRouteMatchType<
   TRouteSchema,
-  TSegmentKey extends string
-> = NextRouteMatch<
+  TSegmentKey,
+  TGroupName,
   Record<
     Extract<keyof RouteQuerySchemaType<TRouteSchema>, string>,
     string | undefined
   > &
     {[K in TSegmentKey]: string}
+>;
+
+export type NextRouteMatchSegmentType<
+  TRouteSchemaDict,
+  TSegmentKey extends string,
+  TGroupName extends string
+> = {
+  [K in Extract<keyof TRouteSchemaDict, string>]: NextRouteMatchType<
+    TRouteSchemaDict[K],
+    TSegmentKey | FilterRouteMatchNonStringSegment<TRouteSchemaDict[K], K>,
+    TGroupName
+  >
+};
+
+export type NextRouteMatchType<
+  TRouteSchema,
+  TSegmentKey extends string,
+  TGroupName extends string
+> = NextRouteMatch<
+  Record<
+    Extract<keyof RouteQuerySchemaType<TRouteSchema>, string>,
+    string | undefined
+  > &
+    {[K in TSegmentKey]: string},
+  TGroupName
 > &
   NextRouteMatchSegmentType<
     NestedRouteSchemaDictType<TRouteSchema>,
-    TSegmentKey
+    TSegmentKey,
+    TGroupName
   >;
 
-export type RouterType<TRouteSchemaDict, TGroupToRouteSchemaDictDict> = Router<
+export type RouteGroupType<
+  TRouteSchemaDict,
+  TGroupName extends string
+> = RouteGroup<NextRouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>> &
+  RouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>;
+
+type __RouterType<
+  TRouteSchemaDict,
+  TGroupToRouteSchemaDictDict,
+  TGroupName extends string
+> = Router<
   {
-    [K in keyof TGroupToRouteSchemaDictDict]: RouteGroup<
-      RouteMatchSegmentType<TGroupToRouteSchemaDictDict[K], never>
-    > &
-      RouteMatchSegmentType<TGroupToRouteSchemaDictDict[K], never>
+    [K in keyof TGroupToRouteSchemaDictDict]: RouteGroupType<
+      TGroupToRouteSchemaDictDict[K],
+      TGroupName
+    >
   },
-  NextRouteMatchSegmentType<TRouteSchemaDict, never>
+  NextRouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>,
+  TGroupName
 > &
-  RouteMatchSegmentType<TRouteSchemaDict, never>;
+  RouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>;
+
+export type RouterType<
+  TRouteSchemaDict,
+  TGroupToRouteSchemaDictDict
+> = __RouterType<
+  TRouteSchemaDict,
+  TGroupToRouteSchemaDictDict,
+  Extract<keyof TGroupToRouteSchemaDictDict, string>
+>;
 
 export interface RouteMatchEntry {
   match: RouteMatch;
@@ -166,11 +205,11 @@ export interface RouterOptions {
   onChange?: RouterOnChange;
 }
 
-export interface RouterRefOptions {
+export interface RouterRefOptions<TGroupName extends string> {
   /**
    * Parallel route group(s) to leave. Set to `'*'` to leave all.
    */
-  leaves?: string | string[];
+  leaves?: TGroupName | TGroupName[];
   /**
    * Whether to preserve values in current query string.
    */
@@ -179,7 +218,8 @@ export interface RouterRefOptions {
 
 export class Router<
   TParallelRouteGroupDict extends object = object,
-  TNextRouteMatchDict extends object = object
+  TNextRouteMatchDict extends object = object,
+  TGroupName extends string = string
 > {
   readonly $ = {} as TParallelRouteGroupDict;
 
@@ -287,7 +327,10 @@ export class Router<
   /**
    * Generates a string reference that can be used for history navigation.
    */
-  $ref({leaves = [], preserveQuery = true}: RouterRefOptions = {}): string {
+  $ref({
+    leaves = [],
+    preserveQuery = true,
+  }: RouterRefOptions<TGroupName> = {}): string {
     let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
     let pathMap: Map<string | undefined, string>;
 
@@ -313,7 +356,7 @@ export class Router<
   /**
    * Perform a `history.push()` with `this.$ref(options)`.
    */
-  $push(options?: RouterRefOptions): void {
+  $push(options?: RouterRefOptions<TGroupName>): void {
     let ref = this.$ref(options);
     this._history.push(ref);
   }
@@ -321,7 +364,7 @@ export class Router<
   /**
    * Perform a `history.replace()` with `this.$ref(options)`.
    */
-  $replace(options?: RouterRefOptions): void {
+  $replace(options?: RouterRefOptions<TGroupName>): void {
     let ref = this.$ref(options);
     this._history.replace(ref);
   }
