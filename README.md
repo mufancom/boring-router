@@ -239,6 +239,8 @@ The value of expression like `router.account` in the usage example above is a `R
 ```ts
 interface RouteMatch<TParamDict> {
   $name: string;
+  $group: string | undefined;
+  $parent: RouteMatch;
 
   $matched: boolean;
   $exact: boolean;
@@ -273,6 +275,8 @@ Within `$beforeEnter`, `$beforeUpdate` hooks and correspondent service hooks, a 
 ```ts
 interface NextRouteMatch<TParamDict> {
   $name: string;
+  $group: string | undefined;
+  $parent: NextRouteMatch;
 
   $exact: boolean;
 
@@ -297,6 +301,8 @@ Boring Router provides 6 hooks: `$beforeEnter`, `$afterEnter`; `$beforeUpdate`, 
 The 3 "before" hooks accept `false` as return value to cancel the route change. You can also `$push` or `$replace` directly within those hooks (which will cancel current route change as well).
 
 The hook callbacks of `$beforeEnter` and `$beforeUpdate` provides a `NextRouteMatch` object which looks like a lite `RouteMatch`, with which you can retrieve parameters and change the location via `$push` and `$replace`.
+
+Another two methods `$intercept` and `$react` are added as shortcut to `$beforeEnter`/`$beforeUpdate` and `$afterEnter`/`$afterUpdate` respectively.
 
 ## Service
 
@@ -356,6 +362,12 @@ router.accountId.$service(match => new AccountRouteService(match));
 router.accountId.account;
 router.accountId.name;
 ```
+
+## Parallel routes
+
+Sometimes when a page is separated into different views, we might want separate routes. For example, a dashboard may have "main content view", "side bar view" and an "overlay" at the same time. If we want to cooperate them all with routes, the parallel-routes feature could be useful.
+
+A parallel route behaves like a primary route most of the time, and can be accessed by `router.$.xxx`. For more information, check out [this example](react/examples/parallel-routes/main.tsx).
 
 ## License
 
