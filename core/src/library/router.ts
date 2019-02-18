@@ -19,7 +19,7 @@ import {
   RouteMatch,
   RouteMatchOptions,
 } from './route-match';
-import {GroupNameToRouteSchemaDictDict, RouteSchemaDict} from './schema';
+import {GroupToRouteSchemaDictDict, RouteSchemaDict} from './schema';
 
 export type SegmentMatcherCallback = (key: string) => string;
 
@@ -83,11 +83,11 @@ export type RouteMatchType<
   RouteMatchSegmentType<NestedRouteSchemaDictType<TRouteSchema>, TSegmentKey> &
   RouteMatchExtensionType<TRouteSchema>;
 
-export type RouterType<TRouteSchemaDict, TRouteGroupSchemaDict> = Router &
+export type RouterType<TRouteSchemaDict, TGroupToRouteSchemaDictDict> = Router &
   RouteMatchSegmentType<TRouteSchemaDict, never> & {
     $: {
-      [K in keyof TRouteGroupSchemaDict]: RouteGroup &
-        RouteMatchSegmentType<TRouteGroupSchemaDict[K], never>
+      [K in keyof TGroupToRouteSchemaDictDict]: RouteGroup &
+        RouteMatchSegmentType<TGroupToRouteSchemaDictDict[K], never>
     };
   };
 
@@ -183,14 +183,14 @@ export class Router {
   private _changing = Promise.resolve();
 
   /** @internal */
-  _children: RouteMatch[];
+  private _groupSet: Set<string>;
 
   /** @internal */
-  _groupSet: Set<string>;
+  _groupToChildrenMap = new Map<string | undefined, RouteMatch[]>();
 
   private constructor(
     primarySchema: RouteSchemaDict,
-    groupNameToSchemaDict: GroupNameToRouteSchemaDictDict | undefined,
+    groupToSchemaDict: GroupToRouteSchemaDictDict | undefined,
     history: IHistory,
     {
       segmentMatcher,
@@ -210,19 +210,21 @@ export class Router {
 
     this._groupSet = new Set();
 
-    this._children = this._build(primarySchema, this);
+    let groupToChildrenMap = this._groupToChildrenMap;
+    let groupSet = this._groupSet;
 
-    if (groupNameToSchemaDict) {
+    groupToChildrenMap.set(undefined, this._build(primarySchema, this));
+
+    if (groupToSchemaDict) {
       let parallelRouteDict = this.$ as Dict<RouteGroup>;
 
-      for (let [groupName, schema] of Object.entries(groupNameToSchemaDict)) {
-        let group = new RouteGroup(groupName);
+      for (let [group, schema] of Object.entries(groupToSchemaDict)) {
+        let routeGroup = new RouteGroup(group);
 
-        parallelRouteDict[groupName] = group;
+        parallelRouteDict[group] = routeGroup;
 
-        this._children = this._children.concat(this._build(schema, group));
-
-        this._groupSet.add(groupName);
+        groupToChildrenMap.set(group, this._build(schema, routeGroup));
+        groupSet.add(group);
       }
     }
 
@@ -351,8 +353,12 @@ export class Router {
       RouteMatchEntry[]
     >();
 
+    let groupToChildrenMap = this._groupToChildrenMap;
+
     for (let [group, path] of pathMap) {
-      let routeMatchEntries = this._match(this, group, path) || [];
+      let routeMatches = groupToChildrenMap.get(group) || [];
+
+      let routeMatchEntries = this._match(routeMatches, path) || [];
 
       if (!routeMatchEntries.length) {
         continue;
@@ -573,11 +579,10 @@ export class Router {
 
   /** @internal */
   private _match(
-    target: Router | RouteMatch,
-    group: string | undefined,
+    routeMatches: RouteMatch[],
     upperRest: string,
   ): RouteMatchEntry[] | undefined {
-    for (let routeMatch of target._children || []) {
+    for (let routeMatch of routeMatches) {
       let {matched, exactlyMatched, segment, rest} = routeMatch._match(
         upperRest,
       );
@@ -586,7 +591,7 @@ export class Router {
         continue;
       }
 
-      if (exactlyMatched && routeMatch.$group === group) {
+      if (exactlyMatched) {
         return [
           {
             match: routeMatch,
@@ -596,7 +601,7 @@ export class Router {
         ];
       }
 
-      let result = this._match(routeMatch, group, rest);
+      let result = this._match(routeMatch._children || [], rest);
 
       if (!result) {
         continue;
@@ -628,7 +633,7 @@ export class Router {
     let history = this._history;
     let prefix = this._prefix;
 
-    let groupName = '$group' in parent ? parent.$group : undefined;
+    let group = '$group' in parent ? parent.$group : undefined;
 
     for (let [routeName, schema] of Object.entries(schemaDict)) {
       if (typeof schema === 'boolean') {
@@ -647,7 +652,7 @@ export class Router {
         match,
         query,
         exact,
-        group: groupName,
+        group,
       };
 
       let routeMatch = new RouteMatch(
@@ -691,50 +696,42 @@ export class Router {
     return routeMatches;
   }
 
-  static create<TPrimarySchema extends RouteSchemaDict>(
-    primarySchema: TPrimarySchema,
+  static create<TPrimaryRouteSchemaDict extends RouteSchemaDict>(
+    primarySchema: TPrimaryRouteSchemaDict,
     history: IHistory,
     options?: RouterOptions,
-  ): RouterType<TPrimarySchema, never>;
+  ): RouterType<TPrimaryRouteSchemaDict, object>;
   static create<
-    TPrimarySchema extends RouteSchemaDict,
-    TGroupSchema extends GroupNameToRouteSchemaDictDict
+    TPrimaryRouteSchemaDict extends RouteSchemaDict,
+    TGroupToRouteSchemaDictDict extends GroupToRouteSchemaDictDict
   >(
-    primarySchema: TPrimarySchema,
-    groupSchema: TGroupSchema,
+    primarySchema: TPrimaryRouteSchemaDict,
+    groupSchema: TGroupToRouteSchemaDictDict,
     history: IHistory,
     options?: RouterOptions,
-  ): RouterType<TPrimarySchema, TGroupSchema>;
-  static create<
-    TPrimarySchema extends RouteSchemaDict,
-    TGroupSchema extends GroupNameToRouteSchemaDictDict
-  >(
+  ): RouterType<TPrimaryRouteSchemaDict, TGroupToRouteSchemaDictDict>;
+  static create(
     primarySchema: any,
     groupSchema: any,
     history: any = {},
     options: any = {},
-  ): any {
-    if (isIHistory(groupSchema)) {
+  ): Router {
+    if (isHistory(groupSchema)) {
       options = history;
       history = groupSchema;
       groupSchema = {};
     }
 
-    return new Router(
-      primarySchema,
-      groupSchema,
-      history,
-      options,
-    ) as RouterType<TPrimarySchema, TGroupSchema>;
+    return new Router(primarySchema, groupSchema, history, options);
   }
 }
 
-function isIHistory(obj: any): obj is IHistory {
+function isHistory(object: any): object is IHistory {
   return (
-    obj &&
-    obj.location &&
-    typeof obj.push === 'function' &&
-    typeof obj.replace === 'function' &&
-    typeof obj.listen === 'function'
+    object &&
+    object.location &&
+    typeof object.push === 'function' &&
+    typeof object.replace === 'function' &&
+    typeof object.listen === 'function'
   );
 }

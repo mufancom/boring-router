@@ -1,3 +1,3 @@
 export class RouteGroup {
-  constructor(public $group: string) {}
+  constructor(readonly $group: string) {}
 }
