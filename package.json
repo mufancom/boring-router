@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "@magicspace/configs": "^0.1.46",
-    "@types/react": "^16.7.21",
+    "@types/react": "^16.4.13",
     "mobx": "^5.9.0",
     "mobx-react": "^5.4.3",
     "react": "^16.7.0",

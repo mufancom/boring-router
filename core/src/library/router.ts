@@ -140,9 +140,13 @@ export type NextRouteMatchType<
   >;
 
 export type RouteGroupType<
+  TThisGroupName extends string,
   TRouteSchemaDict,
   TGroupName extends string
-> = RouteGroup<NextRouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>> &
+> = RouteGroup<
+  TThisGroupName,
+  NextRouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>
+> &
   RouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>;
 
 type __RouterType<
@@ -151,10 +155,9 @@ type __RouterType<
   TGroupName extends string
 > = Router<
   {
-    [K in keyof TGroupToRouteSchemaDictDict]: RouteGroupType<
-      TGroupToRouteSchemaDictDict[K],
-      TGroupName
-    >
+    [K in keyof TGroupToRouteSchemaDictDict]: K extends string
+      ? RouteGroupType<K, TGroupToRouteSchemaDictDict[K], TGroupName>
+      : never
   },
   NextRouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>,
   TGroupName
@@ -298,9 +301,10 @@ export class Router<
     let groupToChildrenMap = this._groupToChildrenMap;
     let groupSet = this._groupSet;
 
-    let primaryMatchRoutes = this._build(primarySchema, this, this.$next);
-
-    groupToChildrenMap.set(undefined, primaryMatchRoutes);
+    groupToChildrenMap.set(
+      undefined,
+      this._build(primarySchema, this, this.$next),
+    );
 
     if (groupToSchemaDict) {
       let parallelRouteDict = this.$ as Dict<RouteGroup>;
