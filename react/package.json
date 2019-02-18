@@ -13,7 +13,7 @@
     "build:library": "rimraf bld/library && tsc -p src/library",
     "typecheck:examples": "./scripts/typecheck-examples.sh",
     "lint:library": "tslint -p src/library",
-    "lint:examples": "./scripts/typecheck-examples.sh",
+    "lint:examples": "./scripts/lint-examples.sh",
     "test:library": "yarn build:library && yarn lint:library",
     "test:examples": "yarn typecheck:examples && yarn lint:examples",
     "test": "yarn test:library && yarn test:examples"
