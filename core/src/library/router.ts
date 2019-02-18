@@ -19,7 +19,7 @@ import {
   RouteMatch,
   RouteMatchOptions,
 } from './route-match';
-import {RouteGroupSchemaDict, RouteSchemaDict} from './schema';
+import {GroupNameToRouteSchemaDictDict, RouteSchemaDict} from './schema';
 
 export type SegmentMatcherCallback = (key: string) => string;
 
@@ -190,7 +190,7 @@ export class Router {
 
   private constructor(
     primarySchema: RouteSchemaDict,
-    groupSchema: RouteGroupSchemaDict | undefined,
+    groupNameToSchemaDict: GroupNameToRouteSchemaDictDict | undefined,
     history: IHistory,
     {
       segmentMatcher,
@@ -212,10 +212,10 @@ export class Router {
 
     this._children = this._build(primarySchema, this);
 
-    if (groupSchema) {
+    if (groupNameToSchemaDict) {
       let parallelRouteDict = this.$ as Dict<RouteGroup>;
 
-      for (let [groupName, schema] of Object.entries(groupSchema)) {
+      for (let [groupName, schema] of Object.entries(groupNameToSchemaDict)) {
         let group = new RouteGroup(groupName);
 
         parallelRouteDict[groupName] = group;
@@ -630,13 +630,13 @@ export class Router {
 
     let groupName = '$group' in parent ? parent.$group : undefined;
 
-    for (let [key, schema] of Object.entries(schemaDict)) {
+    for (let [routeName, schema] of Object.entries(schemaDict)) {
       if (typeof schema === 'boolean') {
         schema = {};
       }
 
       let {
-        $match: match = this._segmentMatcher(key),
+        $match: match = this._segmentMatcher(routeName),
         $query: query,
         $exact: exact = false,
         $children: children,
@@ -651,7 +651,7 @@ export class Router {
       };
 
       let routeMatch = new RouteMatch(
-        key,
+        routeName,
         prefix,
         source,
         parent instanceof RouteMatch ? parent : undefined,
@@ -661,7 +661,7 @@ export class Router {
       );
 
       let nextRouteMatch = new NextRouteMatch(
-        key,
+        routeName,
         prefix,
         matchingSource,
         matchingParent,
@@ -675,10 +675,10 @@ export class Router {
 
       routeMatches.push(routeMatch);
 
-      (parent as any)[key] = routeMatch;
+      (parent as any)[routeName] = routeMatch;
 
       if (matchingParent) {
-        (matchingParent as any)[key] = nextRouteMatch;
+        (matchingParent as any)[routeName] = nextRouteMatch;
       }
 
       if (!children) {
@@ -698,7 +698,7 @@ export class Router {
   ): RouterType<TPrimarySchema, never>;
   static create<
     TPrimarySchema extends RouteSchemaDict,
-    TGroupSchema extends RouteGroupSchemaDict
+    TGroupSchema extends GroupNameToRouteSchemaDictDict
   >(
     primarySchema: TPrimarySchema,
     groupSchema: TGroupSchema,
@@ -707,7 +707,7 @@ export class Router {
   ): RouterType<TPrimarySchema, TGroupSchema>;
   static create<
     TPrimarySchema extends RouteSchemaDict,
-    TGroupSchema extends RouteGroupSchemaDict
+    TGroupSchema extends GroupNameToRouteSchemaDictDict
   >(
     primarySchema: any,
     groupSchema: any,
