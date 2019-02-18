@@ -250,6 +250,13 @@ test('should match `multiple.mixed`', async () => {
   expect(router.multiple.number.$matched).toBe(false);
 });
 
+test('should match `$group`', async () => {
+  expect(router.default.$group).toBe(undefined);
+  expect(router.account.id.$group).toBe(undefined);
+  expect(router.$.popup.$group).toBe('popup');
+  expect(router.$.popup.invite.$group).toBe('popup');
+});
+
 test('should match parallel `account`, `friends` and `invite`', async () => {
   history.push('/account');
 

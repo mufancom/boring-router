@@ -12,13 +12,14 @@ import {
   then,
 } from './@utils';
 import {IHistory, Location} from './history';
+import {RouteGroup} from './route-group';
 import {
   GeneralQueryDict,
   NextRouteMatch,
   RouteMatch,
   RouteMatchOptions,
 } from './route-match';
-import {RouteGroupSchemaDict, RouteSchema, RouteSchemaDict} from './schema';
+import {RouteGroupSchemaDict, RouteSchemaDict} from './schema';
 
 export type SegmentMatcherCallback = (key: string) => string;
 
@@ -85,10 +86,8 @@ export type RouteMatchType<
 export type RouterType<TRouteSchemaDict, TRouteGroupSchemaDict> = Router &
   RouteMatchSegmentType<TRouteSchemaDict, never> & {
     $: {
-      [K in keyof TRouteGroupSchemaDict]: RouteMatchSegmentType<
-        TRouteGroupSchemaDict[K],
-        never
-      >
+      [K in keyof TRouteGroupSchemaDict]: RouteGroup &
+        RouteMatchSegmentType<TRouteGroupSchemaDict[K], never>
     };
   };
 
@@ -209,13 +208,23 @@ export class Router {
 
     this._segmentMatcher = segmentMatcher || DEFAULT_SEGMENT_MATCHER_CALLBACK;
 
-    this._children = this._build(primarySchema, groupSchema, this);
+    this._groupSet = new Set();
 
-    this._groupSet = new Set(
-      this._children
-        .map(match => match.$group)
-        .filter((group): group is string => typeof group === 'string'),
-    );
+    this._children = this._build(primarySchema, this);
+
+    if (groupSchema) {
+      let parallelRouteDict = this.$ as Dict<RouteGroup>;
+
+      for (let [groupName, schema] of Object.entries(groupSchema)) {
+        let group = new RouteGroup(groupName);
+
+        parallelRouteDict[groupName] = group;
+
+        this._children = this._children.concat(this._build(schema, group));
+
+        this._groupSet.add(groupName);
+      }
+    }
 
     then(() => {
       history.listen(this._onLocationChange);
@@ -343,7 +352,7 @@ export class Router {
     >();
 
     for (let [group, path] of pathMap) {
-      let routeMatchEntries = this._match(this, path) || [];
+      let routeMatchEntries = this._match(this, group, path) || [];
 
       if (!routeMatchEntries.length) {
         continue;
@@ -565,6 +574,7 @@ export class Router {
   /** @internal */
   private _match(
     target: Router | RouteMatch,
+    group: string | undefined,
     upperRest: string,
   ): RouteMatchEntry[] | undefined {
     for (let routeMatch of target._children || []) {
@@ -576,7 +586,7 @@ export class Router {
         continue;
       }
 
-      if (exactlyMatched) {
+      if (exactlyMatched && routeMatch.$group === group) {
         return [
           {
             match: routeMatch,
@@ -586,7 +596,7 @@ export class Router {
         ];
       }
 
-      let result = this._match(routeMatch, rest);
+      let result = this._match(routeMatch, group, rest);
 
       if (!result) {
         continue;
@@ -607,9 +617,8 @@ export class Router {
 
   /** @internal */
   private _build(
-    primarySchemaDict: RouteSchemaDict,
-    groupSchemaDict: RouteGroupSchemaDict | undefined,
-    parent: RouteMatch | Router,
+    schemaDict: RouteSchemaDict,
+    parent: RouteMatch | RouteGroup | Router,
     matchingParent?: NextRouteMatch,
   ): RouteMatch[] {
     let routeMatches: RouteMatch[] = [];
@@ -619,34 +628,9 @@ export class Router {
     let history = this._history;
     let prefix = this._prefix;
 
-    let schemaEntries: [
-      /* route name */
-      string,
-      /* route schema */
-      boolean | RouteSchema,
-      /* route group name */
-      string | undefined
-    ][] = [];
+    let groupName = '$group' in parent ? parent.$group : undefined;
 
-    if (groupSchemaDict) {
-      for (let [group, dict] of Object.entries(groupSchemaDict)) {
-        for (let [key, schema] of Object.entries(dict)) {
-          schemaEntries.push([key, schema, group]);
-        }
-      }
-    }
-
-    for (let [key, schema] of Object.entries(primarySchemaDict)) {
-      schemaEntries.push([
-        key,
-        schema,
-        '$group' in parent ? parent.$group : undefined,
-      ]);
-    }
-
-    let parallelRouteDict = this.$ as Dict<Dict<RouteMatch>>;
-
-    for (let [key, schema, groupName] of schemaEntries) {
+    for (let [key, schema] of Object.entries(schemaDict)) {
       if (typeof schema === 'boolean') {
         schema = {};
       }
@@ -693,14 +677,6 @@ export class Router {
 
       (parent as any)[key] = routeMatch;
 
-      if (groupName && groupSchemaDict && key in groupSchemaDict[groupName]) {
-        if (!parallelRouteDict[groupName]) {
-          parallelRouteDict[groupName] = {};
-        }
-
-        parallelRouteDict[groupName][key] = routeMatch;
-      }
-
       if (matchingParent) {
         (matchingParent as any)[key] = nextRouteMatch;
       }
@@ -709,12 +685,7 @@ export class Router {
         continue;
       }
 
-      routeMatch._children = this._build(
-        children,
-        undefined,
-        routeMatch,
-        nextRouteMatch,
-      );
+      routeMatch._children = this._build(children, routeMatch, nextRouteMatch);
     }
 
     return routeMatches;
