@@ -49,27 +49,6 @@ let router = Router.create(
       },
     },
     onlyPopup: true,
-    friends: {
-      $exact: true,
-      $group: 'sidebar',
-      $children: {
-        chat: true,
-        transfer: true,
-        call: true,
-      },
-    },
-    groups: {
-      $exact: true,
-      $group: 'sidebar',
-      $children: {
-        chat: true,
-        call: true,
-      },
-    },
-    invite: {
-      $exact: true,
-      $group: 'popup',
-    },
     multiple: {
       $children: {
         number: {
@@ -84,16 +63,42 @@ let router = Router.create(
       $match: RouteMatch.rest,
     },
   },
+  {
+    popup: {
+      invite: {
+        $exact: true,
+      },
+    },
+    sidebar: {
+      groups: {
+        $exact: true,
+        $children: {
+          chat: true,
+          call: true,
+        },
+      },
+      friends: {
+        $exact: true,
+        $children: {
+          chat: true,
+          transfer: true,
+          call: true,
+        },
+      },
+    },
+  },
   history,
 );
 
 router.onlySidebar.$parallel({groups: ['sidebar']});
 router.onlySidebar.onlyChat.$parallel({
-  matches: [router.friends.chat, router.groups.chat],
+  matches: [router.$.sidebar.friends.chat, router.$.sidebar.groups.chat],
 });
 
-router.onlyFriends.$parallel({matches: [router.friends]});
-router.onlyFriends.onlyTransfer.$parallel({matches: [router.friends.transfer]});
+router.onlyFriends.$parallel({matches: [router.$.sidebar.friends]});
+router.onlyFriends.onlyTransfer.$parallel({
+  matches: [router.$.sidebar.friends.transfer],
+});
 
 router.onlyPopup.$parallel({groups: ['popup']});
 
@@ -251,23 +256,23 @@ test('should match parallel `account`, `friends` and `invite`', async () => {
   await nap();
 
   expect(router.account.$matched).toBe(true);
-  expect(router.friends.$matched).toBe(false);
+  expect(router.$.sidebar.friends.$matched).toBe(false);
 
-  router.friends.$push();
+  router.$.sidebar.friends.$push();
 
   await nap();
 
   expect(router.account.$matched).toBe(true);
-  expect(router.friends.$matched).toBe(true);
+  expect(router.$.sidebar.friends.$matched).toBe(true);
   expect(router.account.$ref()).toBe('/account?_sidebar=/friends');
 
-  router.invite.$push();
+  router.$.popup.invite.$push();
 
   await nap();
 
   expect(router.account.$matched).toBe(true);
-  expect(router.friends.$matched).toBe(true);
-  expect(router.invite.$matched).toBe(true);
+  expect(router.$.sidebar.friends.$matched).toBe(true);
+  expect(router.$.popup.invite.$matched).toBe(true);
   expect(router.account.$ref()).toBe(
     '/account?_sidebar=/friends&_popup=/invite',
   );
@@ -278,25 +283,25 @@ test('should match `friends.chat` then `friends.transfer`', async () => {
 
   await nap();
 
-  router.friends.$push();
+  router.$.sidebar.friends.$push();
 
   await nap();
 
-  router.friends.chat.$push();
+  router.$.sidebar.friends.chat.$push();
 
   await nap();
 
   expect(router.account.id.$matched).toBe(true);
-  expect(router.friends.chat.$matched).toBe(true);
+  expect(router.$.sidebar.friends.chat.$matched).toBe(true);
   expect(router.account.id.$ref()).toBe('/account/123?_sidebar=/friends/chat');
 
-  router.friends.transfer.$replace();
+  router.$.sidebar.friends.transfer.$replace();
 
   await nap();
 
   expect(router.account.id.$matched).toBe(true);
-  expect(router.friends.chat.$matched).toBe(false);
-  expect(router.friends.transfer.$matched).toBe(true);
+  expect(router.$.sidebar.friends.chat.$matched).toBe(false);
+  expect(router.$.sidebar.friends.transfer.$matched).toBe(true);
   expect(router.account.id.$ref()).toBe(
     '/account/123?_sidebar=/friends/transfer',
   );
@@ -307,16 +312,16 @@ test('should switch from `friends.call` to `groups`', async () => {
 
   await nap();
 
-  router.friends.call.$push();
+  router.$.sidebar.friends.call.$push();
 
   await nap();
 
-  router.groups.$push();
+  router.$.sidebar.groups.$push();
 
   await nap();
 
-  expect(router.friends.call.$matched).toBe(false);
-  expect(router.groups.$matched).toBe(true);
+  expect(router.$.sidebar.friends.call.$matched).toBe(false);
+  expect(router.$.sidebar.groups.$matched).toBe(true);
   expect(router.$ref()).toBe('/account/123?_sidebar=/groups');
 });
 
@@ -330,8 +335,8 @@ test('parallel whitelist should take effect', async () => {
   await nap();
 
   expect(router.onlySidebar.$matched).toBe(true);
-  expect(router.friends.call.$matched).toBe(true);
-  expect(router.invite.$matched).toBe(false);
+  expect(router.$.sidebar.friends.call.$matched).toBe(true);
+  expect(router.$.popup.invite.$matched).toBe(false);
   expect(router.$ref()).toBe(
     '/only-sidebar?_sidebar=/friends/call&_popup=/invite',
   );
@@ -341,19 +346,19 @@ test('parallel whitelist should take effect', async () => {
   await nap();
 
   expect(router.onlySidebar.onlyChat.$matched).toBe(true);
-  expect(router.friends.call.$matched).toBe(false);
-  expect(router.invite.$matched).toBe(false);
+  expect(router.$.sidebar.friends.call.$matched).toBe(false);
+  expect(router.$.popup.invite.$matched).toBe(false);
   expect(router.$ref()).toBe(
     '/only-sidebar/only-chat?_sidebar=/friends/call&_popup=/invite',
   );
 
-  router.groups.chat.$push();
+  router.$.sidebar.groups.chat.$push();
 
   await nap();
 
   expect(router.onlySidebar.onlyChat.$matched).toBe(true);
-  expect(router.groups.chat.$matched).toBe(true);
-  expect(router.invite.$matched).toBe(false);
+  expect(router.$.sidebar.groups.chat.$matched).toBe(true);
+  expect(router.$.popup.invite.$matched).toBe(false);
   expect(router.$ref()).toBe(
     '/only-sidebar/only-chat?_sidebar=/groups/chat&_popup=/invite',
   );
@@ -363,26 +368,26 @@ test('parallel whitelist should take effect', async () => {
   await nap();
 
   expect(router.onlyFriends.$matched).toBe(true);
-  expect(router.groups.chat.$matched).toBe(false);
-  expect(router.invite.$matched).toBe(false);
+  expect(router.$.sidebar.groups.chat.$matched).toBe(false);
+  expect(router.$.popup.invite.$matched).toBe(false);
 
-  router.friends.chat.$replace();
+  router.$.sidebar.friends.chat.$replace();
 
   await nap();
 
-  expect(router.friends.chat.$matched).toBe(true);
+  expect(router.$.sidebar.friends.chat.$matched).toBe(true);
 
   router.onlyFriends.onlyTransfer.$replace();
 
   await nap();
 
-  expect(router.friends.chat.$matched).toBe(false);
+  expect(router.$.sidebar.friends.chat.$matched).toBe(false);
 
-  router.friends.transfer.$replace();
+  router.$.sidebar.friends.transfer.$replace();
 
   await nap();
 
-  expect(router.friends.transfer.$matched).toBe(true);
+  expect(router.$.sidebar.friends.transfer.$matched).toBe(true);
   expect(router.$ref()).toBe(
     '/only-friends/only-transfer?_sidebar=/friends/transfer&_popup=/invite',
   );
@@ -391,8 +396,8 @@ test('parallel whitelist should take effect', async () => {
 
   await nap();
 
-  expect(router.friends.transfer.$matched).toBe(false);
-  expect(router.invite.$matched).toBe(true);
+  expect(router.$.sidebar.friends.transfer.$matched).toBe(false);
+  expect(router.$.popup.invite.$matched).toBe(true);
   expect(router.$ref()).toBe(
     '/only-popup?_sidebar=/friends/transfer&_popup=/invite',
   );
@@ -409,17 +414,17 @@ test("should leave and visit group 'sidebar' and 'popup' again", async () => {
 
   expect(router.$ref()).toBe('/account?_popup=/invite');
 
-  router.invite.$replace({}, {leave: true});
+  router.$.popup.invite.$replace({}, {leave: true});
 
   await nap();
 
   expect(router.$ref()).toBe('/account');
 
-  router.invite.$push();
+  router.$.popup.invite.$push();
 
   await nap();
 
-  router.friends.$push();
+  router.$.sidebar.friends.$push();
 
   await nap();
 
@@ -431,37 +436,37 @@ test("should leave parallel routes by 'leaves' options when push a new route", a
 
   await nap();
 
-  router.friends.$push();
+  router.$.sidebar.friends.$push();
 
   await nap();
 
-  router.invite.$push();
+  router.$.popup.invite.$push();
 
   await nap();
 
   expect(router.account.$matched).toBe(true);
-  expect(router.friends.$matched).toBe(true);
-  expect(router.invite.$matched).toBe(true);
+  expect(router.$.sidebar.friends.$matched).toBe(true);
+  expect(router.$.popup.invite.$matched).toBe(true);
 
   router.default.$push({}, {leaves: ['popup']});
 
   await nap();
 
   expect(router.default.$matched).toBe(true);
-  expect(router.friends.$matched).toBe(true);
-  expect(router.invite.$matched).toBe(false);
+  expect(router.$.sidebar.friends.$matched).toBe(true);
+  expect(router.$.popup.invite.$matched).toBe(false);
 
   router.account.$push({}, {leaves: ['sidebar']});
 
   await nap();
 
-  router.invite.$push();
+  router.$.popup.invite.$push();
 
   await nap();
 
   expect(router.account.$matched).toBe(true);
-  expect(router.friends.$matched).toBe(false);
-  expect(router.invite.$matched).toBe(true);
+  expect(router.$.sidebar.friends.$matched).toBe(false);
+  expect(router.$.popup.invite.$matched).toBe(true);
 
   expect(router.$ref()).toBe('/account?_popup=/invite');
 });

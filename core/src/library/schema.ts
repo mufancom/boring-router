@@ -12,13 +12,8 @@ export interface RouteSchema {
   $extension?: object;
 }
 
-export interface RouteRootSchema extends RouteSchema {
-  $group?: string;
-}
-
 export type RouteSchemaDict = Dict<RouteSchema | boolean>;
-
-export type RouteRootSchemaDict = Dict<RouteRootSchema | boolean>;
+export type RouteGroupSchemaDict = Dict<RouteSchemaDict>;
 
 export function schema<T extends RouteSchemaDict>(schema: T): T {
   return schema;
