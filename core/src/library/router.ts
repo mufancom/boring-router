@@ -12,18 +12,14 @@ import {
   then,
 } from './@utils';
 import {IHistory, Location} from './history';
+import {RouteGroup} from './route-group';
 import {
   GeneralQueryDict,
   NextRouteMatch,
   RouteMatch,
   RouteMatchOptions,
 } from './route-match';
-import {
-  RouteRootSchema,
-  RouteRootSchemaDict,
-  RouteSchema,
-  RouteSchemaDict,
-} from './schema';
+import {GroupToRouteSchemaDictDict, RouteSchemaDict} from './schema';
 
 export type SegmentMatcherCallback = (key: string) => string;
 
@@ -87,8 +83,13 @@ export type RouteMatchType<
   RouteMatchSegmentType<NestedRouteSchemaDictType<TRouteSchema>, TSegmentKey> &
   RouteMatchExtensionType<TRouteSchema>;
 
-export type RouterType<TRouteSchemaDict> = Router &
-  RouteMatchSegmentType<TRouteSchemaDict, never>;
+export type RouterType<TRouteSchemaDict, TGroupToRouteSchemaDictDict> = Router &
+  RouteMatchSegmentType<TRouteSchemaDict, never> & {
+    $: {
+      [K in keyof TGroupToRouteSchemaDictDict]: RouteGroup &
+        RouteMatchSegmentType<TGroupToRouteSchemaDictDict[K], never>
+    };
+  };
 
 export interface RouteMatchEntry {
   match: RouteMatch;
@@ -137,6 +138,8 @@ export interface RouterRefOptions {
 }
 
 export class Router {
+  readonly $: object = {};
+
   /** @internal */
   private _history: IHistory;
 
@@ -180,13 +183,14 @@ export class Router {
   private _changing = Promise.resolve();
 
   /** @internal */
-  _children: RouteMatch[];
+  private _groupSet: Set<string>;
 
   /** @internal */
-  _groupSet: Set<string>;
+  _groupToChildrenMap = new Map<string | undefined, RouteMatch[]>();
 
   private constructor(
-    schema: RouteRootSchemaDict,
+    primarySchema: RouteSchemaDict,
+    groupToSchemaDict: GroupToRouteSchemaDictDict | undefined,
     history: IHistory,
     {
       segmentMatcher,
@@ -204,13 +208,25 @@ export class Router {
 
     this._segmentMatcher = segmentMatcher || DEFAULT_SEGMENT_MATCHER_CALLBACK;
 
-    this._children = this._build(schema, this);
+    this._groupSet = new Set();
 
-    this._groupSet = new Set(
-      this._children
-        .map(match => match.$group)
-        .filter((group): group is string => typeof group === 'string'),
-    );
+    let groupToChildrenMap = this._groupToChildrenMap;
+    let groupSet = this._groupSet;
+
+    groupToChildrenMap.set(undefined, this._build(primarySchema, this));
+
+    if (groupToSchemaDict) {
+      let parallelRouteDict = this.$ as Dict<RouteGroup>;
+
+      for (let [group, schema] of Object.entries(groupToSchemaDict)) {
+        let routeGroup = new RouteGroup(group);
+
+        parallelRouteDict[group] = routeGroup;
+
+        groupToChildrenMap.set(group, this._build(schema, routeGroup));
+        groupSet.add(group);
+      }
+    }
 
     then(() => {
       history.listen(this._onLocationChange);
@@ -337,8 +353,12 @@ export class Router {
       RouteMatchEntry[]
     >();
 
+    let groupToChildrenMap = this._groupToChildrenMap;
+
     for (let [group, path] of pathMap) {
-      let routeMatchEntries = this._match(this, path) || [];
+      let routeMatches = groupToChildrenMap.get(group) || [];
+
+      let routeMatchEntries = this._match(routeMatches, path) || [];
 
       if (!routeMatchEntries.length) {
         continue;
@@ -559,10 +579,10 @@ export class Router {
 
   /** @internal */
   private _match(
-    target: Router | RouteMatch,
+    routeMatches: RouteMatch[],
     upperRest: string,
   ): RouteMatchEntry[] | undefined {
-    for (let routeMatch of target._children || []) {
+    for (let routeMatch of routeMatches) {
       let {matched, exactlyMatched, segment, rest} = routeMatch._match(
         upperRest,
       );
@@ -581,7 +601,7 @@ export class Router {
         ];
       }
 
-      let result = this._match(routeMatch, rest);
+      let result = this._match(routeMatch._children || [], rest);
 
       if (!result) {
         continue;
@@ -602,8 +622,8 @@ export class Router {
 
   /** @internal */
   private _build(
-    schemaDict: RouteRootSchemaDict | RouteSchemaDict,
-    parent: RouteMatch | Router,
+    schemaDict: RouteSchemaDict,
+    parent: RouteMatch | RouteGroup | Router,
     matchingParent?: NextRouteMatch,
   ): RouteMatch[] {
     let routeMatches: RouteMatch[] = [];
@@ -613,27 +633,20 @@ export class Router {
     let history = this._history;
     let prefix = this._prefix;
 
-    for (let [key, schema] of Object.entries(schemaDict) as [
-      string,
-      boolean | RouteRootSchema | RouteSchema
-    ][]) {
+    let group = '$group' in parent ? parent.$group : undefined;
+
+    for (let [routeName, schema] of Object.entries(schemaDict)) {
       if (typeof schema === 'boolean') {
         schema = {};
       }
 
-      let group = '$group' in parent ? parent.$group : undefined;
-
       let {
-        $match: match = this._segmentMatcher(key),
+        $match: match = this._segmentMatcher(routeName),
         $query: query,
         $exact: exact = false,
         $children: children,
         $extension: extension = {},
       } = schema;
-
-      if ('$group' in schema) {
-        group = schema.$group;
-      }
 
       let options: RouteMatchOptions = {
         match,
@@ -643,7 +656,7 @@ export class Router {
       };
 
       let routeMatch = new RouteMatch(
-        key,
+        routeName,
         prefix,
         source,
         parent instanceof RouteMatch ? parent : undefined,
@@ -653,7 +666,7 @@ export class Router {
       );
 
       let nextRouteMatch = new NextRouteMatch(
-        key,
+        routeName,
         prefix,
         matchingSource,
         matchingParent,
@@ -667,10 +680,10 @@ export class Router {
 
       routeMatches.push(routeMatch);
 
-      (parent as any)[key] = routeMatch;
+      (parent as any)[routeName] = routeMatch;
 
       if (matchingParent) {
-        (matchingParent as any)[key] = nextRouteMatch;
+        (matchingParent as any)[routeName] = nextRouteMatch;
       }
 
       if (!children) {
@@ -683,11 +696,42 @@ export class Router {
     return routeMatches;
   }
 
-  static create<TSchema extends RouteRootSchemaDict>(
-    schema: TSchema,
+  static create<TPrimaryRouteSchemaDict extends RouteSchemaDict>(
+    primarySchema: TPrimaryRouteSchemaDict,
     history: IHistory,
-    options: RouterOptions = {},
-  ): RouterType<TSchema> {
-    return new Router(schema, history, options) as RouterType<TSchema>;
+    options?: RouterOptions,
+  ): RouterType<TPrimaryRouteSchemaDict, object>;
+  static create<
+    TPrimaryRouteSchemaDict extends RouteSchemaDict,
+    TGroupToRouteSchemaDictDict extends GroupToRouteSchemaDictDict
+  >(
+    primarySchema: TPrimaryRouteSchemaDict,
+    groupSchema: TGroupToRouteSchemaDictDict,
+    history: IHistory,
+    options?: RouterOptions,
+  ): RouterType<TPrimaryRouteSchemaDict, TGroupToRouteSchemaDictDict>;
+  static create(
+    primarySchema: any,
+    groupSchema: any,
+    history: any = {},
+    options: any = {},
+  ): Router {
+    if (isHistory(groupSchema)) {
+      options = history;
+      history = groupSchema;
+      groupSchema = {};
+    }
+
+    return new Router(primarySchema, groupSchema, history, options);
   }
+}
+
+function isHistory(object: any): object is IHistory {
+  return (
+    object &&
+    object.location &&
+    typeof object.push === 'function' &&
+    typeof object.replace === 'function' &&
+    typeof object.listen === 'function'
+  );
 }

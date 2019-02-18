@@ -2,10 +2,12 @@
   "editor.formatOnSave": true,
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.tslint": true
+  },
+  "editor.codeActionsOnSaveTimeout": 10000,
   "files.eol": "\n",
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "tslint.autoFixOnSave": true,
-  "tslint.configFile": "node_modules/@magicspace/configs/tslint-vscode.js"
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

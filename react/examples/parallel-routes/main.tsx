@@ -13,20 +13,6 @@ const router = Router.create(
     default: {
       $match: '',
     },
-    account: {
-      $exact: true,
-      $group: 'popup',
-      $children: {
-        login: true,
-        register: true,
-      },
-    },
-    profile: {
-      $group: 'popup',
-    },
-    cart: {
-      $group: 'sidebar',
-    },
     news: true,
     about: {
       $exact: true,
@@ -39,10 +25,25 @@ const router = Router.create(
       $match: RouteMatch.rest,
     },
   },
+  {
+    popup: {
+      account: {
+        $exact: true,
+        $children: {
+          login: true,
+          register: true,
+        },
+      },
+      profile: true,
+    },
+    sidebar: {
+      cart: true,
+    },
+  },
   history,
 );
 
-router.about.$parallel({matches: [router.cart]});
+router.about.$parallel({matches: [router.$.sidebar.cart]});
 router.contact.$parallel({groups: ['popup']});
 
 router.about.$beforeEnter(match => {
@@ -60,16 +61,16 @@ export class App extends Component {
         <Route match={router.default}>
           <p>Home page</p>
           <div>
-            <Link to={router.account} toggle>
+            <Link to={router.$.popup.account} toggle>
               Account
             </Link>
             {' | '}
-            <Link to={router.profile} toggle>
+            <Link to={router.$.popup.profile} toggle>
               Profile
             </Link>
           </div>
           <div>
-            <Link to={router.cart}>Cart</Link>
+            <Link to={router.$.sidebar.cart}>Cart</Link>
           </div>
           <div>
             <Link to={router.news}>News</Link>
@@ -86,7 +87,7 @@ export class App extends Component {
             </Link>
           </div>
         </Route>
-        <Route match={router.account}>
+        <Route match={router.$.popup.account}>
           <div
             style={{
               position: 'fixed',
@@ -107,27 +108,27 @@ export class App extends Component {
                 x
               </a>
             </p>
-            <Route match={router.account} exact={true}>
+            <Route match={router.$.popup.account} exact={true}>
               <p>
-                <Link to={router.account.login}>Login</Link>
+                <Link to={router.$.popup.account.login}>Login</Link>
                 <br />
-                <Link to={router.account.register}>Register</Link>
+                <Link to={router.$.popup.account.register}>Register</Link>
               </p>
               <p>
-                <Link to={router.profile}>Profile</Link>
+                <Link to={router.$.popup.profile}>Profile</Link>
               </p>
             </Route>
-            <Route match={router.account.login}>
+            <Route match={router.$.popup.account.login}>
               <p>- Login</p>
-              <Link to={router.account}>Back</Link>
+              <Link to={router.$.popup.account}>Back</Link>
             </Route>
-            <Route match={router.account.register}>
+            <Route match={router.$.popup.account.register}>
               <p>- Register</p>
-              <Link to={router.account}>Back</Link>
+              <Link to={router.$.popup.account}>Back</Link>
             </Route>
           </div>
         </Route>
-        <Route match={router.profile}>
+        <Route match={router.$.popup.profile}>
           <div
             style={{
               position: 'fixed',
@@ -149,11 +150,11 @@ export class App extends Component {
               </a>
             </p>
             <p>
-              <Link to={router.account}>Account</Link>
+              <Link to={router.$.popup.account}>Account</Link>
             </p>
           </div>
         </Route>
-        <Route match={router.cart}>
+        <Route match={router.$.sidebar.cart}>
           <div
             style={{
               position: 'fixed',
