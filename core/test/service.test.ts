@@ -1,12 +1,7 @@
 import {createMemoryHistory} from 'history';
 import {computed, configure, observable} from 'mobx';
 
-import {
-  IRouteService,
-  NextRouteMatchType,
-  RouteMatch,
-  Router,
-} from '../bld/library';
+import {IRouteService, RouteMatch, Router} from '../bld/library';
 
 import {nap} from './@utils';
 
@@ -60,13 +55,11 @@ class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
     return `[${this.match.$params.accountId}]`;
   }
 
-  beforeEnter({
-    $params: {accountId},
-  }: NextRouteMatchType<AccountIdRouteMatch>): void {
+  beforeEnter({$params: {accountId}}: AccountIdRouteMatch['$next']): void {
     this.account = new Account(accountId);
   }
 
-  beforeUpdate(match: NextRouteMatchType<AccountIdRouteMatch>): void {
+  beforeUpdate(match: AccountIdRouteMatch['$next']): void {
     beforeUpdate();
 
     this.beforeEnter(match);
