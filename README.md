@@ -69,7 +69,7 @@ class App extends Component {
 
 ### Example list
 
-- [Basic](examples/basic/main.tsx)
+- [Basic](react/examples/basic/main.tsx)
 
   Basic usage.
 
@@ -79,7 +79,7 @@ class App extends Component {
   </Route>
   ```
 
-- [Exact](examples/exact/main.tsx)
+- [Exact](react/examples/exact/main.tsx)
 
   Match exact path.
 
@@ -89,7 +89,7 @@ class App extends Component {
   </Route>
   ```
 
-- [Segment](examples/segment/main.tsx)
+- [Segment](react/examples/segment/main.tsx)
 
   Boring Router's version of `/account/:id` alike parameter.
 
@@ -105,7 +105,7 @@ class App extends Component {
   </Route>
   ```
 
-- [Query](examples/query/main.tsx)
+- [Query](react/examples/query/main.tsx)
 
   Handle query string parameter.
 
@@ -121,7 +121,7 @@ class App extends Component {
   </Route>
   ```
 
-- [Redirect](examples/redirect/main.tsx)
+- [Redirect](react/examples/redirect/main.tsx)
 
   Redirect on match.
 
@@ -129,7 +129,7 @@ class App extends Component {
   <Redirect match={router.notFound} to={router.account} params={{id: '123'}} />
   ```
 
-- [NavLink](examples/nav-link/main.tsx)
+- [NavLink](react/examples/nav-link/main.tsx)
 
   Like `<Link>` but will add a class name if `to` matches.
 
@@ -137,7 +137,7 @@ class App extends Component {
   <NavLink to={router.account}>Account</NavLink>
   ```
 
-- [Function as Child](examples/function-as-child/main.tsx)
+- [Function as Child](react/examples/function-as-child/main.tsx)
 
   Use `<Route />` with a function child.
 
@@ -147,7 +147,7 @@ class App extends Component {
   </Route>
   ```
 
-- [Route Component](examples/route-component/main.tsx)
+- [Route Component](react/examples/route-component/main.tsx)
 
   Use `<Route />` with a route component.
 
@@ -161,7 +161,7 @@ class App extends Component {
   </Route>
   ```
 
-- [Multiple Route Match](examples/multi-route-match/main.tsx)
+- [Multiple Route Match](react/examples/multi-route-match/main.tsx)
 
   Match with multiple route match for shared content.
 
@@ -172,7 +172,16 @@ class App extends Component {
   />
   ```
 
-- [Hooks](examples/hooks/main.tsx)
+- [Parallel Routes](react/examples/parallel-routes/main.tsx)
+
+  Match parallel routes for separate views.
+
+  ```tsx
+  <Route match={router.account} component={AccountPage} />
+  <Route match={router.$.popup} component={PopupView} />
+  ```
+
+- [Hooks](react/examples/hooks/main.tsx)
 
   Add hooks to route match.
 
@@ -182,7 +191,7 @@ class App extends Component {
   });
   ```
 
-- [Service](examples/service/main.tsx)
+- [Service](react/examples/service/main.tsx)
 
   Add service to route match.
 
@@ -248,6 +257,9 @@ interface RouteMatch<TParamDict> {
 
   $beforeLeave(callback: RouteMatchBeforeLeave): this;
   $afterLeave(callback: RouteMatchAfterLeave): this;
+
+  $intercept(callback: RouteInterceptCallback): this;
+  $react(callback: RouteReactCallback): this;
 
   $service(factory: RouteMatchServiceFactory<this>): this;
 

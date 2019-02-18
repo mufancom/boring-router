@@ -43,6 +43,8 @@ export type RouteInterceptCallback<
   TRouteMatch extends RouteMatch = RouteMatch
 > = (next: TRouteMatch['$next']) => Promise<boolean | void> | boolean | void;
 
+export type RouteReactCallback = () => void;
+
 export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
 ) => IRouteService<TRouteMatch> | Promise<IRouteService<TRouteMatch>>;
@@ -525,6 +527,13 @@ export class RouteMatch<
   $intercept(callback: RouteInterceptCallback): this {
     this._beforeEnterCallbacks.push(callback);
     this._beforeUpdateCallbacks.push(callback);
+
+    return this;
+  }
+
+  $react(callback: RouteReactCallback): this {
+    this._afterEnterCallbacks.push(callback);
+    this._afterUpdateCallbacks.push(callback);
 
     return this;
   }
