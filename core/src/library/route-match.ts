@@ -10,18 +10,13 @@ import {buildRef, testPathPrefix, tolerate} from './@utils';
 import {IHistory} from './history';
 import {RouteMatchEntry, RouteSource} from './router';
 
-export type NextRouteMatchType<TRouteMatch extends RouteMatch> = OmitValueOfKey<
-  TRouteMatch,
-  Exclude<keyof RouteMatch, keyof NextRouteMatch>
->;
-
 /**
  * Route before enter callback.
  * @return Return `true` or `undefined` to do nothing; return `false` to revert
  * this history change; return full path to redirect.
  */
 export type RouteBeforeEnter<TRouteMatch extends RouteMatch = RouteMatch> = (
-  next: NextRouteMatchType<TRouteMatch>,
+  next: TRouteMatch['$next'],
 ) => Promise<boolean | void> | boolean | void;
 
 /**
@@ -30,7 +25,7 @@ export type RouteBeforeEnter<TRouteMatch extends RouteMatch = RouteMatch> = (
  * this history change; return full path to redirect.
  */
 export type RouteBeforeUpdate<TRouteMatch extends RouteMatch = RouteMatch> = (
-  next: NextRouteMatchType<TRouteMatch>,
+  next: TRouteMatch['$next'],
 ) => Promise<boolean | void> | boolean | void;
 
 /**
@@ -46,9 +41,7 @@ export type RouteAfterLeave = () => void;
 
 export type RouteInterceptCallback<
   TRouteMatch extends RouteMatch = RouteMatch
-> = (
-  next: NextRouteMatchType<TRouteMatch>,
-) => Promise<boolean | void> | boolean | void;
+> = (next: TRouteMatch['$next']) => Promise<boolean | void> | boolean | void;
 
 export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
@@ -102,7 +95,7 @@ export interface RouteMatchOptions extends RouteMatchSharedOptions {
   exact: boolean;
 }
 
-export interface RouterMatchRefOptions {
+export interface RouterMatchRefOptions<TGroupName extends string> {
   /**
    * Whether to leave this match's group.
    */
@@ -110,7 +103,7 @@ export interface RouterMatchRefOptions {
   /**
    * Parallel route groups to leave.
    */
-  leaves?: string[];
+  leaves?: TGroupName[];
   /**
    * Whether to preserve values in current query string.
    */
@@ -118,7 +111,8 @@ export interface RouterMatchRefOptions {
 }
 
 abstract class RouteMatchShared<
-  TParamDict extends GeneralParamDict = GeneralParamDict
+  TParamDict extends GeneralParamDict = GeneralParamDict,
+  TGroupName extends string = string
 > {
   /**
    * Name of this `RouteMatch`, correspondent to the field name of route
@@ -129,7 +123,7 @@ abstract class RouteMatchShared<
   /**
    * Group of this `RouteMatch`, specified in the root route.
    */
-  readonly $group: string | undefined;
+  readonly $group: TGroupName | undefined;
 
   /**
    * Parent of this route match.
@@ -160,7 +154,7 @@ abstract class RouteMatchShared<
     {match, query, group}: RouteMatchSharedOptions,
   ) {
     this.$name = name;
-    this.$group = group;
+    this.$group = group as TGroupName;
     this.$parent = parent;
     this._prefix = prefix;
     this._source = source;
@@ -262,7 +256,7 @@ abstract class RouteMatchShared<
    */
   $ref(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
-    options?: boolean | RouterMatchRefOptions,
+    options?: boolean | RouterMatchRefOptions<TGroupName>,
   ): string {
     let leave: boolean;
     let leaves: string[];
@@ -336,7 +330,7 @@ abstract class RouteMatchShared<
    */
   $push(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: boolean | RouterMatchRefOptions,
+    options?: boolean | RouterMatchRefOptions<TGroupName>,
   ): void {
     let ref = this.$ref(params, options);
     this._history.push(ref);
@@ -347,7 +341,7 @@ abstract class RouteMatchShared<
    */
   $replace(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: boolean | RouterMatchRefOptions,
+    options?: boolean | RouterMatchRefOptions<TGroupName>,
   ): void {
     let ref = this.$ref(params, options);
     this._history.replace(ref);
@@ -358,8 +352,9 @@ abstract class RouteMatchShared<
 }
 
 export class NextRouteMatch<
-  TParamDict extends GeneralParamDict = GeneralParamDict
-> extends RouteMatchShared<TParamDict> {
+  TParamDict extends GeneralParamDict = GeneralParamDict,
+  TGroupName extends string = string
+> extends RouteMatchShared<TParamDict, TGroupName> {
   readonly $parent: NextRouteMatch | undefined;
 
   /** @internal */
@@ -369,7 +364,7 @@ export class NextRouteMatch<
     name: string,
     prefix: string,
     source: RouteSource,
-    parent: RouteMatchShared<TParamDict> | undefined,
+    parent: NextRouteMatch<TParamDict> | undefined,
     origin: RouteMatch<TParamDict>,
     extension: object,
     history: IHistory,
@@ -403,9 +398,15 @@ export class NextRouteMatch<
 }
 
 export class RouteMatch<
-  TParamDict extends GeneralParamDict = GeneralParamDict
-> extends RouteMatchShared<TParamDict> {
+  TParamDict extends GeneralParamDict = GeneralParamDict,
+  TNextRouteMatch extends NextRouteMatch<TParamDict> = NextRouteMatch<
+    TParamDict
+  >,
+  TGroupName extends string = string
+> extends RouteMatchShared<TParamDict, TGroupName> {
   readonly $parent: RouteMatch | undefined;
+
+  readonly $next!: TNextRouteMatch;
 
   /** @internal */
   private _beforeEnterCallbacks: RouteBeforeEnter[] = [];
@@ -448,9 +449,6 @@ export class RouteMatch<
 
   /** @internal */
   _children: RouteMatch[] | undefined;
-
-  /** @internal */
-  _next!: NextRouteMatch<TParamDict>;
 
   /** @internal */
   _parallel: RouteMatchParallelOptions | undefined;
@@ -700,12 +698,10 @@ export class RouteMatch<
 
   /** @internal */
   async _beforeEnter(): Promise<boolean> {
-    let next = this._next;
+    let next = this.$next;
 
     let results = await Promise.all([
-      ...this._beforeEnterCallbacks.map(callback =>
-        tolerate(callback, next as NextRouteMatchType<RouteMatch>),
-      ),
+      ...this._beforeEnterCallbacks.map(callback => tolerate(callback, next)),
       (async () => {
         let service = await this._getService();
 
@@ -713,9 +709,7 @@ export class RouteMatch<
           return undefined;
         }
 
-        return tolerate(() =>
-          service!.beforeEnter!(next as NextRouteMatchType<RouteMatch>),
-        );
+        return tolerate(() => service!.beforeEnter!(next));
       })(),
     ]);
 
@@ -724,12 +718,10 @@ export class RouteMatch<
 
   /** @internal */
   async _beforeUpdate(): Promise<boolean> {
-    let next = this._next;
+    let next = this.$next;
 
     let results = await Promise.all([
-      ...this._beforeUpdateCallbacks.map(callback =>
-        tolerate(callback, next as NextRouteMatchType<RouteMatch>),
-      ),
+      ...this._beforeUpdateCallbacks.map(callback => tolerate(callback, next)),
       (async () => {
         let service = await this._getService();
 
@@ -737,9 +729,7 @@ export class RouteMatch<
           return undefined;
         }
 
-        return tolerate(() =>
-          service!.beforeUpdate!(next as NextRouteMatchType<RouteMatch>),
-        );
+        return tolerate(() => service!.beforeUpdate!(next));
       })(),
     ]);
 
