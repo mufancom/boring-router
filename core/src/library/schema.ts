@@ -13,7 +13,7 @@ export interface RouteSchema {
 }
 
 export type RouteSchemaDict = Dict<RouteSchema | boolean>;
-export type RouteGroupSchemaDict = Dict<RouteSchemaDict>;
+export type GroupNameToRouteSchemaDictDict = Dict<RouteSchemaDict>;
 
 export function schema<T extends RouteSchemaDict>(schema: T): T {
   return schema;
