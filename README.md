@@ -326,13 +326,11 @@ class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
     return `[${this.match.$params.accountId}]`;
   }
 
-  beforeEnter({
-    $params: {accountId},
-  }: NextRouteMatchType<AccountIdRouteMatch>): void {
+  beforeEnter({$params: {accountId}}: AccountIdRouteMatch['$next']): void {
     this.account = new Account(accountId);
   }
 
-  beforeUpdate(match: NextRouteMatchType<AccountIdRouteMatch>): void {
+  beforeUpdate(match: AccountIdRouteMatch['$next']): void {
     this.beforeEnter(match);
   }
 
