@@ -21,8 +21,8 @@ There are multiple reasons pushing me to write Boring Router instead of sticking
 yarn add history react mobx mobx-react
 
 # boring router packages
-yarn add boring-router
-yarn add boring-router-react
+yarn add boring-router@next
+yarn add boring-router-react@next
 ```
 
 ## Usage
