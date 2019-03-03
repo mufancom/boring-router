@@ -205,7 +205,7 @@ class App extends Component {
 yarn install
 yarn build
 
-yarn global add parcel
+yarn global add parcel-bundler
 
 parcel examples/[name]/index.html
 ```
