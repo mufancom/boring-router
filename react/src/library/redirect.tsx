@@ -48,9 +48,9 @@ export class Redirect<
     let {to, params, preserveQuery, push} = this.props;
 
     if (push) {
-      to.$push(params, preserveQuery);
+      to.$push(params, {preserveQuery});
     } else {
-      to.$replace(params, preserveQuery);
+      to.$replace(params, {preserveQuery});
     }
   }
 }

@@ -19,11 +19,7 @@ const router = Router.create(
         id: true,
       },
       $children: {
-        details: {
-          $query: {
-            id: true,
-          },
-        },
+        details: true,
       },
     },
   },
@@ -47,9 +43,7 @@ export class App extends Component {
           <Link to={router.default}>Home</Link>
           <hr />
           <p>Account {router.account.$params.id} page</p>
-          <Link to={router.account.details} preserveQuery>
-            Details
-          </Link>
+          <Link to={router.account.details}>Details</Link>
           <Route match={router.account.details}>
             <p>Account {router.account.details.$params.id} details</p>
           </Route>

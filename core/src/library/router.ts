@@ -63,11 +63,14 @@ export type RouteMatchExtensionType<
 export type RouteMatchSegmentType<
   TRouteSchemaDict,
   TSegmentKey extends string,
+  TQueryKey extends string,
   TGroupName extends string
 > = {
   [K in Extract<keyof TRouteSchemaDict, string>]: RouteMatchType<
     TRouteSchemaDict[K],
     TSegmentKey | FilterRouteMatchNonStringSegment<TRouteSchemaDict[K], K>,
+    | TQueryKey
+    | Extract<keyof RouteQuerySchemaType<TRouteSchemaDict[K]>, string>,
     TGroupName
   >
 };
@@ -75,6 +78,7 @@ export type RouteMatchSegmentType<
 type __RouteMatchType<
   TRouteSchema,
   TSegmentKey extends string,
+  TQueryKey extends string,
   TGroupName extends string,
   TParamDict extends Dict<string | undefined>
 > = RouteMatch<
@@ -90,6 +94,7 @@ type __RouteMatchType<
   RouteMatchSegmentType<
     NestedRouteSchemaDictType<TRouteSchema>,
     TSegmentKey,
+    TQueryKey,
     TGroupName
   > &
   RouteMatchExtensionType<TRouteSchema>;
@@ -97,16 +102,14 @@ type __RouteMatchType<
 export type RouteMatchType<
   TRouteSchema,
   TSegmentKey extends string,
+  TQueryKey extends string,
   TGroupName extends string
 > = __RouteMatchType<
   TRouteSchema,
   TSegmentKey,
+  TQueryKey,
   TGroupName,
-  Record<
-    Extract<keyof RouteQuerySchemaType<TRouteSchema>, string>,
-    string | undefined
-  > &
-    {[K in TSegmentKey]: string}
+  Record<TQueryKey, string | undefined> & Record<TSegmentKey, string>
 >;
 
 export type NextRouteMatchSegmentType<
@@ -130,7 +133,7 @@ export type NextRouteMatchType<
     Extract<keyof RouteQuerySchemaType<TRouteSchema>, string>,
     string | undefined
   > &
-    {[K in TSegmentKey]: string},
+    Record<TSegmentKey, string>,
   TGroupName
 > &
   NextRouteMatchSegmentType<
@@ -147,7 +150,7 @@ export type RouteGroupType<
   TThisGroupName,
   NextRouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>
 > &
-  RouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>;
+  RouteMatchSegmentType<TRouteSchemaDict, never, never, TGroupName>;
 
 type __RouterType<
   TRouteSchemaDict,
@@ -162,7 +165,7 @@ type __RouterType<
   NextRouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>,
   TGroupName
 > &
-  RouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>;
+  RouteMatchSegmentType<TRouteSchemaDict, never, never, TGroupName>;
 
 export type RouterType<
   TRouteSchemaDict,
@@ -177,6 +180,7 @@ export interface RouteMatchEntry {
   match: RouteMatch;
   exact: boolean;
   segment: string;
+  rest: string;
 }
 
 export interface RouteSource {
@@ -556,10 +560,13 @@ export class Router<
 
     if (!previousMatchToMatchEntryMap) {
       previousMatchToMatchEntryMap = new Map();
-      this._source.groupToMatchToMatchEntryMapMap.set(
-        group,
-        previousMatchToMatchEntryMap,
-      );
+
+      runInAction(() => {
+        this._source.groupToMatchToMatchEntryMapMap.set(
+          group,
+          previousMatchToMatchEntryMap!,
+        );
+      });
     }
 
     let previousMatchSet = new Set(previousMatchToMatchEntryMap.keys());
@@ -622,6 +629,8 @@ export class Router<
       }
     }
 
+    // Update
+
     this._location = nextLocation;
 
     runInAction(() => {
@@ -644,17 +653,6 @@ export class Router<
 
       source.groupToMatchToMatchEntryMapMap.set(group, matchToMatchEntryMap);
     });
-
-    // Update
-
-    for (let match of reversedLeavingMatches) {
-      match._update(false, false);
-    }
-
-    for (let match of nextMatchSet) {
-      let {exact} = matchToMatchEntryMap.get(match)!;
-      match._update(true, exact);
-    }
 
     // Process after hooks
 
@@ -703,6 +701,7 @@ export class Router<
             match: routeMatch,
             segment: segment!,
             exact: true,
+            rest,
           },
         ];
       }
@@ -718,6 +717,7 @@ export class Router<
           match: routeMatch,
           segment: segment!,
           exact: false,
+          rest,
         },
         ...result,
       ];

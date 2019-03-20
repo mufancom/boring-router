@@ -27,11 +27,7 @@ let router = Router.create(
           $exact: true,
           $children: {
             settings: true,
-            billings: {
-              $query: {
-                callback: true,
-              },
-            },
+            billings: true,
           },
         },
       },
@@ -206,15 +202,20 @@ test('should match `account.id.billings`', async () => {
   expect(router.account.id.billings.$exact).toBe(true);
 
   expect({...router.account.$params}).toEqual({callback: '/redirect'});
-  expect({...router.account.id.$params}).toEqual({id: '123'});
+  expect({...router.account.id.$params}).toEqual({
+    id: '123',
+    callback: '/redirect',
+  });
   expect({...router.account.id.billings.$params}).toEqual({
     id: '123',
     callback: '/redirect',
   });
 
-  expect(router.account.$ref({}, true)).toBe('/account?callback=%2Fredirect');
-  expect(router.account.id.billings.$ref()).toBe('/account/123/billings');
-  expect(router.account.id.billings.$ref({}, true)).toBe(
+  expect(router.account.$ref({})).toBe('/account?callback=%2Fredirect');
+  expect(router.account.id.billings.$ref({}, {preserveQuery: false})).toBe(
+    '/account/123/billings',
+  );
+  expect(router.account.id.billings.$ref({})).toBe(
     '/account/123/billings?callback=%2Fredirect',
   );
 });

@@ -98,7 +98,7 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     let {to, params, preserveQuery} = this.props;
 
     try {
-      this.href = to.$ref(params, preserveQuery);
+      this.href = to.$ref(params, {preserveQuery});
     } catch (error) {
       this.href = 'javascript:;';
     }

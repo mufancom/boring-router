@@ -1,4 +1,4 @@
-import {action, computed, observable} from 'mobx';
+import {computed, observable} from 'mobx';
 import {
   Dict,
   EmptyObjectPatch,
@@ -107,7 +107,12 @@ export interface RouterMatchRefOptions<TGroupName extends string> {
    */
   leaves?: TGroupName[];
   /**
-   * Whether to preserve values in current query string.
+   * Whether to preserve rest path of current match, defaults to `false`.
+   */
+  rest?: boolean;
+  /**
+   * Whether to preserve query string that matches the target ref, defaults to
+   * `true`.
    */
   preserveQuery?: boolean;
 }
@@ -145,7 +150,7 @@ abstract class RouteMatchShared<
   protected _matchPattern: string | RegExp;
 
   /** @internal */
-  protected _queryKeys: string[] | undefined;
+  protected _queryKeySet: Set<string>;
 
   constructor(
     name: string,
@@ -170,9 +175,10 @@ abstract class RouteMatchShared<
 
     this._matchPattern = match;
 
-    if (query) {
-      this._queryKeys = Object.keys(query);
-    }
+    this._queryKeySet = new Set([
+      ...(query ? Object.keys(query) : []),
+      ...(parent ? parent._queryKeySet : []),
+    ]);
   }
 
   /**
@@ -188,8 +194,14 @@ abstract class RouteMatchShared<
 
   /** @internal */
   @computed
+  protected get _matchEntry(): RouteMatchEntry | undefined {
+    return this._getMatchEntry(this._source);
+  }
+
+  /** @internal */
+  @computed
   protected get _segment(): string | undefined {
-    let entry = this._getMatchEntry(this._source);
+    let entry = this._matchEntry;
     return entry && entry.segment;
   }
 
@@ -229,55 +241,50 @@ abstract class RouteMatchShared<
 
   /** @internal */
   @computed
+  protected get _rest(): string {
+    let entry = this._matchEntry;
+    return entry ? entry.rest : '';
+  }
+
+  /** @internal */
+  @computed
   protected get _query(): GeneralQueryDict | undefined {
-    let queryKeys = this._queryKeys;
     let sourceQueryDict = this._source.queryDict;
 
-    return queryKeys
-      ? queryKeys.reduce(
-          (dict, key) => {
-            let value = sourceQueryDict[key];
+    return Array.from(this._queryKeySet).reduce(
+      (dict, key) => {
+        let value = sourceQueryDict[key];
 
-            if (value !== undefined) {
-              dict[key] = sourceQueryDict[key];
-            }
+        if (value !== undefined) {
+          dict[key] = sourceQueryDict[key];
+        }
 
-            return dict;
-          },
-          {} as GeneralQueryDict,
-        )
-      : undefined;
+        return dict;
+      },
+      {} as GeneralQueryDict,
+    );
   }
 
   /**
    * Generates a string reference that can be used for history navigation.
    * @param params A dictionary of the combination of query string and
    * segments.
-   * @param options Shortcut to `preserveQuery` if its a boolean instead of an
-   * options object.
    */
   $ref(
+    params?: Partial<TParamDict> & EmptyObjectPatch,
+    options?: RouterMatchRefOptions<TGroupName>,
+  ): string;
+  $ref(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
-    options?: boolean | RouterMatchRefOptions<TGroupName>,
+    {
+      leave = false,
+      rest = false,
+      preserveQuery = true,
+      leaves = [],
+    }: RouterMatchRefOptions<TGroupName> = {},
   ): string {
-    let leave: boolean;
-    let leaves: string[];
-    let preserveQuery: boolean;
-
     let group = this.$group;
-
-    if (typeof options === 'object') {
-      ({
-        leave = false,
-        preserveQuery = typeof group === 'string',
-        leaves = [],
-      } = options);
-    } else {
-      leave = false;
-      leaves = [];
-      preserveQuery =
-        options === undefined ? typeof group === 'string' : options;
-    }
+    let beingPrimaryRoute = group === undefined;
 
     let paramKeySet = new Set(Object.keys(params));
     let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
@@ -289,7 +296,7 @@ abstract class RouteMatchShared<
     }
 
     if (leave) {
-      if (group === undefined) {
+      if (beingPrimaryRoute) {
         throw new Error('Cannot leave the primary route');
       }
 
@@ -312,18 +319,44 @@ abstract class RouteMatchShared<
         })
         .join('');
 
+      if (rest) {
+        path += this._rest;
+      }
+
       pathMap.set(group, path);
     }
 
+    let queryKeySet = this._queryKeySet;
+
+    let preservedQueryDict = preserveQuery
+      ? Object.entries(sourceQueryDict)
+          .filter(([key]) => queryKeySet.has(key))
+          .reduce(
+            (dict, [key, value]) => {
+              dict[key] = value!;
+              return dict;
+            },
+            {} as Dict<string>,
+          )
+      : {};
+
+    let restParamDict = Array.from(paramKeySet).reduce(
+      (dict, key) => {
+        if (!queryKeySet.has(key)) {
+          throw new Error(
+            `Parameter "${key}" is defined as neither segment nor query`,
+          );
+        }
+
+        dict[key] = params[key]!;
+        return dict;
+      },
+      {} as Dict<string>,
+    );
+
     return buildRef(this._prefix, pathMap, {
-      ...(preserveQuery ? (sourceQueryDict as Dict<string>) : undefined),
-      ...Array.from(paramKeySet).reduce(
-        (dict, key) => {
-          dict[key] = params[key]!;
-          return dict;
-        },
-        {} as Dict<string>,
-      ),
+      ...preservedQueryDict,
+      ...restParamDict,
     });
   }
 
@@ -332,7 +365,7 @@ abstract class RouteMatchShared<
    */
   $push(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: boolean | RouterMatchRefOptions<TGroupName>,
+    options?: RouterMatchRefOptions<TGroupName>,
   ): void {
     let ref = this.$ref(params, options);
     this._history.push(ref);
@@ -343,14 +376,16 @@ abstract class RouteMatchShared<
    */
   $replace(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: boolean | RouterMatchRefOptions<TGroupName>,
+    options?: RouterMatchRefOptions<TGroupName>,
   ): void {
     let ref = this.$ref(params, options);
     this._history.replace(ref);
   }
 
   /** @internal */
-  abstract _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined;
+  protected abstract _getMatchEntry(
+    source: RouteSource,
+  ): RouteMatchEntry | undefined;
 }
 
 export class NextRouteMatch<
@@ -439,14 +474,6 @@ export class RouteMatch<
   private _serviceFactory: RouteServiceFactory<any> | undefined;
 
   /** @internal */
-  @observable
-  private _matched = false;
-
-  /** @internal */
-  @observable
-  private _exactlyMatched = false;
-
-  /** @internal */
   private _allowExact: boolean;
 
   /** @internal */
@@ -484,14 +511,15 @@ export class RouteMatch<
    * A reactive value indicates whether this route is matched.
    */
   get $matched(): boolean {
-    return this._matched;
+    return !!this._matchEntry;
   }
 
   /**
    * A reactive value indicates whether this route is exactly matched.
    */
   get $exact(): boolean {
-    return this._exactlyMatched;
+    let entry = this._matchEntry;
+    return !!entry && entry.exact;
   }
 
   $beforeEnter(callback: RouteBeforeEnter<this>): this {
@@ -788,13 +816,6 @@ export class RouteMatch<
     }
 
     tolerate(() => service!.afterUpdate!());
-  }
-
-  /** @internal */
-  @action
-  _update(matched: boolean, exactlyMatched: boolean): void {
-    this._matched = matched;
-    this._exactlyMatched = exactlyMatched;
   }
 
   /** @internal */
