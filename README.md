@@ -247,9 +247,9 @@ interface RouteMatch<TParamDict> {
 
   $params: TParamDict;
 
-  $ref(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
-  $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
-  $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
+  $ref(params?: Partial<TParamDict>, options: RouteMatchRefOptions): string;
+  $push(params?: Partial<TParamDict>, options: RouteMatchRefOptions): void;
+  $replace(params?: Partial<TParamDict>, options: RouteMatchRefOptions): void;
 
   $beforeEnter(callback: RouteMatchBeforeEnter<this>): this;
   $afterEnter(callback: RouteMatchAfterEnter): this;
@@ -282,9 +282,9 @@ interface NextRouteMatch<TParamDict> {
 
   $params: TParamDict;
 
-  $ref(params?: Partial<TParamDict>, preserveQuery?: boolean): string;
-  $push(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
-  $replace(params?: Partial<TParamDict>, preserveQuery?: boolean): void;
+  $ref(params?: Partial<TParamDict>, options: RouteMatchRefOptions): string;
+  $push(params?: Partial<TParamDict>, options: RouteMatchRefOptions): void;
+  $replace(params?: Partial<TParamDict>, options: RouteMatchRefOptions): void;
 }
 ```
 
