@@ -29,7 +29,9 @@ export function buildRef(
       .join('&'),
   );
 
-  let normalQuery = new URLSearchParams(Object.entries(queryDict)).toString();
+  let normalQuery = new URLSearchParams(
+    Object.entries(queryDict).filter(([, value]) => value !== undefined),
+  ).toString();
 
   let query = pathQuery
     ? normalQuery

@@ -218,6 +218,9 @@ test('should match `account.id.billings`', async () => {
   expect(router.account.id.billings.$ref({})).toBe(
     '/account/123/billings?callback=%2Fredirect',
   );
+  expect(router.account.id.billings.$ref({callback: undefined})).toBe(
+    '/account/123/billings',
+  );
 });
 
 test('should match `multiple.number`', async () => {
