@@ -328,17 +328,19 @@ abstract class RouteMatchShared<
 
     let queryKeySet = this._queryKeySet;
 
-    let preservedQueryDict = preserveQuery
-      ? Object.entries(sourceQueryDict)
-          .filter(([key]) => queryKeySet.has(key))
-          .reduce(
-            (dict, [key, value]) => {
-              dict[key] = value!;
-              return dict;
-            },
-            {} as Dict<string>,
-          )
-      : {};
+    let preservedQueryDict = beingPrimaryRoute
+      ? preserveQuery
+        ? Object.entries(sourceQueryDict)
+            .filter(([key]) => queryKeySet.has(key))
+            .reduce(
+              (dict, [key, value]) => {
+                dict[key] = value!;
+                return dict;
+              },
+              {} as Dict<string>,
+            )
+        : {}
+      : (sourceQueryDict as Dict<string>);
 
     let restParamDict = Array.from(paramKeySet).reduce(
       (dict, key) => {
