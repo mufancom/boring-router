@@ -35,5 +35,6 @@
   "dependencies": {
     "hyphenate": "^0.2.4",
     "tslang": "^0.1.12"
-  }
+  },
+  "gitHead": "18d2d55aecee40d03f6b71adcc8904a0f3b7b9b8"
 }
