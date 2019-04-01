@@ -20,7 +20,7 @@ export function buildRef(
   pathMap: Map<string | undefined, string>,
   queryDict: Dict<string>,
 ): string {
-  let primaryPath = pathMap.get(undefined)!;
+  let primaryPath = pathMap.get(undefined) || '';
 
   let pathQuery = encodeURI(
     Array.from(pathMap)
