@@ -76,8 +76,8 @@ export type GeneralSegmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
 
-export interface RouteMatchParallelOptions {
-  groups?: string[];
+export interface RouteMatchParallelOptions<TGroupName extends string> {
+  groups?: TGroupName[];
   matches?: RouteMatch[];
 }
 
@@ -482,7 +482,7 @@ export class RouteMatch<
   _children: RouteMatch[] | undefined;
 
   /** @internal */
-  _parallel: RouteMatchParallelOptions | undefined;
+  _parallel: RouteMatchParallelOptions<TGroupName> | undefined;
 
   constructor(
     name: string,
@@ -578,7 +578,7 @@ export class RouteMatch<
     return this;
   }
 
-  $parallel(options: RouteMatchParallelOptions): void {
+  $parallel(options: RouteMatchParallelOptions<TGroupName>): void {
     if (this.$group) {
       throw new Error('Parallel whitelist can only be set on primary routes');
     }
