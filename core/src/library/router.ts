@@ -1,6 +1,6 @@
 import hyphenate from 'hyphenate';
 import {observable, runInAction} from 'mobx';
-import {Dict} from 'tslang';
+import {Dict, EmptyObjectPatch} from 'tslang';
 
 import {
   buildRef,
@@ -12,6 +12,7 @@ import {
   then,
 } from './@utils';
 import {IHistory, Location} from './history';
+import {RouteBuilder, RouteBuilderBuildOptions} from './route-builder';
 import {RouteGroup} from './route-group';
 import {
   GeneralQueryDict,
@@ -19,6 +20,8 @@ import {
   RouteMatch,
   RouteMatchEntry,
   RouteMatchOptions,
+  RouteMatchShared,
+  RouteMatchSharedToParamDict,
   RouteSource,
 } from './route-match';
 import {GroupToRouteSchemaDictDict, RouteSchemaDict} from './schema';
@@ -202,7 +205,7 @@ export interface RouterRefOptions<TGroupName extends string> {
   /**
    * Parallel route group(s) to leave. Set to `'*'` to leave all.
    */
-  leaves?: TGroupName | TGroupName[];
+  leaves?: '*' | TGroupName | TGroupName[];
   /**
    * Whether to preserve values in current query string.
    */
@@ -361,6 +364,19 @@ export class Router<
   $replace(options?: RouterRefOptions<TGroupName>): void {
     let ref = this.$ref(options);
     this._history.replace(ref);
+  }
+
+  $build<TRouteMatchShared extends RouteMatchShared>(
+    match: TRouteMatchShared,
+    params?: Partial<RouteMatchSharedToParamDict<TRouteMatchShared>> &
+      EmptyObjectPatch,
+    options?: RouteBuilderBuildOptions,
+  ): RouteBuilder<TGroupName> {
+    return new RouteBuilder(match._prefix, match._source, this._history).$and(
+      match,
+      params,
+      options,
+    );
   }
 
   /** @internal */

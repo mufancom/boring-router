@@ -481,3 +481,26 @@ test("should leave parallel routes by 'leaves' options when push a new route", a
 
   expect(router.$ref()).toBe('/account?_popup=/invite');
 });
+
+test('should leave all parallel routes', async () => {
+  router.$push({leaves: '*'});
+
+  await nap();
+
+  expect(router.$ref()).toBe('/account');
+});
+
+test('should build route with multiple matches', async () => {
+  router.account.id.$push({id: '123'});
+
+  await nap();
+
+  router
+    .$build(router.account, {callback: 'foo'}, {rest: true})
+    .$and(router.$.popup.invite)
+    .$push();
+
+  await nap();
+
+  expect(router.$ref()).toBe('/account/123?_popup=/invite&callback=foo');
+});

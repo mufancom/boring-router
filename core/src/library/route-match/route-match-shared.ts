@@ -10,6 +10,12 @@ export type GeneralSegmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
 
+export type RouteMatchSharedToParamDict<
+  TRouteMatchShared extends RouteMatchShared
+> = TRouteMatchShared extends RouteMatchShared<infer TParamDict>
+  ? TParamDict
+  : never;
+
 export interface RouterMatchRefOptions<TGroupName extends string> {
   /**
    * Whether to leave this match's group.
@@ -57,19 +63,19 @@ export abstract class RouteMatchShared<
   readonly $parent: RouteMatchShared | undefined;
 
   /** @internal */
-  protected _prefix: string;
+  readonly _prefix: string;
+
+  /** @internal */
+  readonly _source: RouteSource;
+
+  /** @internal */
+  readonly _queryKeySet: Set<string>;
 
   /** @internal */
   protected _history: IHistory;
 
   /** @internal */
-  protected _source: RouteSource;
-
-  /** @internal */
   protected _matchPattern: string | RegExp;
-
-  /** @internal */
-  protected _queryKeySet: Set<string>;
 
   constructor(
     name: string,
@@ -160,7 +166,7 @@ export abstract class RouteMatchShared<
 
   /** @internal */
   @computed
-  protected get _rest(): string {
+  get _rest(): string {
     let entry = this._matchEntry;
     return entry ? entry.rest : '';
   }
@@ -205,7 +211,7 @@ export abstract class RouteMatchShared<
     let group = this.$group;
     let beingPrimaryRoute = group === undefined;
 
-    let paramKeySet = new Set(Object.keys(params));
+    let restParamKeySet = new Set(Object.keys(params));
     let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
 
     let pathMap = new Map(sourcePathMap);
@@ -225,7 +231,7 @@ export abstract class RouteMatchShared<
 
       let path = Object.keys(segmentDict)
         .map(key => {
-          paramKeySet.delete(key);
+          restParamKeySet.delete(key);
 
           let param = params[key];
           let segment = typeof param === 'string' ? param : segmentDict[key];
@@ -245,40 +251,35 @@ export abstract class RouteMatchShared<
       pathMap.set(group, path);
     }
 
-    let queryKeySet = this._queryKeySet;
+    let preservedQueryDict: GeneralQueryDict = {};
 
-    let preservedQueryDict = beingPrimaryRoute
-      ? preserveQuery
-        ? Object.entries(sourceQueryDict)
-            .filter(([key]) => queryKeySet.has(key))
-            .reduce(
-              (dict, [key, value]) => {
-                dict[key] = value;
-                return dict;
-              },
-              {} as Dict<string | undefined>,
-            )
-        : {}
-      : (sourceQueryDict as Dict<string>);
+    if (beingPrimaryRoute) {
+      preservedQueryDict = {};
 
-    let restParamDict = Array.from(paramKeySet).reduce(
-      (dict, key) => {
+      let queryKeySet = this._queryKeySet;
+
+      for (let [key, value] of Object.entries(sourceQueryDict)) {
+        if (queryKeySet.has(key)) {
+          preservedQueryDict[key] = value;
+        }
+      }
+
+      for (let key of restParamKeySet) {
         if (!queryKeySet.has(key)) {
           throw new Error(
             `Parameter "${key}" is defined as neither segment nor query`,
           );
         }
 
-        dict[key] = params[key]!;
-        return dict;
-      },
-      {} as Dict<string>,
-    );
+        preservedQueryDict[key] = params[key];
+      }
+    } else {
+      preservedQueryDict = sourceQueryDict;
+    }
 
-    return buildRef(this._prefix, pathMap, {
-      ...preservedQueryDict,
-      ...restParamDict,
-    });
+    let queryDict = preserveQuery ? preservedQueryDict : {};
+
+    return buildRef(this._prefix, pathMap, queryDict);
   }
 
   /**
