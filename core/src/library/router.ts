@@ -17,7 +17,9 @@ import {
   GeneralQueryDict,
   NextRouteMatch,
   RouteMatch,
+  RouteMatchEntry,
   RouteMatchOptions,
+  RouteSource,
 } from './route-match';
 import {GroupToRouteSchemaDictDict, RouteSchemaDict} from './schema';
 
@@ -175,22 +177,6 @@ export type RouterType<
   TGroupToRouteSchemaDictDict,
   Extract<keyof TGroupToRouteSchemaDictDict, string>
 >;
-
-export interface RouteMatchEntry {
-  match: RouteMatch;
-  exact: boolean;
-  segment: string;
-  rest: string;
-}
-
-export interface RouteSource {
-  groupToMatchToMatchEntryMapMap: Map<
-    string | undefined,
-    Map<RouteMatch, RouteMatchEntry>
-  >;
-  queryDict: GeneralQueryDict;
-  pathMap: Map<string | undefined, string>;
-}
 
 export type RouterOnLeave = (path: string) => void;
 

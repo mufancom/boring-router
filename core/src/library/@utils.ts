@@ -18,7 +18,7 @@ export function hasOwnProperty(object: object, name: string): boolean {
 export function buildRef(
   prefix: string,
   pathMap: Map<string | undefined, string>,
-  queryDict: Dict<string>,
+  queryDict: Dict<string | undefined>,
 ): string {
   let primaryPath = pathMap.get(undefined) || '';
 
@@ -30,7 +30,9 @@ export function buildRef(
   );
 
   let normalQuery = new URLSearchParams(
-    Object.entries(queryDict).filter(([, value]) => value !== undefined),
+    Object.entries(queryDict).filter(
+      (entry): entry is [string, string] => entry[1] !== undefined,
+    ),
   ).toString();
 
   let query = pathQuery
