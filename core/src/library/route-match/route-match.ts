@@ -3,6 +3,7 @@ import {OmitValueOfKey, OmitValueWithType} from 'tslang';
 
 import {testPathPrefix, tolerate} from '../@utils';
 import {IHistory} from '../history';
+import {Router} from '../router';
 
 import {NextRouteMatch} from './next-route-match';
 import {
@@ -157,13 +158,14 @@ export class RouteMatch<
   constructor(
     name: string,
     prefix: string,
+    router: Router,
     source: RouteSource,
     parent: RouteMatch | undefined,
     extension: object,
     history: IHistory,
     {exact, ...sharedOptions}: RouteMatchOptions,
   ) {
-    super(name, prefix, source, parent, history, sharedOptions);
+    super(name, prefix, router, source, parent, history, sharedOptions);
 
     for (let [key, defaultValue] of Object.entries(extension)) {
       Object.defineProperty(this, key, {
