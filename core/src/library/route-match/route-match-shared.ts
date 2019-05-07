@@ -5,8 +5,8 @@ import {buildRef, getNextId} from '../@utils';
 import {IHistory} from '../history';
 import {
   Router,
-  RouterInternalLocationState,
   RouterOnRouteComplete,
+  RouterOnRouteCompleteLocationState,
 } from '../router';
 
 import {RouteMatchEntry, RouteSource} from './route-match';
@@ -304,7 +304,7 @@ export abstract class RouteMatchShared<
     options?: RouterMatchRefOptions<TGroupName>,
   ): void {
     let ref = this.$ref(params, options);
-    let state = this.generateState(options);
+    let state = this._generateState(options);
 
     this._history.push(ref, state);
   }
@@ -317,7 +317,7 @@ export abstract class RouteMatchShared<
     options?: RouterMatchRefOptions<TGroupName>,
   ): void {
     let ref = this.$ref(params, options);
-    let state = this.generateState(options);
+    let state = this._generateState(options);
 
     this._history.replace(ref, state);
   }
@@ -327,21 +327,24 @@ export abstract class RouteMatchShared<
     source: RouteSource,
   ): RouteMatchEntry | undefined;
 
-  private generateState({
+  private _generateState({
     onComplete: onCompleteListener,
-  }: RouterMatchRefOptions<TGroupName> = {}): RouterInternalLocationState {
-    let state: RouterInternalLocationState = {};
-
-    if (onCompleteListener) {
-      let onCompleteListenerId = getNextId();
-
-      this._router._onRouteCompleteListenerMap.set(
-        onCompleteListenerId,
-        onCompleteListener,
-      );
-      state.onCompleteListenerId = onCompleteListenerId;
+  }: RouterMatchRefOptions<TGroupName> = {}):
+    | RouterOnRouteCompleteLocationState
+    | undefined {
+    if (!onCompleteListener) {
+      return undefined;
     }
 
-    return state;
+    let onCompleteListenerId = getNextId();
+
+    this._router._onRouteCompleteListenerMap.set(
+      onCompleteListenerId,
+      onCompleteListener,
+    );
+
+    return {
+      onCompleteListenerId,
+    };
   }
 }

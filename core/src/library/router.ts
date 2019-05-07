@@ -193,10 +193,6 @@ export interface RouterOnRouteCompleteLocationState {
   onCompleteListenerId: number;
 }
 
-export type RouterInternalLocationState = Partial<
-  RouterOnRouteCompleteLocationState
->;
-
 export interface RouterOptions {
   /**
    * A function to perform default schema field name to segment string
