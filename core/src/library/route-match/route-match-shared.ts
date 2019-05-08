@@ -1,8 +1,13 @@
 import {computed} from 'mobx';
 import {Dict, EmptyObjectPatch} from 'tslang';
 
-import {buildRef} from '../@utils';
+import {buildRef, getNextId} from '../@utils';
 import {IHistory} from '../history';
+import {
+  Router,
+  RouterOnRouteComplete,
+  RouterOnRouteCompleteLocationState,
+} from '../router';
 
 import {RouteMatchEntry, RouteSource} from './route-match';
 
@@ -34,6 +39,10 @@ export interface RouterMatchRefOptions<TGroupName extends string> {
    * `true`.
    */
   preserveQuery?: boolean;
+  /**
+   * The callback that will be called after a route completed (after all the hooks).
+   */
+  onComplete?: RouterOnRouteComplete;
 }
 
 export interface RouteMatchSharedOptions {
@@ -77,9 +86,13 @@ export abstract class RouteMatchShared<
   /** @internal */
   protected _matchPattern: string | RegExp;
 
+  /** @internal */
+  protected _router: Router;
+
   constructor(
     name: string,
     prefix: string,
+    router: Router,
     source: RouteSource,
     parent: RouteMatchShared | undefined,
     history: IHistory,
@@ -89,6 +102,7 @@ export abstract class RouteMatchShared<
     this.$group = group as TGroupName;
     this.$parent = parent;
     this._prefix = prefix;
+    this._router = router;
     this._source = source;
     this._history = history;
 
@@ -290,7 +304,9 @@ export abstract class RouteMatchShared<
     options?: RouterMatchRefOptions<TGroupName>,
   ): void {
     let ref = this.$ref(params, options);
-    this._history.push(ref);
+    let state = this._generateState(options);
+
+    this._history.push(ref, state);
   }
 
   /**
@@ -301,11 +317,34 @@ export abstract class RouteMatchShared<
     options?: RouterMatchRefOptions<TGroupName>,
   ): void {
     let ref = this.$ref(params, options);
-    this._history.replace(ref);
+    let state = this._generateState(options);
+
+    this._history.replace(ref, state);
   }
 
   /** @internal */
   protected abstract _getMatchEntry(
     source: RouteSource,
   ): RouteMatchEntry | undefined;
+
+  private _generateState({
+    onComplete: onCompleteListener,
+  }: RouterMatchRefOptions<TGroupName> = {}):
+    | RouterOnRouteCompleteLocationState
+    | undefined {
+    if (!onCompleteListener) {
+      return undefined;
+    }
+
+    let onCompleteListenerId = getNextId();
+
+    this._router._onRouteCompleteListenerMap.set(
+      onCompleteListenerId,
+      onCompleteListener,
+    );
+
+    return {
+      onCompleteListenerId,
+    };
+  }
 }

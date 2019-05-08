@@ -40,7 +40,9 @@ type RouteQuerySchemaType<TRouteSchema> = TRouteSchema extends {
 type FilterRouteMatchNonStringSegment<TRouteSchema, T> = TRouteSchema extends {
   $match: infer TMatch;
 }
-  ? TMatch extends string ? never : T
+  ? TMatch extends string
+    ? never
+    : T
   : never;
 
 interface RouteSchemaChildrenSection<TRouteSchemaDict> {
@@ -185,6 +187,12 @@ export type RouterOnLeave = (path: string) => void;
 
 export type RouterOnChange = (from: Location | undefined, to: Location) => void;
 
+export type RouterOnRouteComplete = () => void;
+
+export interface RouterOnRouteCompleteLocationState {
+  onCompleteListenerId: number;
+}
+
 export interface RouterOptions {
   /**
    * A function to perform default schema field name to segment string
@@ -268,6 +276,9 @@ export class Router<
 
   /** @internal */
   _groupToChildrenMap = new Map<string | undefined, RouteMatch[]>();
+
+  /** @internal */
+  _onRouteCompleteListenerMap = new Map<number, RouterOnRouteComplete>();
 
   private constructor(
     primarySchema: RouteSchemaDict,
@@ -392,6 +403,19 @@ export class Router<
   private _asyncOnLocationChange = async (
     nextLocation: Location,
   ): Promise<void> => {
+    let onCompleteListener: RouterOnRouteComplete | undefined;
+
+    let state = nextLocation.state;
+
+    if (isRouterOnRouteCompleteLocationState(state)) {
+      let onCompleteListenerId = state.onCompleteListenerId;
+
+      onCompleteListener = this._onRouteCompleteListenerMap.get(
+        onCompleteListenerId,
+      );
+      this._onRouteCompleteListenerMap.delete(onCompleteListenerId);
+    }
+
     if (this._isNextLocationOutDated(nextLocation)) {
       return;
     }
@@ -541,6 +565,10 @@ export class Router<
 
     if (this._onChange) {
       this._onChange(location, nextLocation);
+    }
+
+    if (onCompleteListener) {
+      onCompleteListener();
     }
   };
 
@@ -766,6 +794,7 @@ export class Router<
       let routeMatch = new RouteMatch(
         routeName,
         prefix,
+        this,
         source,
         parent instanceof RouteMatch ? parent : undefined,
         extension,
@@ -776,6 +805,7 @@ export class Router<
       let nextRouteMatch = new NextRouteMatch(
         routeName,
         prefix,
+        this,
         matchingSource,
         matchingParent instanceof NextRouteMatch ? matchingParent : undefined,
         routeMatch,
@@ -839,4 +869,10 @@ function isHistory(object: any): object is IHistory {
     typeof object.replace === 'function' &&
     typeof object.listen === 'function'
   );
+}
+
+function isRouterOnRouteCompleteLocationState(
+  object: any,
+): object is RouterOnRouteCompleteLocationState {
+  return object && typeof object.onCompleteListenerId === 'number';
 }

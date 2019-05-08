@@ -126,3 +126,9 @@ export function parsePath(path: string): Location {
     hash: hash === '#' ? '' : hash,
   };
 }
+
+let lastId = 0;
+
+export function getNextId(): number {
+  return ++lastId;
+}
