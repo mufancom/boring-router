@@ -43,6 +43,8 @@ export type RouteAfterEnter = () => void;
 export type RouteAfterUpdate = () => void;
 export type RouteAfterLeave = () => void;
 
+export type RouteHookRemovalCallback = () => void;
+
 export type RouteInterceptCallback<
   TRouteMatch extends RouteMatch = RouteMatch
 > = (next: TRouteMatch['$next']) => Promise<boolean | void> | boolean | void;
@@ -119,22 +121,22 @@ export class RouteMatch<
   readonly $next!: TNextRouteMatch;
 
   /** @internal */
-  private _beforeEnterCallbacks: RouteBeforeEnter[] = [];
+  private _beforeEnterCallbackSet = new Set<RouteBeforeEnter>();
 
   /** @internal */
-  private _beforeUpdateCallbacks: RouteBeforeUpdate[] = [];
+  private _beforeUpdateCallbackSet = new Set<RouteBeforeUpdate>();
 
   /** @internal */
-  private _beforeLeaveCallbacks: RouteBeforeLeave[] = [];
+  private _beforeLeaveCallbackSet = new Set<RouteBeforeLeave>();
 
   /** @internal */
-  private _afterEnterCallbacks: RouteAfterEnter[] = [];
+  private _afterEnterCallbackSet = new Set<RouteAfterEnter>();
 
   /** @internal */
-  private _afterUpdateCallbacks: RouteAfterUpdate[] = [];
+  private _afterUpdateCallbackSet = new Set<RouteAfterUpdate>();
 
   /** @internal */
-  private _afterLeaveCallbacks: RouteAfterLeave[] = [];
+  private _afterLeaveCallbackSet = new Set<RouteAfterLeave>();
 
   /** @internal */
   @observable
@@ -196,48 +198,72 @@ export class RouteMatch<
     return !!entry && entry.exact;
   }
 
-  $beforeEnter(callback: RouteBeforeEnter<this>): this {
-    this._beforeEnterCallbacks.push(callback as RouteBeforeEnter);
-    return this;
+  $beforeEnter(callback: RouteBeforeEnter<this>): RouteHookRemovalCallback {
+    this._beforeEnterCallbackSet.add(callback as RouteBeforeEnter);
+
+    return () => {
+      this._beforeEnterCallbackSet.delete(callback);
+    };
   }
 
-  $beforeUpdate(callback: RouteBeforeUpdate<this>): this {
-    this._beforeUpdateCallbacks.push(callback as RouteBeforeUpdate);
-    return this;
+  $beforeUpdate(callback: RouteBeforeUpdate<this>): RouteHookRemovalCallback {
+    this._beforeUpdateCallbackSet.add(callback as RouteBeforeUpdate);
+
+    return () => {
+      this._beforeUpdateCallbackSet.delete(callback);
+    };
   }
 
-  $beforeLeave(callback: RouteBeforeLeave): this {
-    this._beforeLeaveCallbacks.push(callback);
-    return this;
+  $beforeLeave(callback: RouteBeforeLeave): RouteHookRemovalCallback {
+    this._beforeLeaveCallbackSet.add(callback);
+
+    return () => {
+      this._beforeLeaveCallbackSet.delete(callback);
+    };
   }
 
-  $afterEnter(callback: RouteAfterEnter): this {
-    this._afterEnterCallbacks.push(callback);
-    return this;
+  $afterEnter(callback: RouteAfterEnter): RouteHookRemovalCallback {
+    this._afterEnterCallbackSet.add(callback);
+
+    return () => {
+      this._afterEnterCallbackSet.delete(callback);
+    };
   }
 
-  $afterUpdate(callback: RouteAfterUpdate): this {
-    this._afterUpdateCallbacks.push(callback);
-    return this;
+  $afterUpdate(callback: RouteAfterUpdate): RouteHookRemovalCallback {
+    this._afterUpdateCallbackSet.add(callback);
+
+    return () => {
+      this._afterUpdateCallbackSet.delete(callback);
+    };
   }
 
-  $afterLeave(callback: RouteAfterLeave): this {
-    this._afterLeaveCallbacks.push(callback);
-    return this;
+  $afterLeave(callback: RouteAfterLeave): RouteHookRemovalCallback {
+    this._afterLeaveCallbackSet.add(callback);
+
+    return () => {
+      this._afterLeaveCallbackSet.delete(callback);
+    };
   }
 
-  $intercept(callback: RouteInterceptCallback): this {
-    this._beforeEnterCallbacks.push(callback);
-    this._beforeUpdateCallbacks.push(callback);
+  $intercept(callback: RouteInterceptCallback): RouteHookRemovalCallback {
+    this._beforeEnterCallbackSet.add(callback);
+    this._beforeUpdateCallbackSet.add(callback);
 
-    return this;
+    return () => {
+      this._beforeEnterCallbackSet.delete(callback);
+      this._beforeUpdateCallbackSet.delete(callback);
+    };
   }
 
-  $react(callback: RouteReactCallback): this {
-    this._afterEnterCallbacks.push(callback);
-    this._afterUpdateCallbacks.push(callback);
+  $react(callback: RouteReactCallback): RouteHookRemovalCallback {
+    this._afterEnterCallbackSet.add(callback);
+    this._afterUpdateCallbackSet.add(callback);
 
-    return this;
+    return () => {
+      this._afterEnterCallbackSet.delete(callback);
+      this._afterUpdateCallbackSet.delete(callback);
+    };
   }
 
   $service(factory: RouteServiceFactory<this>): this {
@@ -392,7 +418,9 @@ export class RouteMatch<
   /** @internal */
   async _beforeLeave(): Promise<boolean> {
     let results = await Promise.all([
-      ...this._beforeLeaveCallbacks.map(callback => tolerate(callback)),
+      ...Array.from(this._beforeLeaveCallbackSet).map(callback =>
+        tolerate(callback),
+      ),
       (async () => {
         let service = await this._getService();
 
@@ -412,7 +440,9 @@ export class RouteMatch<
     let next = this.$next;
 
     let results = await Promise.all([
-      ...this._beforeEnterCallbacks.map(callback => tolerate(callback, next)),
+      ...Array.from(this._beforeEnterCallbackSet).map(callback =>
+        tolerate(callback, next),
+      ),
       (async () => {
         let service = await this._getService();
 
@@ -432,7 +462,9 @@ export class RouteMatch<
     let next = this.$next;
 
     let results = await Promise.all([
-      ...this._beforeUpdateCallbacks.map(callback => tolerate(callback, next)),
+      ...Array.from(this._beforeUpdateCallbackSet).map(callback =>
+        tolerate(callback, next),
+      ),
       (async () => {
         let service = await this._getService();
 
@@ -449,7 +481,7 @@ export class RouteMatch<
 
   /** @internal */
   async _afterLeave(): Promise<void> {
-    for (let callback of this._afterLeaveCallbacks) {
+    for (let callback of this._afterLeaveCallbackSet) {
       tolerate(callback);
     }
 
@@ -464,7 +496,7 @@ export class RouteMatch<
 
   /** @internal */
   async _afterEnter(): Promise<void> {
-    for (let callback of this._afterEnterCallbacks) {
+    for (let callback of this._afterEnterCallbackSet) {
       tolerate(callback);
     }
 
@@ -479,7 +511,7 @@ export class RouteMatch<
 
   /** @internal */
   async _afterUpdate(): Promise<void> {
-    for (let callback of this._afterUpdateCallbacks) {
+    for (let callback of this._afterUpdateCallbackSet) {
       tolerate(callback);
     }
 
