@@ -35,14 +35,14 @@ let redirectBeforeEnter = jest.fn(() => {
 });
 let redirectAfterEnter = jest.fn();
 
-router.redirect
-  .$beforeEnter(redirectBeforeEnter)
-  .$afterEnter(redirectAfterEnter);
+router.redirect.$beforeEnter(redirectBeforeEnter);
+router.redirect.$afterEnter(redirectAfterEnter);
 
 let revertBeforeEnter = jest.fn(() => false);
 let revertAfterEnter = jest.fn();
 
-router.revert.$beforeEnter(revertBeforeEnter).$afterEnter(revertAfterEnter);
+router.revert.$beforeEnter(revertBeforeEnter);
+router.revert.$afterEnter(revertAfterEnter);
 
 let persistBeforeLeave = jest.fn(() => false);
 
@@ -51,18 +51,24 @@ router.persist.$beforeLeave(persistBeforeLeave);
 let parentBeforeEnter = jest.fn();
 let parentBeforeUpdate = jest.fn();
 
-router.parent.$beforeEnter(parentBeforeEnter).$beforeUpdate(parentBeforeUpdate);
+router.parent.$beforeEnter(parentBeforeEnter);
+router.parent.$beforeUpdate(parentBeforeUpdate);
 
 let aboutBeforeEnter = jest.fn();
 let aboutAfterEnter = jest.fn();
 let aboutBeforeLeave = jest.fn();
 let aboutAfterLeave = jest.fn();
 
-router.about
-  .$beforeEnter(aboutBeforeEnter)
-  .$afterEnter(aboutAfterEnter)
-  .$beforeLeave(aboutBeforeLeave)
-  .$afterLeave(aboutAfterLeave);
+router.about.$beforeEnter(aboutBeforeEnter);
+router.about.$afterEnter(aboutAfterEnter);
+router.about.$beforeLeave(aboutBeforeLeave);
+router.about.$afterLeave(aboutAfterLeave);
+
+let canceledAboutAfterEnter = jest.fn();
+
+let removalCallback = router.about.$afterEnter(canceledAboutAfterEnter);
+
+removalCallback();
 
 test('should navigate from `redirect` to `about`', async () => {
   history.push('/redirect');
@@ -111,6 +117,17 @@ test('should trigger `parent.$beforeUpdate` on `$exact` change', async () => {
   await nap();
 
   expect(parentBeforeUpdate).toHaveBeenCalled();
+});
+
+test('should not call hooks that have been canceled.', async () => {
+  history.push('/about');
+
+  await nap();
+
+  expect(history.location.pathname).toBe('/about');
+  expect(router.about.$matched).toBe(true);
+
+  expect(canceledAboutAfterEnter).not.toHaveBeenCalled();
 });
 
 test('should revert navigation from `persist` to `about` by `persist.$beforeLeave`', async () => {
