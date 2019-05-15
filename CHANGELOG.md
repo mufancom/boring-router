@@ -16,6 +16,7 @@
 - `RouteMatch#$action` has been removed, see hooks for alternatives.
 - The second argument `RouteMatch#$ref()`, `RouteMatch#$push()`, `RouteMatch#$replace()` methods is now an option object.
 - Route match ref option `preserveQuery` now defaults to `true`, but the behavior has changed to preserve query defined with `$query` (and its parents).
+- The return value of route hooks (such as `RouteMatch#$beforeEnter`, `RouteMatch#$afterLeave`) is now a removal callback.
 
 ## [0.2.1] - 2018-9-5
 
