@@ -36,24 +36,26 @@ router.account.$beforeEnter(() => {
   router.about.$push({source: 'reaction'});
 });
 
-router.profile
-  .$beforeEnter(match => {
-    console.info('before enter profile');
-    console.info('before enter ref', match.$ref());
+router.profile.$beforeEnter(match => {
+  console.info('before enter profile');
+  console.info('before enter ref', match.$ref());
 
-    if (match.$exact) {
-      match.details.$push();
-    }
-  })
-  .$afterEnter(() => {
-    console.info('after enter profile');
-  })
-  .$beforeLeave(() => {
-    console.info('before leave profile');
-  })
-  .$afterLeave(() => {
-    console.info('after leave profile');
-  });
+  if (match.$exact) {
+    match.details.$push();
+  }
+});
+
+router.profile.$afterEnter(() => {
+  console.info('after enter profile');
+});
+
+router.profile.$beforeLeave(() => {
+  console.info('before leave profile');
+});
+
+router.profile.$afterLeave(() => {
+  console.info('after leave profile');
+});
 
 @observer
 export class App extends Component {

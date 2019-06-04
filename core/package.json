@@ -27,14 +27,14 @@
   },
   "devDependencies": {
     "@types/history": "^4.7.2",
-    "@types/jest": "^24.0.11",
+    "@types/jest": "^24.0.13",
     "history": "^4.9.0",
-    "jest": "^24.7.1",
+    "jest": "^24.8.0",
     "ts-jest": "^24.0.2"
   },
   "dependencies": {
     "hyphenate": "^0.2.4",
-    "tslang": "^0.1.13"
+    "tslang": "^0.1.15"
   },
   "gitHead": "18d2d55aecee40d03f6b71adcc8904a0f3b7b9b8"
 }

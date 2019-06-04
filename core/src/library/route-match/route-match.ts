@@ -68,7 +68,8 @@ export type RouteServiceExtension<
   TRouteMatch extends RouteMatch
 > = OmitValueWithType<
   OmitValueOfKey<TRouteMatch, keyof RouteMatch>,
-  RouteMatch
+  RouteMatch,
+  false
 >;
 
 interface RouteMatchInternalResult {

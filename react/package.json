@@ -8,8 +8,6 @@
   },
   "license": "MIT",
   "scripts": {
-    "tsc": "tsc",
-    "tslint": "tslint",
     "build:library": "rimraf bld/library && tsc -p src/library",
     "typecheck:examples": "./scripts/typecheck-examples.sh",
     "lint:library": "tslint -p src/library",
@@ -31,14 +29,14 @@
     "react": "16"
   },
   "devDependencies": {
-    "@types/classnames": "^2.2.7",
+    "@types/classnames": "^2.2.8",
     "@types/history": "^4.7.2",
-    "@types/react-dom": "^16.8.3",
+    "@types/react-dom": "^16.8.4",
     "history": "^4.9.0",
     "react-dom": "^16.8.6"
   },
   "dependencies": {
     "classnames": "^2.2.6",
-    "tslang": "^0.1.13"
+    "tslang": "^0.1.15"
   }
 }
