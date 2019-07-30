@@ -15,25 +15,24 @@ class Account {
   constructor(readonly id: string) {}
 }
 
-let router = Router.create(
-  {
-    default: {
-      $match: '',
-    },
-    account: {
-      $children: {
-        accountId: {
-          $match: RouteMatch.segment,
-          $extension: {
-            account: undefined! as Account,
-            name: undefined! as string,
-          },
+let router = new Router(history);
+
+let rootRoute = router.route({
+  default: {
+    $match: '',
+  },
+  account: {
+    $children: {
+      accountId: {
+        $match: RouteMatch.segment,
+        $extension: {
+          account: undefined! as Account,
+          name: undefined! as string,
         },
       },
     },
   },
-  history,
-);
+});
 
 let beforeUpdate = jest.fn();
 
@@ -42,7 +41,7 @@ let afterEnter = jest.fn();
 
 let beforeLeave = jest.fn();
 
-type AccountIdRouteMatch = typeof router.account.accountId;
+type AccountIdRouteMatch = typeof rootRoute.account.accountId;
 
 class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
   @observable
@@ -82,12 +81,12 @@ class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
   }
 }
 
-router.account.accountId.$service(match => new AccountRouteService(match));
+rootRoute.account.accountId.$service(match => new AccountRouteService(match));
 
 test('should navigate from `default` to `account` and triggers `$beforeEnter`', async () => {
   await nap();
 
-  expect(router.account.accountId.account).toBeUndefined();
+  expect(rootRoute.account.accountId.account).toBeUndefined();
 
   let id = 'abc';
   let path = `/account/${encodeURIComponent(id)}`;
@@ -97,8 +96,8 @@ test('should navigate from `default` to `account` and triggers `$beforeEnter`', 
   await nap();
 
   expect(history.location.pathname).toBe(path);
-  expect(router.account.accountId.account.id).toBe(id);
-  expect(router.account.accountId.name).toBe(`[${id}]`);
+  expect(rootRoute.account.accountId.account.id).toBe(id);
+  expect(rootRoute.account.accountId.name).toBe(`[${id}]`);
 
   expect(afterEnter).toHaveBeenCalled();
   expect(beforeUpdate).not.toHaveBeenCalled();
@@ -116,8 +115,8 @@ test('should navigate from `default` to `account` and triggers `$beforeUpdate`',
   await nap();
 
   expect(history.location.pathname).toBe(path);
-  expect(router.account.accountId.account.id).toBe(id);
-  expect(router.account.accountId.name).toBe(`[${id}]`);
+  expect(rootRoute.account.accountId.account.id).toBe(id);
+  expect(rootRoute.account.accountId.name).toBe(`[${id}]`);
 
   expect(afterEnter).not.toHaveBeenCalled();
   expect(beforeUpdate).toHaveBeenCalled();
@@ -125,13 +124,13 @@ test('should navigate from `default` to `account` and triggers `$beforeUpdate`',
 });
 
 test('should navigate from `account` to `default`', async () => {
-  router.default.$push();
+  rootRoute.default.$push();
 
   await nap();
 
   expect(history.location.pathname).toBe('/');
-  expect(router.account.accountId.account).toBeUndefined();
-  expect(router.account.accountId.name).toBeUndefined();
+  expect(rootRoute.account.accountId.account).toBeUndefined();
+  expect(rootRoute.account.accountId.name).toBeUndefined();
 
   expect(beforeLeave).toHaveBeenCalled();
 });

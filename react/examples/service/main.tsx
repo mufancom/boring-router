@@ -17,31 +17,30 @@ class Account {
   }
 }
 
-const router = Router.create(
-  {
-    default: {
-      $match: '',
-    },
-    account: {
-      $children: {
-        id: {
-          $match: RouteMatch.segment,
-          $extension: {
-            tick: undefined! as number,
-            account: undefined! as Account,
-          },
+const router = new Router(history);
+
+const rootRoute = router.route({
+  default: {
+    $match: '',
+  },
+  account: {
+    $children: {
+      id: {
+        $match: RouteMatch.segment,
+        $extension: {
+          tick: undefined! as number,
+          account: undefined! as Account,
         },
       },
     },
-    profile: true,
-    notFound: {
-      $match: RouteMatch.rest,
-    },
   },
-  history,
-);
+  profile: true,
+  notFound: {
+    $match: RouteMatch.rest,
+  },
+});
 
-type AccountIdRouteMatch = typeof router.account.id;
+type AccountIdRouteMatch = typeof rootRoute.account.id;
 
 class AccountIdRouteService implements IRouteService<AccountIdRouteMatch> {
   private timer!: number;
@@ -69,7 +68,7 @@ class AccountIdRouteService implements IRouteService<AccountIdRouteMatch> {
   }
 }
 
-router.account.id.$service(match => new AccountIdRouteService(match));
+rootRoute.account.id.$service(match => new AccountIdRouteService(match));
 
 @observer
 export class App extends Component {
@@ -77,20 +76,20 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={router.default}>
+        <Route match={rootRoute.default}>
           <p>Home page</p>
           <Link
-            to={router.account.id}
+            to={rootRoute.account.id}
             params={{id: '4a35d104523ef520dd5d9f60c7e1eeb1'}}
           >
             Account
           </Link>
         </Route>
-        <Route match={router.account.id}>
+        <Route match={rootRoute.account.id}>
           {({account, tick}) => (
             <>
               <p>Account page</p>
-              <Link to={router.default}>Home</Link>
+              <Link to={rootRoute.default}>Home</Link>
               <hr />
               <p>Account {account.id}</p>
               <img src={account.avatarURL} alt="avatar" />

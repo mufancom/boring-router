@@ -1,5 +1,4 @@
 import {IHistory} from '../history';
-import {Router} from '../router';
 
 import {RouteMatch, RouteMatchEntry, RouteSource} from './route-match';
 import {
@@ -20,7 +19,6 @@ export class NextRouteMatch<
   constructor(
     name: string,
     prefix: string,
-    router: Router,
     source: RouteSource,
     parent: NextRouteMatch<TParamDict> | undefined,
     origin: RouteMatch<TParamDict>,
@@ -28,7 +26,7 @@ export class NextRouteMatch<
     history: IHistory,
     options: RouteMatchSharedOptions,
   ) {
-    super(name, prefix, router, source, parent, history, options);
+    super(name, prefix, source, parent, history, options);
 
     this._origin = origin;
 
@@ -39,14 +37,6 @@ export class NextRouteMatch<
         },
       });
     }
-  }
-
-  /**
-   * A reactive value indicates whether this route is exactly matched.
-   */
-  get $exact(): boolean {
-    let entry = this._getMatchEntry();
-    return !!entry && entry.exact;
   }
 
   /** @internal */

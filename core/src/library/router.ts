@@ -15,6 +15,7 @@ import {IHistory, Location} from './history';
 import {RouteBuilder, RouteBuilderBuildOptions} from './route-builder';
 import {RouteGroup} from './route-group';
 import {
+  GeneralParamDict,
   GeneralQueryDict,
   NextRouteMatch,
   RouteMatch,
@@ -24,7 +25,7 @@ import {
   RouteMatchSharedToParamDict,
   RouteSource,
 } from './route-match';
-import {GroupToRouteSchemaDictDict, RouteSchemaDict} from './schema';
+import {RouteSchemaDict} from './schema';
 
 export type SegmentMatcherCallback = (key: string) => string;
 
@@ -152,36 +153,15 @@ export type NextRouteMatchType<
 export type RouteGroupType<
   TThisGroupName extends string,
   TRouteSchemaDict,
-  TGroupName extends string
+  TGroupNames extends string,
+  TParamDict extends GeneralParamDict = GeneralParamDict
 > = RouteGroup<
+  TParamDict,
+  NextRouteMatch<TParamDict, TGroupNames>,
   TThisGroupName,
-  NextRouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>
+  TGroupNames
 > &
-  RouteMatchSegmentType<TRouteSchemaDict, never, never, TGroupName>;
-
-type __RouterType<
-  TRouteSchemaDict,
-  TGroupToRouteSchemaDictDict,
-  TGroupName extends string
-> = Router<
-  {
-    [K in keyof TGroupToRouteSchemaDictDict]: K extends string
-      ? RouteGroupType<K, TGroupToRouteSchemaDictDict[K], TGroupName>
-      : never
-  },
-  NextRouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>,
-  TGroupName
-> &
-  RouteMatchSegmentType<TRouteSchemaDict, never, never, TGroupName>;
-
-export type RouterType<
-  TRouteSchemaDict,
-  TGroupToRouteSchemaDictDict
-> = __RouterType<
-  TRouteSchemaDict,
-  TGroupToRouteSchemaDictDict,
-  Extract<keyof TGroupToRouteSchemaDictDict, string>
->;
+  RouteMatchSegmentType<TRouteSchemaDict, never, never, TGroupNames>;
 
 export type RouterOnLeave = (path: string) => void;
 
@@ -220,15 +200,7 @@ export interface RouterRefOptions<TGroupName extends string> {
   preserveQuery?: boolean;
 }
 
-export class Router<
-  TParallelRouteGroupDict extends object = object,
-  TNextRouteMatchDict extends object = object,
-  TGroupName extends string = string
-> {
-  readonly $ = {} as TParallelRouteGroupDict;
-
-  readonly $next = {} as TNextRouteMatchDict;
-
+export class Router<TGroupNames extends string = string> {
   /** @internal */
   private _history: IHistory;
 
@@ -272,17 +244,12 @@ export class Router<
   private _changing = Promise.resolve();
 
   /** @internal */
-  private _groupSet: Set<string>;
-
-  /** @internal */
   _groupToChildrenMap = new Map<string | undefined, RouteMatch[]>();
 
   /** @internal */
   _onRouteCompleteListenerMap = new Map<number, RouterOnRouteComplete>();
 
-  private constructor(
-    primarySchema: RouteSchemaDict,
-    groupToSchemaDict: GroupToRouteSchemaDictDict | undefined,
+  constructor(
     history: IHistory,
     {
       segmentMatcher,
@@ -290,7 +257,7 @@ export class Router<
       prefix = '',
       onLeave,
       onChange,
-    }: RouterOptions,
+    }: RouterOptions = {},
   ) {
     this._history = history;
     this._default = parsePath(defaultPath);
@@ -300,36 +267,70 @@ export class Router<
 
     this._segmentMatcher = segmentMatcher || DEFAULT_SEGMENT_MATCHER_CALLBACK;
 
-    this._groupSet = new Set();
-
-    let groupToChildrenMap = this._groupToChildrenMap;
-    let groupSet = this._groupSet;
-
-    groupToChildrenMap.set(
-      undefined,
-      this._build(primarySchema, this, this.$next),
-    );
-
-    if (groupToSchemaDict) {
-      let parallelRouteDict = this.$ as Dict<RouteGroup>;
-
-      for (let [group, schema] of Object.entries(groupToSchemaDict)) {
-        let routeGroup = new RouteGroup(group);
-
-        parallelRouteDict[group] = routeGroup;
-
-        groupToChildrenMap.set(
-          group,
-          this._build(schema, routeGroup, routeGroup.$next),
-        );
-        groupSet.add(group);
-      }
-    }
-
     then(() => {
       history.listen(this._onLocationChange);
       this._onLocationChange(history.location);
     });
+  }
+
+  /** @internal */
+  private get _groupSet(): Set<string> {
+    return new Set(
+      Array.from(this._groupToChildrenMap.keys()).filter(
+        (group): group is string => !!group,
+      ),
+    );
+  }
+
+  route<
+    TPrimaryRouteSchemaDict extends RouteSchemaDict,
+    TGRoupName extends string = string
+  >(
+    schema: TPrimaryRouteSchemaDict,
+    group?: TGRoupName,
+  ): RouteGroupType<TGroupNames, TPrimaryRouteSchemaDict, TGroupNames>;
+  route<
+    TPrimaryRouteSchemaDict extends RouteSchemaDict,
+    TGroupName extends TGroupNames
+  >(
+    group: TGroupName,
+    schema: TPrimaryRouteSchemaDict,
+  ): RouteGroupType<TGroupName, TPrimaryRouteSchemaDict, TGroupNames>;
+  route<
+    TPrimaryRouteSchemaDict extends RouteSchemaDict,
+    TGroupName extends TGroupNames
+  >(
+    group: TPrimaryRouteSchemaDict | TGroupName,
+    schema: TPrimaryRouteSchemaDict | TGroupName,
+  ): RouteGroupType<TGroupName, TPrimaryRouteSchemaDict, TGroupNames> {
+    let _group: TGroupName | undefined;
+    let _schema: TPrimaryRouteSchemaDict;
+
+    if (isSchema(group)) {
+      _schema = group;
+      _group = undefined;
+    } else {
+      _group = group;
+      _schema = schema as TPrimaryRouteSchemaDict;
+    }
+
+    let routeGroup = new RouteGroup(
+      _group,
+      this._prefix,
+      this._source,
+      this._matchingSource,
+      this._history,
+    );
+
+    routeGroup._children = this._build(_schema, routeGroup, routeGroup.$next);
+
+    this._groupToChildrenMap.set(_group, [routeGroup]);
+
+    return routeGroup as RouteGroupType<
+      TGroupName,
+      TPrimaryRouteSchemaDict,
+      TGroupNames
+    >;
   }
 
   /**
@@ -338,7 +339,7 @@ export class Router<
   $ref({
     leaves = [],
     preserveQuery = true,
-  }: RouterRefOptions<TGroupName> = {}): string {
+  }: RouterRefOptions<TGroupNames> = {}): string {
     let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
     let pathMap: Map<string | undefined, string>;
 
@@ -361,28 +362,12 @@ export class Router<
     });
   }
 
-  /**
-   * Perform a `history.push()` with `this.$ref(options)`.
-   */
-  $push(options?: RouterRefOptions<TGroupName>): void {
-    let ref = this.$ref(options);
-    this._history.push(ref);
-  }
-
-  /**
-   * Perform a `history.replace()` with `this.$ref(options)`.
-   */
-  $replace(options?: RouterRefOptions<TGroupName>): void {
-    let ref = this.$ref(options);
-    this._history.replace(ref);
-  }
-
   $build<TRouteMatchShared extends RouteMatchShared>(
     match: TRouteMatchShared,
     params?: Partial<RouteMatchSharedToParamDict<TRouteMatchShared>> &
       EmptyObjectPatch,
     options?: RouteBuilderBuildOptions,
-  ): RouteBuilder<TGroupName> {
+  ): RouteBuilder<TGroupNames> {
     return new RouteBuilder(match._prefix, match._source, this._history).$and(
       match,
       params,
@@ -485,7 +470,7 @@ export class Router<
     for (let [group, path] of pathMap) {
       let routeMatches = groupToChildrenMap.get(group) || [];
 
-      let routeMatchEntries = this._match(routeMatches, path) || [];
+      let routeMatchEntries = this._routerMatch(routeMatches, path) || [];
 
       if (!routeMatchEntries.length) {
         continue;
@@ -612,6 +597,8 @@ export class Router<
 
     let enteringAndUpdatingMatchSet = new Set(nextMatchSet);
 
+    let triggerByDescendanceMatchSet = new Set<RouteMatch>();
+
     for (let match of previousMatchSet) {
       if (!enteringAndUpdatingMatchSet.has(match)) {
         continue;
@@ -623,11 +610,13 @@ export class Router<
         isShallowlyEqual(match._pathSegments, nextMatch._pathSegments) &&
         match.$exact === nextMatch.$exact
       ) {
-        enteringAndUpdatingMatchSet.delete(match);
+        if (match._rest === nextMatch._rest) {
+          enteringAndUpdatingMatchSet.delete(match);
+        } else {
+          triggerByDescendanceMatchSet.add(match);
+        }
       }
     }
-
-    // Process before hooks
 
     for (let match of reversedLeavingMatches) {
       let result = await match._beforeLeave();
@@ -646,7 +635,7 @@ export class Router<
       let update = previousMatchSet.has(match);
 
       let result = update
-        ? await match._beforeUpdate()
+        ? await match._beforeUpdate(triggerByDescendanceMatchSet.has(match))
         : await match._beforeEnter();
 
       if (this._isNextLocationOutDated(nextLocation)) {
@@ -694,7 +683,7 @@ export class Router<
       let update = previousMatchSet.has(match);
 
       if (update) {
-        await match._afterUpdate();
+        await match._afterUpdate(triggerByDescendanceMatchSet.has(match));
       } else {
         await match._afterEnter();
       }
@@ -712,7 +701,7 @@ export class Router<
   }
 
   /** @internal */
-  private _match(
+  private _routerMatch(
     routeMatches: RouteMatch[],
     upperRest: string,
   ): RouteMatchEntry[] | undefined {
@@ -736,7 +725,7 @@ export class Router<
         ];
       }
 
-      let result = this._match(routeMatch._children || [], rest);
+      let result = this._routerMatch(routeMatch._children || [], rest);
 
       if (!result) {
         continue;
@@ -759,8 +748,8 @@ export class Router<
   /** @internal */
   private _build(
     schemaDict: RouteSchemaDict,
-    parent: RouteMatch | RouteGroup | Router,
-    matchingParent: object,
+    parent: RouteMatch,
+    matchingParent: NextRouteMatch,
   ): RouteMatch[] {
     let routeMatches: RouteMatch[] = [];
 
@@ -768,8 +757,7 @@ export class Router<
     let matchingSource = this._matchingSource;
     let history = this._history;
     let prefix = this._prefix;
-
-    let group = '$group' in parent ? parent.$group : undefined;
+    let group = parent.$group;
 
     for (let [routeName, schema] of Object.entries(schemaDict)) {
       if (typeof schema === 'boolean') {
@@ -794,9 +782,8 @@ export class Router<
       let routeMatch = new RouteMatch(
         routeName,
         prefix,
-        this,
         source,
-        parent instanceof RouteMatch ? parent : undefined,
+        parent,
         extension,
         history,
         options,
@@ -805,9 +792,8 @@ export class Router<
       let nextRouteMatch = new NextRouteMatch(
         routeName,
         prefix,
-        this,
         matchingSource,
-        matchingParent instanceof NextRouteMatch ? matchingParent : undefined,
+        matchingParent,
         routeMatch,
         extension,
         history,
@@ -819,7 +805,7 @@ export class Router<
       routeMatches.push(routeMatch);
 
       (parent as any)[routeName] = routeMatch;
-      (matchingParent as any)[routeName] = nextRouteMatch;
+      // (matchingParent as any)[routeName] = nextRouteMatch;
 
       if (!children) {
         continue;
@@ -830,45 +816,12 @@ export class Router<
 
     return routeMatches;
   }
-
-  static create<TPrimaryRouteSchemaDict extends RouteSchemaDict>(
-    primarySchema: TPrimaryRouteSchemaDict,
-    history: IHistory,
-    options?: RouterOptions,
-  ): RouterType<TPrimaryRouteSchemaDict, object>;
-  static create<
-    TPrimaryRouteSchemaDict extends RouteSchemaDict,
-    TGroupToRouteSchemaDictDict extends GroupToRouteSchemaDictDict
-  >(
-    primarySchema: TPrimaryRouteSchemaDict,
-    groupSchema: TGroupToRouteSchemaDictDict,
-    history: IHistory,
-    options?: RouterOptions,
-  ): RouterType<TPrimaryRouteSchemaDict, TGroupToRouteSchemaDictDict>;
-  static create(
-    primarySchema: any,
-    groupSchema: any,
-    history: any = {},
-    options: any = {},
-  ): Router {
-    if (isHistory(groupSchema)) {
-      options = history;
-      history = groupSchema;
-      groupSchema = {};
-    }
-
-    return new Router(primarySchema, groupSchema, history, options);
-  }
 }
 
-function isHistory(object: any): object is IHistory {
-  return (
-    object &&
-    object.location &&
-    typeof object.push === 'function' &&
-    typeof object.replace === 'function' &&
-    typeof object.listen === 'function'
-  );
+function isSchema<TGRoupName extends RouteSchemaDict>(
+  schema: any,
+): schema is TGRoupName {
+  return typeof schema === 'object';
 }
 
 function isRouterOnRouteCompleteLocationState(

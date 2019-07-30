@@ -29,7 +29,7 @@ export interface RouterMatchRefOptions<TGroupName extends string> {
   /**
    * Parallel route groups to leave.
    */
-  leaves?: TGroupName[];
+  leaves?: TGroupName[] | '*';
   /**
    * Whether to preserve rest path of current match, defaults to `false`.
    */
@@ -46,14 +46,17 @@ export interface RouterMatchRefOptions<TGroupName extends string> {
 }
 
 export interface RouteMatchSharedOptions {
-  match: string | RegExp;
+  match: string | symbol | RegExp;
   query: Dict<boolean> | undefined;
   group: string | undefined;
 }
 
+export const ROUTER_MATCH_SYMBOL = Symbol('router-match-symbol');
+
 export abstract class RouteMatchShared<
   TParamDict extends GeneralParamDict = GeneralParamDict,
-  TGroupName extends string = string
+  TGroupName extends string = string,
+  TGroupNames extends string = string
 > {
   /**
    * Name of this `RouteMatch`, correspondent to the field name of route
@@ -84,15 +87,14 @@ export abstract class RouteMatchShared<
   protected _history: IHistory;
 
   /** @internal */
-  protected _matchPattern: string | RegExp;
+  protected _matchPattern: string | symbol | RegExp;
 
   /** @internal */
-  protected _router: Router;
+  protected _router: Router | undefined;
 
   constructor(
     name: string,
     prefix: string,
-    router: Router,
     source: RouteSource,
     parent: RouteMatchShared | undefined,
     history: IHistory,
@@ -102,7 +104,6 @@ export abstract class RouteMatchShared<
     this.$group = group as TGroupName;
     this.$parent = parent;
     this._prefix = prefix;
-    this._router = router;
     this._source = source;
     this._history = history;
 
@@ -129,6 +130,21 @@ export abstract class RouteMatchShared<
       ...this._paramSegments,
       ...this._query,
     } as TParamDict;
+  }
+
+  /**
+   * A reactive value indicates whether this route is exactly matched.
+   */
+  get $exact(): boolean {
+    let entry = this._matchEntry;
+    return !!entry && entry.exact;
+  }
+
+  /**
+   * A reactive value indicates whether this route is matched.
+   */
+  get $matched(): boolean {
+    return !!this._matchEntry;
   }
 
   /** @internal */
@@ -169,6 +185,13 @@ export abstract class RouteMatchShared<
 
     let matchPattern = this._matchPattern;
     let segment = this._segment;
+
+    if (
+      typeof matchPattern === 'symbol' &&
+      matchPattern === ROUTER_MATCH_SYMBOL
+    ) {
+      return upperSegmentDict || {};
+    }
 
     return {
       ...upperSegmentDict,
@@ -211,7 +234,7 @@ export abstract class RouteMatchShared<
    */
   $ref(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouterMatchRefOptions<TGroupName>,
+    options?: RouterMatchRefOptions<TGroupNames>,
   ): string;
   $ref(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
@@ -220,7 +243,7 @@ export abstract class RouteMatchShared<
       rest = false,
       preserveQuery = true,
       leaves = [],
-    }: RouterMatchRefOptions<TGroupName> = {},
+    }: RouterMatchRefOptions<TGroupNames> = {},
   ): string {
     let group = this.$group;
     let beingPrimaryRoute = group === undefined;
@@ -230,8 +253,12 @@ export abstract class RouteMatchShared<
 
     let pathMap = new Map(sourcePathMap);
 
-    for (let item of leaves) {
-      pathMap.delete(item);
+    if (Array.isArray(leaves)) {
+      for (let item of leaves) {
+        pathMap.delete(item);
+      }
+    } else if (leaves === '*') {
+      pathMap = new Map([[undefined, sourcePathMap.get(undefined)!]]);
     }
 
     if (leave) {
@@ -243,12 +270,12 @@ export abstract class RouteMatchShared<
     } else {
       let segmentDict = this._pathSegments;
 
-      let path = Object.keys(segmentDict)
-        .map(key => {
+      let path = Object.entries(segmentDict)
+        .map(([key, segment]) => {
           restParamKeySet.delete(key);
 
           let param = params[key];
-          let segment = typeof param === 'string' ? param : segmentDict[key];
+          segment = typeof param === 'string' ? param : segment;
 
           if (typeof segment !== 'string') {
             throw new Error(`Parameter "${key}" is required`);
@@ -301,7 +328,7 @@ export abstract class RouteMatchShared<
    */
   $push(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouterMatchRefOptions<TGroupName>,
+    options?: RouterMatchRefOptions<TGroupNames>,
   ): void {
     let ref = this.$ref(params, options);
     let state = this._generateState(options);
@@ -314,7 +341,7 @@ export abstract class RouteMatchShared<
    */
   $replace(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouterMatchRefOptions<TGroupName>,
+    options?: RouterMatchRefOptions<TGroupNames>,
   ): void {
     let ref = this.$ref(params, options);
     let state = this._generateState(options);
@@ -329,7 +356,7 @@ export abstract class RouteMatchShared<
 
   private _generateState({
     onComplete: onCompleteListener,
-  }: RouterMatchRefOptions<TGroupName> = {}):
+  }: RouterMatchRefOptions<TGroupNames> = {}):
     | RouterOnRouteCompleteLocationState
     | undefined {
     if (!onCompleteListener) {
@@ -338,10 +365,14 @@ export abstract class RouteMatchShared<
 
     let onCompleteListenerId = getNextId();
 
-    this._router._onRouteCompleteListenerMap.set(
-      onCompleteListenerId,
-      onCompleteListener,
-    );
+    let router = this._router;
+
+    if (router) {
+      router._onRouteCompleteListenerMap.set(
+        onCompleteListenerId,
+        onCompleteListener,
+      );
+    }
 
     return {
       onCompleteListenerId,

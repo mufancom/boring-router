@@ -8,23 +8,22 @@ import {Link, Route, RouteComponentProps} from '../../bld/library';
 
 const history = createBrowserHistory();
 
-const router = Router.create(
-  {
-    default: {
-      $match: '',
-    },
-    account: {
-      $children: {
-        signUp: true,
-        resetPassword: true,
-        settings: true,
-      },
+const router = new Router(history);
+
+const rootRoute = router.route({
+  default: {
+    $match: '',
+  },
+  account: {
+    $children: {
+      signUp: true,
+      resetPassword: true,
+      settings: true,
     },
   },
-  history,
-);
+});
 
-export type RouterType = typeof router;
+export type RouterType = typeof rootRoute;
 
 export type AccountPageProps = RouteComponentProps<
   RouterType['account']['signUp' | 'resetPassword']
@@ -35,12 +34,12 @@ export class AccountPage extends Component<AccountPageProps> {
     return (
       <>
         <p>Account page</p>
-        <Link to={router.default}>Home</Link>
+        <Link to={rootRoute.default}>Home</Link>
         <hr />
-        <Route match={router.account.signUp}>
+        <Route match={rootRoute.account.signUp}>
           <p>Sign up</p>
         </Route>
-        <Route match={router.account.resetPassword}>
+        <Route match={rootRoute.account.resetPassword}>
           <p>Reset password</p>
         </Route>
       </>
@@ -54,25 +53,25 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={router.default}>
+        <Route match={rootRoute.default}>
           <p>Home page</p>
           <div>
-            <Link to={router.account.signUp}>Sign up</Link>
+            <Link to={rootRoute.account.signUp}>Sign up</Link>
           </div>
           <div>
-            <Link to={router.account.resetPassword}>Reset password</Link>
+            <Link to={rootRoute.account.resetPassword}>Reset password</Link>
           </div>
           <div>
-            <Link to={router.account.settings}>Settings</Link>
+            <Link to={rootRoute.account.settings}>Settings</Link>
           </div>
         </Route>
         <Route
-          match={[router.account.signUp, router.account.resetPassword]}
+          match={[rootRoute.account.signUp, rootRoute.account.resetPassword]}
           component={AccountPage}
         />
-        <Route match={router.account.settings}>
+        <Route match={rootRoute.account.settings}>
           <p>Account settings</p>
-          <Link to={router.default}>Home</Link>
+          <Link to={rootRoute.default}>Home</Link>
         </Route>
       </>
     );

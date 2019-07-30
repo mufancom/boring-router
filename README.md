@@ -36,7 +36,9 @@ import React, {Component} from 'react';
 
 const history = createBrowserHistory();
 
-const router = Router.create(
+const router = new Router(history);
+
+const rootRoute = router.route(
   {
     account: true,
     about: true,
@@ -44,7 +46,6 @@ const router = Router.create(
       $match: RouteMatch.rest,
     },
   },
-  history,
 );
 
 @observer
@@ -339,7 +340,9 @@ class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
   }
 }
 
-let router = Router.create(
+let router = new Router(history);
+
+let rootRoute = router.route(
   {
     accountId: {
       $match: RouteMatch.segment,
@@ -350,7 +353,6 @@ let router = Router.create(
       },
     },
   },
-  history,
 );
 
 // Method `$service` accepts an asynchronous function as well.

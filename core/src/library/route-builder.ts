@@ -71,12 +71,12 @@ export class RouteBuilder<TGroupName extends string = string> {
     } else {
       let segmentDict = match._pathSegments;
 
-      let path = Object.keys(segmentDict)
-        .map(key => {
+      let path = Object.entries(segmentDict)
+        .map(([key, segment]) => {
           restParamKeySet.delete(key);
 
           let param = params[key];
-          let segment = typeof param === 'string' ? param : segmentDict[key];
+          segment = typeof param === 'string' ? param : segment;
 
           if (typeof segment !== 'string') {
             throw new Error(`Parameter "${key}" is required`);

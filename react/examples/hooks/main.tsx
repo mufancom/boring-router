@@ -8,35 +8,34 @@ import {Link, Route} from '../../bld/library';
 
 const history = createBrowserHistory();
 
-const router = Router.create(
-  {
-    default: {
-      $match: '',
-    },
-    account: true,
-    profile: {
-      $exact: true,
-      $children: {
-        details: true,
-      },
-    },
-    about: {
-      $query: {
-        source: true,
-      },
-    },
-    notFound: {
-      $match: RouteMatch.rest,
+const router = new Router(history);
+
+const rootRoute = router.route({
+  default: {
+    $match: '',
+  },
+  account: true,
+  profile: {
+    $exact: true,
+    $children: {
+      details: true,
     },
   },
-  history,
-);
-
-router.account.$beforeEnter(() => {
-  router.about.$push({source: 'reaction'});
+  about: {
+    $query: {
+      source: true,
+    },
+  },
+  notFound: {
+    $match: RouteMatch.rest,
+  },
 });
 
-router.profile.$beforeEnter(match => {
+rootRoute.account.$beforeEnter(() => {
+  rootRoute.about.$push({source: 'reaction'});
+});
+
+rootRoute.profile.$beforeEnter(match => {
   console.info('before enter profile');
   console.info('before enter ref', match.$ref());
 
@@ -45,15 +44,15 @@ router.profile.$beforeEnter(match => {
   }
 });
 
-router.profile.$afterEnter(() => {
+rootRoute.profile.$afterEnter(() => {
   console.info('after enter profile');
 });
 
-router.profile.$beforeLeave(() => {
+rootRoute.profile.$beforeLeave(() => {
   console.info('before leave profile');
 });
 
-router.profile.$afterLeave(() => {
+rootRoute.profile.$afterLeave(() => {
   console.info('after leave profile');
 });
 
@@ -63,25 +62,25 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={router.default}>
+        <Route match={rootRoute.default}>
           <p>Home page</p>
           <div>
-            <Link to={router.account}>Account</Link>
+            <Link to={rootRoute.account}>Account</Link>
           </div>
           <div>
-            <Link to={router.profile}>Profile</Link>
+            <Link to={rootRoute.profile}>Profile</Link>
           </div>
           <div>
-            <Link to={router.about}>About</Link>
+            <Link to={rootRoute.about}>About</Link>
           </div>
         </Route>
-        <Route match={router.profile.details}>
+        <Route match={rootRoute.profile.details}>
           <p>Profile details page</p>
-          <Link to={router.default}>Home</Link>
+          <Link to={rootRoute.default}>Home</Link>
         </Route>
-        <Route match={router.about}>
+        <Route match={rootRoute.about}>
           <p>About page</p>
-          <Link to={router.default}>Home</Link>
+          <Link to={rootRoute.default}>Home</Link>
         </Route>
       </>
     );

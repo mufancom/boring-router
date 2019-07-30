@@ -8,23 +8,22 @@ import {Link, Route} from '../../bld/library';
 
 const history = createBrowserHistory();
 
-const router = Router.create(
-  {
-    default: {
-      $match: '',
+const router = new Router(history);
+
+const rootRoute = router.route({
+  default: {
+    $match: '',
+  },
+  account: {
+    $exact: true,
+    $query: {
+      id: true,
     },
-    account: {
-      $exact: true,
-      $query: {
-        id: true,
-      },
-      $children: {
-        details: true,
-      },
+    $children: {
+      details: true,
     },
   },
-  history,
-);
+});
 
 @observer
 export class App extends Component {
@@ -32,20 +31,20 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={router.default}>
+        <Route match={rootRoute.default}>
           <p>Home page</p>
-          <Link to={router.account} params={{id: '123'}}>
+          <Link to={rootRoute.account} params={{id: '123'}}>
             Account 123
           </Link>
         </Route>
-        <Route match={router.account}>
+        <Route match={rootRoute.account}>
           <p>Account page</p>
-          <Link to={router.default}>Home</Link>
+          <Link to={rootRoute.default}>Home</Link>
           <hr />
-          <p>Account {router.account.$params.id} page</p>
-          <Link to={router.account.details}>Details</Link>
-          <Route match={router.account.details}>
-            <p>Account {router.account.details.$params.id} details</p>
+          <p>Account {rootRoute.account.$params.id} page</p>
+          <Link to={rootRoute.account.details}>Details</Link>
+          <Route match={rootRoute.account.details}>
+            <p>Account {rootRoute.account.details.$params.id} details</p>
           </Route>
         </Route>
       </>

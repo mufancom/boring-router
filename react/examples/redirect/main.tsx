@@ -8,24 +8,23 @@ import {Link, Redirect, Route} from '../../bld/library';
 
 const history = createBrowserHistory();
 
-const router = Router.create(
-  {
-    default: {
-      $match: '',
-    },
-    account: true,
-    profile: true,
-    about: {
-      $query: {
-        source: true,
-      },
-    },
-    notFound: {
-      $match: RouteMatch.rest,
+const router = new Router(history);
+
+const rootRoute = router.route({
+  default: {
+    $match: '',
+  },
+  account: true,
+  profile: true,
+  about: {
+    $query: {
+      source: true,
     },
   },
-  history,
-);
+  notFound: {
+    $match: RouteMatch.rest,
+  },
+});
 
 @observer
 export class App extends Component {
@@ -33,32 +32,35 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={router.default}>
+        <Route match={rootRoute.default}>
           <p>Home page</p>
           <div>
-            <Link to={router.account}>Account</Link>
+            <Link to={rootRoute.account}>Account</Link>
           </div>
           <div>
-            <Link to={router.about}>About</Link>
+            <Link to={rootRoute.about}>About</Link>
           </div>
           <div>
-            <Link to={router.notFound} params={{notFound: 'boring'}}>
+            <Link to={rootRoute.notFound} params={{notFound: 'boring'}}>
               Boring
             </Link>
           </div>
         </Route>
-        <Route match={router.account}>
+        <Route match={rootRoute.account}>
           <p>Account page</p>
-          <Link to={router.default}>Home</Link>
+          <Link to={rootRoute.default}>Home</Link>
         </Route>
-        <Route match={router.about}>
+        <Route match={rootRoute.about}>
           <p>About page</p>
-          <Link to={router.default}>Home</Link>
+          <Link to={rootRoute.default}>Home</Link>
         </Route>
-        <Redirect match={[router.account, router.profile]} to={router.about} />
         <Redirect
-          match={router.notFound}
-          to={router.about}
+          match={[rootRoute.account, rootRoute.profile]}
+          to={rootRoute.about}
+        />
+        <Redirect
+          match={rootRoute.notFound}
+          to={rootRoute.about}
           params={{source: 'not-found'}}
         />
       </>
