@@ -282,13 +282,10 @@ export class Router<TGroupNames extends string = string> {
     );
   }
 
-  route<
-    TPrimaryRouteSchemaDict extends RouteSchemaDict,
-    TGRoupName extends string = string
-  >(
+  route<TPrimaryRouteSchemaDict extends RouteSchemaDict>(
     schema: TPrimaryRouteSchemaDict,
-    group?: TGRoupName,
-  ): RouteGroupType<TGroupNames, TPrimaryRouteSchemaDict, TGroupNames>;
+    group?: never,
+  ): RouteGroupType<never, TPrimaryRouteSchemaDict, TGroupNames>;
   route<
     TPrimaryRouteSchemaDict extends RouteSchemaDict,
     TGroupName extends TGroupNames
