@@ -6,10 +6,10 @@ import {IHistory} from '../history';
 
 import {NextRouteMatch} from './next-route-match';
 import {
+  COMPATIBLE_MATCH_SYMBOL,
   GeneralParamDict,
   GeneralQueryDict,
   GeneralSegmentDict,
-  ROUTER_MATCH_SYMBOL,
   RouteMatchShared,
   RouteMatchSharedOptions,
 } from './route-match-shared';
@@ -421,7 +421,7 @@ export class RouteMatch<
     let pattern = this._matchPattern;
 
     if (typeof pattern === 'symbol') {
-      if (pattern === ROUTER_MATCH_SYMBOL) {
+      if (pattern === COMPATIBLE_MATCH_SYMBOL) {
         return {
           matched: true,
           exactlyMatched: false,

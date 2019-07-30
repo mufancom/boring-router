@@ -51,7 +51,7 @@ export interface RouteMatchSharedOptions {
   group: string | undefined;
 }
 
-export const ROUTER_MATCH_SYMBOL = Symbol('router-match-symbol');
+export const COMPATIBLE_MATCH_SYMBOL = Symbol('compatible-match');
 
 export abstract class RouteMatchShared<
   TParamDict extends GeneralParamDict = GeneralParamDict,
@@ -188,7 +188,7 @@ export abstract class RouteMatchShared<
 
     if (
       typeof matchPattern === 'symbol' &&
-      matchPattern === ROUTER_MATCH_SYMBOL
+      matchPattern === COMPATIBLE_MATCH_SYMBOL
     ) {
       return upperSegmentDict || {};
     }

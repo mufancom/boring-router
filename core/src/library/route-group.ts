@@ -1,8 +1,8 @@
 import {IHistory} from './history';
 import {
+  COMPATIBLE_MATCH_SYMBOL,
   GeneralParamDict,
   NextRouteMatch,
-  ROUTER_MATCH_SYMBOL,
   RouteMatch,
   RouteSource,
 } from './route-match';
@@ -26,7 +26,7 @@ export class RouteGroup<
   ) {
     super(group || '', prefix, source, undefined, {}, history, {
       exact: false,
-      match: ROUTER_MATCH_SYMBOL,
+      match: COMPATIBLE_MATCH_SYMBOL,
       query: undefined,
       group,
     });
@@ -40,7 +40,7 @@ export class RouteGroup<
       {},
       history,
       {
-        match: ROUTER_MATCH_SYMBOL,
+        match: COMPATIBLE_MATCH_SYMBOL,
         query: undefined,
         group,
       },
