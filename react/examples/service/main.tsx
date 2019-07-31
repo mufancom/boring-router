@@ -19,7 +19,7 @@ class Account {
 
 const router = new Router(history);
 
-const rootRoute = router.route({
+const primaryRoute = router.route({
   default: {
     $match: '',
   },
@@ -40,7 +40,7 @@ const rootRoute = router.route({
   },
 });
 
-type AccountIdRouteMatch = typeof rootRoute.account.id;
+type AccountIdRouteMatch = typeof primaryRoute.account.id;
 
 class AccountIdRouteService implements IRouteService<AccountIdRouteMatch> {
   private timer!: number;
@@ -68,7 +68,7 @@ class AccountIdRouteService implements IRouteService<AccountIdRouteMatch> {
   }
 }
 
-rootRoute.account.id.$service(match => new AccountIdRouteService(match));
+primaryRoute.account.id.$service(match => new AccountIdRouteService(match));
 
 @observer
 export class App extends Component {
@@ -76,20 +76,20 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={rootRoute.default}>
+        <Route match={primaryRoute.default}>
           <p>Home page</p>
           <Link
-            to={rootRoute.account.id}
+            to={primaryRoute.account.id}
             params={{id: '4a35d104523ef520dd5d9f60c7e1eeb1'}}
           >
             Account
           </Link>
         </Route>
-        <Route match={rootRoute.account.id}>
+        <Route match={primaryRoute.account.id}>
           {({account, tick}) => (
             <>
               <p>Account page</p>
-              <Link to={rootRoute.default}>Home</Link>
+              <Link to={primaryRoute.default}>Home</Link>
               <hr />
               <p>Account {account.id}</p>
               <img src={account.avatarURL} alt="avatar" />

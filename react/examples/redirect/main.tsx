@@ -10,7 +10,7 @@ const history = createBrowserHistory();
 
 const router = new Router(history);
 
-const rootRoute = router.route({
+const primaryRoute = router.route({
   default: {
     $match: '',
   },
@@ -32,35 +32,35 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={rootRoute.default}>
+        <Route match={primaryRoute.default}>
           <p>Home page</p>
           <div>
-            <Link to={rootRoute.account}>Account</Link>
+            <Link to={primaryRoute.account}>Account</Link>
           </div>
           <div>
-            <Link to={rootRoute.about}>About</Link>
+            <Link to={primaryRoute.about}>About</Link>
           </div>
           <div>
-            <Link to={rootRoute.notFound} params={{notFound: 'boring'}}>
+            <Link to={primaryRoute.notFound} params={{notFound: 'boring'}}>
               Boring
             </Link>
           </div>
         </Route>
-        <Route match={rootRoute.account}>
+        <Route match={primaryRoute.account}>
           <p>Account page</p>
-          <Link to={rootRoute.default}>Home</Link>
+          <Link to={primaryRoute.default}>Home</Link>
         </Route>
-        <Route match={rootRoute.about}>
+        <Route match={primaryRoute.about}>
           <p>About page</p>
-          <Link to={rootRoute.default}>Home</Link>
+          <Link to={primaryRoute.default}>Home</Link>
         </Route>
         <Redirect
-          match={[rootRoute.account, rootRoute.profile]}
-          to={rootRoute.about}
+          match={[primaryRoute.account, primaryRoute.profile]}
+          to={primaryRoute.about}
         />
         <Redirect
-          match={rootRoute.notFound}
-          to={rootRoute.about}
+          match={primaryRoute.notFound}
+          to={primaryRoute.about}
           params={{source: 'not-found'}}
         />
       </>

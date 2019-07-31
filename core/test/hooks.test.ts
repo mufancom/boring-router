@@ -13,7 +13,7 @@ let history = createMemoryHistory();
 
 let router = new Router(history);
 
-let rootRoute = router.route({
+let primaryRoute = router.route({
   default: {
     $match: '',
   },
@@ -30,42 +30,42 @@ let rootRoute = router.route({
 });
 
 let redirectBeforeEnter = jest.fn(() => {
-  rootRoute.about.$push();
+  primaryRoute.about.$push();
 });
 let redirectAfterEnter = jest.fn();
 
-rootRoute.redirect.$beforeEnter(redirectBeforeEnter);
-rootRoute.redirect.$afterEnter(redirectAfterEnter);
+primaryRoute.redirect.$beforeEnter(redirectBeforeEnter);
+primaryRoute.redirect.$afterEnter(redirectAfterEnter);
 
 let revertBeforeEnter = jest.fn(() => false);
 let revertAfterEnter = jest.fn();
 
-rootRoute.revert.$beforeEnter(revertBeforeEnter);
-rootRoute.revert.$afterEnter(revertAfterEnter);
+primaryRoute.revert.$beforeEnter(revertBeforeEnter);
+primaryRoute.revert.$afterEnter(revertAfterEnter);
 
 let persistBeforeLeave = jest.fn(() => false);
 
-rootRoute.persist.$beforeLeave(persistBeforeLeave);
+primaryRoute.persist.$beforeLeave(persistBeforeLeave);
 
 let parentBeforeEnter = jest.fn();
 let parentBeforeUpdate = jest.fn();
 
-rootRoute.parent.$beforeEnter(parentBeforeEnter);
-rootRoute.parent.$beforeUpdate(parentBeforeUpdate);
+primaryRoute.parent.$beforeEnter(parentBeforeEnter);
+primaryRoute.parent.$beforeUpdate(parentBeforeUpdate);
 
 let aboutBeforeEnter = jest.fn();
 let aboutAfterEnter = jest.fn();
 let aboutBeforeLeave = jest.fn();
 let aboutAfterLeave = jest.fn();
 
-rootRoute.about.$beforeEnter(aboutBeforeEnter);
-rootRoute.about.$afterEnter(aboutAfterEnter);
-rootRoute.about.$beforeLeave(aboutBeforeLeave);
-rootRoute.about.$afterLeave(aboutAfterLeave);
+primaryRoute.about.$beforeEnter(aboutBeforeEnter);
+primaryRoute.about.$afterEnter(aboutAfterEnter);
+primaryRoute.about.$beforeLeave(aboutBeforeLeave);
+primaryRoute.about.$afterLeave(aboutAfterLeave);
 
 let canceledAboutAfterEnter = jest.fn();
 
-let removalCallback = rootRoute.about.$afterEnter(canceledAboutAfterEnter);
+let removalCallback = primaryRoute.about.$afterEnter(canceledAboutAfterEnter);
 
 removalCallback();
 
@@ -75,8 +75,8 @@ test('should navigate from `redirect` to `about`', async () => {
   await nap();
 
   expect(history.location.pathname).toBe('/about');
-  expect(rootRoute.about.$matched).toBe(true);
-  expect(rootRoute.redirect.$matched).toBe(false);
+  expect(primaryRoute.about.$matched).toBe(true);
+  expect(primaryRoute.redirect.$matched).toBe(false);
 
   expect(redirectBeforeEnter).toHaveBeenCalled();
   expect(redirectAfterEnter).not.toHaveBeenCalled();
@@ -91,8 +91,8 @@ test('should revert navigation from `about` to `revert` by `revert.$beforeEnter`
   await nap();
 
   expect(history.location.pathname).toBe('/about');
-  expect(rootRoute.about.$matched).toBe(true);
-  expect(rootRoute.revert.$matched).toBe(false);
+  expect(primaryRoute.about.$matched).toBe(true);
+  expect(primaryRoute.revert.$matched).toBe(false);
 
   expect(revertBeforeEnter).toHaveBeenCalled();
   expect(revertAfterEnter).not.toHaveBeenCalled();
@@ -124,7 +124,7 @@ test('should not call hooks that have been canceled.', async () => {
   await nap();
 
   expect(history.location.pathname).toBe('/about');
-  expect(rootRoute.about.$matched).toBe(true);
+  expect(primaryRoute.about.$matched).toBe(true);
 
   expect(canceledAboutAfterEnter).not.toHaveBeenCalled();
 });
@@ -139,8 +139,8 @@ test('should revert navigation from `persist` to `about` by `persist.$beforeLeav
   await nap();
 
   expect(history.location.pathname).toBe('/persist');
-  expect(rootRoute.about.$matched).toBe(false);
-  expect(rootRoute.persist.$matched).toBe(true);
+  expect(primaryRoute.about.$matched).toBe(false);
+  expect(primaryRoute.persist.$matched).toBe(true);
 
   expect(persistBeforeLeave).toHaveBeenCalled();
 

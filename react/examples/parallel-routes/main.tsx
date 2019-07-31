@@ -10,7 +10,7 @@ const history = createBrowserHistory();
 
 const router = new Router<'popup' | 'sidebar'>(history);
 
-const rootRoute = router.route({
+const primaryRoute = router.route({
   default: {
     $match: '',
   },
@@ -42,10 +42,10 @@ const sidebarRoute = router.route('sidebar', {
   cart: true,
 });
 
-rootRoute.about.$parallel({matches: [sidebarRoute.cart]});
-rootRoute.contact.$parallel({groups: ['popup']});
+primaryRoute.about.$parallel({matches: [sidebarRoute.cart]});
+primaryRoute.contact.$parallel({groups: ['popup']});
 
-rootRoute.about.$beforeEnter(match => {
+primaryRoute.about.$beforeEnter(match => {
   if (match.$exact) {
     match.test.$push();
   }
@@ -57,7 +57,7 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={rootRoute.default}>
+        <Route match={primaryRoute.default}>
           <p>Home page</p>
           <div>
             <Link to={popupRoute.account} toggle>
@@ -72,16 +72,16 @@ export class App extends Component {
             <Link to={sidebarRoute.cart}>Cart</Link>
           </div>
           <div>
-            <Link to={rootRoute.news}>News</Link>
+            <Link to={primaryRoute.news}>News</Link>
           </div>
           <div>
-            <Link to={rootRoute.about}>About (With Cart)</Link>
+            <Link to={primaryRoute.about}>About (With Cart)</Link>
           </div>
           <div>
-            <Link to={rootRoute.contact}>Contact (With 'popup' Group)</Link>
+            <Link to={primaryRoute.contact}>Contact (With 'popup' Group)</Link>
           </div>
           <div>
-            <Link to={rootRoute.notFound} params={{notFound: 'boring'}}>
+            <Link to={primaryRoute.notFound} params={{notFound: 'boring'}}>
               Boring
             </Link>
           </div>
@@ -101,7 +101,7 @@ export class App extends Component {
               <a
                 href="javascript:void(0);"
                 onClick={() => {
-                  rootRoute.$replace({leaves: 'popup'});
+                  primaryRoute.$replace({}, {leaves: ['popup']});
                 }}
               >
                 x
@@ -142,7 +142,7 @@ export class App extends Component {
               <a
                 href="javascript:void(0);"
                 onClick={() => {
-                  rootRoute.$replace({leaves: 'popup'});
+                  primaryRoute.$replace({}, {leaves: ['popup']});
                 }}
               >
                 x
@@ -168,7 +168,7 @@ export class App extends Component {
               <a
                 href="javascript:;"
                 onClick={() => {
-                  rootRoute.$replace({leaves: 'sidebar'});
+                  primaryRoute.$replace({}, {leaves: ['sidebar']});
                 }}
               >
                 x
@@ -176,21 +176,21 @@ export class App extends Component {
             </p>
           </div>
         </Route>
-        <Route match={rootRoute.news}>
+        <Route match={primaryRoute.news}>
           <p>News page</p>
-          <Link to={rootRoute.default}>Home</Link>
+          <Link to={primaryRoute.default}>Home</Link>
         </Route>
-        <Route match={rootRoute.about}>
+        <Route match={primaryRoute.about}>
           <p>About page</p>
-          <Link to={rootRoute.default}>Home</Link>
+          <Link to={primaryRoute.default}>Home</Link>
         </Route>
-        <Route match={rootRoute.contact}>
+        <Route match={primaryRoute.contact}>
           <p>Contact page</p>
-          <Link to={rootRoute.default}>Home</Link>
+          <Link to={primaryRoute.default}>Home</Link>
         </Route>
-        <Route match={rootRoute.notFound}>
+        <Route match={primaryRoute.notFound}>
           <p>Not found</p>
-          <Link to={rootRoute.default}>Home</Link>
+          <Link to={primaryRoute.default}>Home</Link>
         </Route>
       </>
     );

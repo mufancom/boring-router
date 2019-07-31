@@ -10,7 +10,7 @@ const history = createBrowserHistory();
 
 const router = new Router(history);
 
-const rootRoute = router.route({
+const primaryRoute = router.route({
   default: {
     $match: '',
   },
@@ -21,7 +21,7 @@ const rootRoute = router.route({
   },
 });
 
-export type RouterType = typeof rootRoute;
+export type RouterType = typeof primaryRoute;
 
 @observer
 export class App extends Component {
@@ -29,17 +29,17 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={rootRoute.default}>
+        <Route match={primaryRoute.default}>
           <p>Home page</p>
-          <Link to={rootRoute.account} params={{id: '123'}}>
+          <Link to={primaryRoute.account} params={{id: '123'}}>
             Account 123
           </Link>
         </Route>
-        <Route match={rootRoute.account}>
+        <Route match={primaryRoute.account}>
           {match => (
             <>
               <p>Account {match.$params.id} page</p>
-              <Link to={rootRoute.default}>Home</Link>
+              <Link to={primaryRoute.default}>Home</Link>
             </>
           )}
         </Route>

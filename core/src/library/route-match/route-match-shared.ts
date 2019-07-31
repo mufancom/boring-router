@@ -11,6 +11,8 @@ import {
 
 import {RouteMatchEntry, RouteSource} from './route-match';
 
+export const ROUTE_MATCH_START_ANCHOR = Symbol('^');
+
 export type GeneralSegmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
@@ -51,12 +53,10 @@ export interface RouteMatchSharedOptions {
   group: string | undefined;
 }
 
-export const COMPATIBLE_MATCH_SYMBOL = Symbol('compatible-match');
-
 export abstract class RouteMatchShared<
   TParamDict extends GeneralParamDict = GeneralParamDict,
-  TGroupName extends string = string,
-  TGroupNames extends string = string
+  TSpecificGroupName extends string | undefined = string | undefined,
+  TGroupName extends string = string
 > {
   /**
    * Name of this `RouteMatch`, correspondent to the field name of route
@@ -67,7 +67,7 @@ export abstract class RouteMatchShared<
   /**
    * Group of this `RouteMatch`, specified in the root route.
    */
-  readonly $group: TGroupName | undefined;
+  readonly $group: TSpecificGroupName | undefined;
 
   /**
    * Parent of this route match.
@@ -95,15 +95,17 @@ export abstract class RouteMatchShared<
   constructor(
     name: string,
     prefix: string,
+    router: Router,
     source: RouteSource,
     parent: RouteMatchShared | undefined,
     history: IHistory,
     {match, query, group}: RouteMatchSharedOptions,
   ) {
     this.$name = name;
-    this.$group = group as TGroupName;
+    this.$group = group as TSpecificGroupName;
     this.$parent = parent;
     this._prefix = prefix;
+    this._router = router;
     this._source = source;
     this._history = history;
 
@@ -188,7 +190,7 @@ export abstract class RouteMatchShared<
 
     if (
       typeof matchPattern === 'symbol' &&
-      matchPattern === COMPATIBLE_MATCH_SYMBOL
+      matchPattern === ROUTE_MATCH_START_ANCHOR
     ) {
       return upperSegmentDict || {};
     }
@@ -234,7 +236,7 @@ export abstract class RouteMatchShared<
    */
   $ref(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouterMatchRefOptions<TGroupNames>,
+    options?: RouterMatchRefOptions<TGroupName>,
   ): string;
   $ref(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
@@ -243,10 +245,10 @@ export abstract class RouteMatchShared<
       rest = false,
       preserveQuery = true,
       leaves = [],
-    }: RouterMatchRefOptions<TGroupNames> = {},
+    }: RouterMatchRefOptions<TGroupName> = {},
   ): string {
     let group = this.$group;
-    let beingPrimaryRoute = group === undefined;
+    let primary = group === undefined;
 
     let restParamKeySet = new Set(Object.keys(params));
     let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
@@ -262,7 +264,7 @@ export abstract class RouteMatchShared<
     }
 
     if (leave) {
-      if (beingPrimaryRoute) {
+      if (primary) {
         throw new Error('Cannot leave the primary route');
       }
 
@@ -271,11 +273,11 @@ export abstract class RouteMatchShared<
       let segmentDict = this._pathSegments;
 
       let path = Object.entries(segmentDict)
-        .map(([key, segment]) => {
+        .map(([key, defaultSegment]) => {
           restParamKeySet.delete(key);
 
           let param = params[key];
-          segment = typeof param === 'string' ? param : segment;
+          let segment = typeof param === 'string' ? param : defaultSegment;
 
           if (typeof segment !== 'string') {
             throw new Error(`Parameter "${key}" is required`);
@@ -294,7 +296,7 @@ export abstract class RouteMatchShared<
 
     let preservedQueryDict: GeneralQueryDict = {};
 
-    if (beingPrimaryRoute) {
+    if (primary) {
       preservedQueryDict = {};
 
       let queryKeySet = this._queryKeySet;
@@ -328,7 +330,7 @@ export abstract class RouteMatchShared<
    */
   $push(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouterMatchRefOptions<TGroupNames>,
+    options?: RouterMatchRefOptions<TGroupName>,
   ): void {
     let ref = this.$ref(params, options);
     let state = this._generateState(options);
@@ -341,7 +343,7 @@ export abstract class RouteMatchShared<
    */
   $replace(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouterMatchRefOptions<TGroupNames>,
+    options?: RouterMatchRefOptions<TGroupName>,
   ): void {
     let ref = this.$ref(params, options);
     let state = this._generateState(options);
@@ -356,7 +358,7 @@ export abstract class RouteMatchShared<
 
   private _generateState({
     onComplete: onCompleteListener,
-  }: RouterMatchRefOptions<TGroupNames> = {}):
+  }: RouterMatchRefOptions<TGroupName> = {}):
     | RouterOnRouteCompleteLocationState
     | undefined {
     if (!onCompleteListener) {

@@ -10,7 +10,7 @@ const history = createBrowserHistory();
 
 const router = new Router(history);
 
-const rootRoute = router.route({
+const primaryRoute = router.route({
   default: {
     $match: '',
   },
@@ -31,11 +31,11 @@ const rootRoute = router.route({
   },
 });
 
-rootRoute.account.$beforeEnter(() => {
-  rootRoute.about.$push({source: 'reaction'});
+primaryRoute.account.$beforeEnter(() => {
+  primaryRoute.about.$push({source: 'reaction'});
 });
 
-rootRoute.profile.$beforeEnter(match => {
+primaryRoute.profile.$beforeEnter(match => {
   console.info('before enter profile');
   console.info('before enter ref', match.$ref());
 
@@ -44,15 +44,15 @@ rootRoute.profile.$beforeEnter(match => {
   }
 });
 
-rootRoute.profile.$afterEnter(() => {
+primaryRoute.profile.$afterEnter(() => {
   console.info('after enter profile');
 });
 
-rootRoute.profile.$beforeLeave(() => {
+primaryRoute.profile.$beforeLeave(() => {
   console.info('before leave profile');
 });
 
-rootRoute.profile.$afterLeave(() => {
+primaryRoute.profile.$afterLeave(() => {
   console.info('after leave profile');
 });
 
@@ -62,25 +62,25 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={rootRoute.default}>
+        <Route match={primaryRoute.default}>
           <p>Home page</p>
           <div>
-            <Link to={rootRoute.account}>Account</Link>
+            <Link to={primaryRoute.account}>Account</Link>
           </div>
           <div>
-            <Link to={rootRoute.profile}>Profile</Link>
+            <Link to={primaryRoute.profile}>Profile</Link>
           </div>
           <div>
-            <Link to={rootRoute.about}>About</Link>
+            <Link to={primaryRoute.about}>About</Link>
           </div>
         </Route>
-        <Route match={rootRoute.profile.details}>
+        <Route match={primaryRoute.profile.details}>
           <p>Profile details page</p>
-          <Link to={rootRoute.default}>Home</Link>
+          <Link to={primaryRoute.default}>Home</Link>
         </Route>
-        <Route match={rootRoute.about}>
+        <Route match={primaryRoute.about}>
           <p>About page</p>
-          <Link to={rootRoute.default}>Home</Link>
+          <Link to={primaryRoute.default}>Home</Link>
         </Route>
       </>
     );

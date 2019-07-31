@@ -56,14 +56,14 @@ export class RouteBuilder<TGroupName extends string = string> {
     {leave = false, rest = false}: RouteBuilderBuildOptions = {},
   ): this {
     let group = match.$group;
-    let beingPrimaryRoute = group === undefined;
+    let primary = group === undefined;
 
     let restParamKeySet = new Set(Object.keys(params));
 
     let overridingPathMap = this.overridingPathMap;
 
     if (leave) {
-      if (beingPrimaryRoute) {
+      if (primary) {
         throw new Error('Cannot leave the primary route');
       }
 
@@ -72,11 +72,11 @@ export class RouteBuilder<TGroupName extends string = string> {
       let segmentDict = match._pathSegments;
 
       let path = Object.entries(segmentDict)
-        .map(([key, segment]) => {
+        .map(([key, defaultSegment]) => {
           restParamKeySet.delete(key);
 
           let param = params[key];
-          segment = typeof param === 'string' ? param : segment;
+          let segment = typeof param === 'string' ? param : defaultSegment;
 
           if (typeof segment !== 'string') {
             throw new Error(`Parameter "${key}" is required`);
@@ -93,7 +93,7 @@ export class RouteBuilder<TGroupName extends string = string> {
       overridingPathMap.set(group, path);
     }
 
-    if (beingPrimaryRoute) {
+    if (primary) {
       let {queryDict: sourceQueryDict} = match._source;
 
       let queryKeySet = match._queryKeySet;

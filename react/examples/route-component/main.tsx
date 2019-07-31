@@ -10,7 +10,7 @@ const history = createBrowserHistory();
 
 const router = new Router(history);
 
-const rootRoute = router.route({
+const primaryRoute = router.route({
   default: {
     $match: '',
   },
@@ -25,7 +25,7 @@ const rootRoute = router.route({
   },
 });
 
-export type RouterType = typeof rootRoute;
+export type RouterType = typeof primaryRoute;
 
 export type AccountPageProps = RouteComponentProps<RouterType['account']>;
 
@@ -36,7 +36,7 @@ export class AccountPage extends Component<AccountPageProps> {
     return (
       <>
         <p>Account page</p>
-        <Link to={rootRoute.default}>Home</Link>
+        <Link to={primaryRoute.default}>Home</Link>
         <hr />
         <Link to={match.details} preserveQuery>
           Details
@@ -55,15 +55,15 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={rootRoute.default}>
+        <Route match={primaryRoute.default}>
           <p>Home page</p>
           <div>
-            <Link to={rootRoute.account} params={{id: '123'}}>
+            <Link to={primaryRoute.account} params={{id: '123'}}>
               Account 123
             </Link>
           </div>
         </Route>
-        <Route match={rootRoute.account} component={AccountPage} />
+        <Route match={primaryRoute.account} component={AccountPage} />
       </>
     );
   }

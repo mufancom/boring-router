@@ -13,7 +13,7 @@ let history = createMemoryHistory();
 
 let router = new Router<'popup' | 'sidebar'>(history);
 
-let rootRoute = router.route({
+let primaryRoute = router.route({
   default: {
     $match: '',
   },
@@ -85,25 +85,25 @@ let sidebarRoute = router.route('sidebar', {
   },
 });
 
-rootRoute.onlySidebar.$parallel({groups: ['sidebar']});
+primaryRoute.onlySidebar.$parallel({groups: ['sidebar']});
 
-rootRoute.onlySidebar.onlyChat.$parallel({
+primaryRoute.onlySidebar.onlyChat.$parallel({
   matches: [sidebarRoute.friends.chat, sidebarRoute.groups.chat],
 });
 
-rootRoute.onlyFriends.$parallel({matches: [sidebarRoute.friends]});
-rootRoute.onlyFriends.onlyTransfer.$parallel({
+primaryRoute.onlyFriends.$parallel({matches: [sidebarRoute.friends]});
+primaryRoute.onlyFriends.onlyTransfer.$parallel({
   matches: [sidebarRoute.friends.transfer],
 });
 
-rootRoute.onlyPopup.$parallel({groups: ['popup']});
+primaryRoute.onlyPopup.$parallel({groups: ['popup']});
 
 test('should match `default`', async () => {
   await nap();
 
-  expect(rootRoute.default.$matched).toBe(true);
-  expect(rootRoute.default.$exact).toBe(true);
-  expect<object>({...rootRoute.default.$params}).toEqual({});
+  expect(primaryRoute.default.$matched).toBe(true);
+  expect(primaryRoute.default.$exact).toBe(true);
+  expect<object>({...primaryRoute.default.$params}).toEqual({});
 });
 
 test('should match `notFound`', async () => {
@@ -111,17 +111,19 @@ test('should match `notFound`', async () => {
 
   await nap();
 
-  expect(rootRoute.notFound.$matched).toBe(true);
-  expect(rootRoute.notFound.$exact).toBe(true);
-  expect({...rootRoute.notFound.$params}).toEqual({notFound: 'boring'});
+  expect(primaryRoute.notFound.$matched).toBe(true);
+  expect(primaryRoute.notFound.$exact).toBe(true);
+  expect({...primaryRoute.notFound.$params}).toEqual({notFound: 'boring'});
 
   history.push('/boring/router?foo=bar');
 
   await nap();
 
-  expect(rootRoute.notFound.$matched).toBe(true);
-  expect(rootRoute.notFound.$exact).toBe(true);
-  expect({...rootRoute.notFound.$params}).toEqual({notFound: 'boring/router'});
+  expect(primaryRoute.notFound.$matched).toBe(true);
+  expect(primaryRoute.notFound.$exact).toBe(true);
+  expect({...primaryRoute.notFound.$params}).toEqual({
+    notFound: 'boring/router',
+  });
 });
 
 test('should match `account`', async () => {
@@ -129,18 +131,18 @@ test('should match `account`', async () => {
 
   await nap();
 
-  expect(rootRoute.default.$matched).toBe(false);
-  expect(rootRoute.default.$exact).toBe(false);
+  expect(primaryRoute.default.$matched).toBe(false);
+  expect(primaryRoute.default.$exact).toBe(false);
 
-  expect(rootRoute.account.$matched).toBe(true);
-  expect(rootRoute.account.$exact).toBe(true);
-  expect({...rootRoute.account.$params}).toEqual({});
+  expect(primaryRoute.account.$matched).toBe(true);
+  expect(primaryRoute.account.$exact).toBe(true);
+  expect({...primaryRoute.account.$params}).toEqual({});
 
-  expect(rootRoute.account.$ref()).toBe('/account');
-  expect(() => rootRoute.account.id.$ref()).toThrow(
+  expect(primaryRoute.account.$ref()).toBe('/account');
+  expect(() => primaryRoute.account.id.$ref()).toThrow(
     'Parameter "id" is required',
   );
-  expect(() => rootRoute.account.id.settings.$ref()).toThrow(
+  expect(() => primaryRoute.account.id.settings.$ref()).toThrow(
     'Parameter "id" is required',
   );
 });
@@ -150,11 +152,11 @@ test('should match `notFound`', async () => {
 
   await nap();
 
-  expect(rootRoute.account.$matched).toBe(false);
-  expect(rootRoute.account.$exact).toBe(false);
+  expect(primaryRoute.account.$matched).toBe(false);
+  expect(primaryRoute.account.$exact).toBe(false);
 
-  expect(rootRoute.notFound.$matched).toBe(true);
-  expect(rootRoute.notFound.$exact).toBe(true);
+  expect(primaryRoute.notFound.$matched).toBe(true);
+  expect(primaryRoute.notFound.$exact).toBe(true);
 });
 
 test('should match `account.id`', async () => {
@@ -162,15 +164,15 @@ test('should match `account.id`', async () => {
 
   await nap();
 
-  expect(rootRoute.account.$matched).toBe(true);
-  expect(rootRoute.account.id.$matched).toBe(true);
-  expect(rootRoute.account.id.$exact).toBe(true);
+  expect(primaryRoute.account.$matched).toBe(true);
+  expect(primaryRoute.account.id.$matched).toBe(true);
+  expect(primaryRoute.account.id.$exact).toBe(true);
 
-  expect({...rootRoute.account.$params}).toEqual({});
-  expect({...rootRoute.account.id.$params}).toEqual({id: '123'});
+  expect({...primaryRoute.account.$params}).toEqual({});
+  expect({...primaryRoute.account.id.$params}).toEqual({id: '123'});
 
-  expect(rootRoute.account.id.$ref()).toBe('/account/123');
-  expect(rootRoute.account.id.$ref({id: '456'})).toBe('/account/456');
+  expect(primaryRoute.account.id.$ref()).toBe('/account/123');
+  expect(primaryRoute.account.id.$ref({id: '456'})).toBe('/account/456');
 });
 
 test('should match `account.id.settings`', async () => {
@@ -178,17 +180,17 @@ test('should match `account.id.settings`', async () => {
 
   await nap();
 
-  expect(rootRoute.account.$matched).toBe(true);
-  expect(rootRoute.account.id.$matched).toBe(true);
-  expect(rootRoute.account.id.settings.$matched).toBe(true);
-  expect(rootRoute.account.id.settings.$exact).toBe(true);
+  expect(primaryRoute.account.$matched).toBe(true);
+  expect(primaryRoute.account.id.$matched).toBe(true);
+  expect(primaryRoute.account.id.settings.$matched).toBe(true);
+  expect(primaryRoute.account.id.settings.$exact).toBe(true);
 
-  expect({...rootRoute.account.$params}).toEqual({});
-  expect({...rootRoute.account.id.$params}).toEqual({id: '123'});
-  expect({...rootRoute.account.id.settings.$params}).toEqual({id: '123'});
+  expect({...primaryRoute.account.$params}).toEqual({});
+  expect({...primaryRoute.account.id.$params}).toEqual({id: '123'});
+  expect({...primaryRoute.account.id.settings.$params}).toEqual({id: '123'});
 
-  expect(rootRoute.account.id.settings.$ref()).toBe('/account/123/settings');
-  expect(rootRoute.account.id.settings.$ref({id: '456'})).toBe(
+  expect(primaryRoute.account.id.settings.$ref()).toBe('/account/123/settings');
+  expect(primaryRoute.account.id.settings.$ref({id: '456'})).toBe(
     '/account/456/settings',
   );
 });
@@ -198,29 +200,29 @@ test('should match `account.id.billings`', async () => {
 
   await nap();
 
-  expect(rootRoute.account.$matched).toBe(true);
-  expect(rootRoute.account.id.$matched).toBe(true);
-  expect(rootRoute.account.id.billings.$matched).toBe(true);
-  expect(rootRoute.account.id.billings.$exact).toBe(true);
+  expect(primaryRoute.account.$matched).toBe(true);
+  expect(primaryRoute.account.id.$matched).toBe(true);
+  expect(primaryRoute.account.id.billings.$matched).toBe(true);
+  expect(primaryRoute.account.id.billings.$exact).toBe(true);
 
-  expect({...rootRoute.account.$params}).toEqual({callback: '/redirect'});
-  expect({...rootRoute.account.id.$params}).toEqual({
+  expect({...primaryRoute.account.$params}).toEqual({callback: '/redirect'});
+  expect({...primaryRoute.account.id.$params}).toEqual({
     id: '123',
     callback: '/redirect',
   });
-  expect({...rootRoute.account.id.billings.$params}).toEqual({
+  expect({...primaryRoute.account.id.billings.$params}).toEqual({
     id: '123',
     callback: '/redirect',
   });
 
-  expect(rootRoute.account.$ref({})).toBe('/account?callback=%2Fredirect');
-  expect(rootRoute.account.id.billings.$ref({}, {preserveQuery: false})).toBe(
-    '/account/123/billings',
-  );
-  expect(rootRoute.account.id.billings.$ref({})).toBe(
+  expect(primaryRoute.account.$ref({})).toBe('/account?callback=%2Fredirect');
+  expect(
+    primaryRoute.account.id.billings.$ref({}, {preserveQuery: false}),
+  ).toBe('/account/123/billings');
+  expect(primaryRoute.account.id.billings.$ref({})).toBe(
     '/account/123/billings?callback=%2Fredirect',
   );
-  expect(rootRoute.account.id.billings.$ref({callback: undefined})).toBe(
+  expect(primaryRoute.account.id.billings.$ref({callback: undefined})).toBe(
     '/account/123/billings',
   );
 });
@@ -230,10 +232,10 @@ test('should match `multiple.number`', async () => {
 
   await nap();
 
-  expect(rootRoute.multiple.number.$matched).toBe(true);
-  expect(rootRoute.multiple.number.$exact).toBe(true);
+  expect(primaryRoute.multiple.number.$matched).toBe(true);
+  expect(primaryRoute.multiple.number.$exact).toBe(true);
 
-  expect(rootRoute.multiple.mixed.$matched).toBe(false);
+  expect(primaryRoute.multiple.mixed.$matched).toBe(false);
 });
 
 test('should match `multiple.mixed`', async () => {
@@ -241,24 +243,24 @@ test('should match `multiple.mixed`', async () => {
 
   await nap();
 
-  expect(rootRoute.multiple.mixed.$matched).toBe(true);
-  expect(rootRoute.multiple.mixed.$exact).toBe(true);
+  expect(primaryRoute.multiple.mixed.$matched).toBe(true);
+  expect(primaryRoute.multiple.mixed.$exact).toBe(true);
 
-  expect(rootRoute.multiple.number.$matched).toBe(false);
+  expect(primaryRoute.multiple.number.$matched).toBe(false);
 
   history.push('/multiple/abc123');
 
   await nap();
 
-  expect(rootRoute.multiple.mixed.$matched).toBe(true);
-  expect(rootRoute.multiple.mixed.$exact).toBe(true);
+  expect(primaryRoute.multiple.mixed.$matched).toBe(true);
+  expect(primaryRoute.multiple.mixed.$exact).toBe(true);
 
-  expect(rootRoute.multiple.number.$matched).toBe(false);
+  expect(primaryRoute.multiple.number.$matched).toBe(false);
 });
 
 test('should match `$group`', async () => {
-  expect(rootRoute.default.$group).toBe(undefined);
-  expect(rootRoute.account.id.$group).toBe(undefined);
+  expect(primaryRoute.default.$group).toBe(undefined);
+  expect(primaryRoute.account.id.$group).toBe(undefined);
   expect(popupRoute.$group).toBe('popup');
   expect(popupRoute.invite.$group).toBe('popup');
 });
@@ -268,25 +270,25 @@ test('should match parallel `account`, `friends` and `invite`', async () => {
 
   await nap();
 
-  expect(rootRoute.account.$matched).toBe(true);
+  expect(primaryRoute.account.$matched).toBe(true);
   expect(sidebarRoute.friends.$matched).toBe(false);
 
   sidebarRoute.friends.$push();
 
   await nap();
 
-  expect(rootRoute.account.$matched).toBe(true);
+  expect(primaryRoute.account.$matched).toBe(true);
   expect(sidebarRoute.friends.$matched).toBe(true);
-  expect(rootRoute.account.$ref()).toBe('/account?_sidebar=/friends');
+  expect(primaryRoute.account.$ref()).toBe('/account?_sidebar=/friends');
 
   popupRoute.invite.$push();
 
   await nap();
 
-  expect(rootRoute.account.$matched).toBe(true);
+  expect(primaryRoute.account.$matched).toBe(true);
   expect(sidebarRoute.friends.$matched).toBe(true);
   expect(popupRoute.invite.$matched).toBe(true);
-  expect(rootRoute.account.$ref()).toBe(
+  expect(primaryRoute.account.$ref()).toBe(
     '/account?_sidebar=/friends&_popup=/invite',
   );
 });
@@ -304,9 +306,9 @@ test('should match `friends.chat` then `friends.transfer`', async () => {
 
   await nap();
 
-  expect(rootRoute.account.id.$matched).toBe(true);
+  expect(primaryRoute.account.id.$matched).toBe(true);
   expect(sidebarRoute.friends.chat.$matched).toBe(true);
-  expect(rootRoute.account.id.$ref()).toBe(
+  expect(primaryRoute.account.id.$ref()).toBe(
     '/account/123?_sidebar=/friends/chat',
   );
 
@@ -314,10 +316,10 @@ test('should match `friends.chat` then `friends.transfer`', async () => {
 
   await nap();
 
-  expect(rootRoute.account.id.$matched).toBe(true);
+  expect(primaryRoute.account.id.$matched).toBe(true);
   expect(sidebarRoute.friends.chat.$matched).toBe(false);
   expect(sidebarRoute.friends.transfer.$matched).toBe(true);
-  expect(rootRoute.account.id.$ref()).toBe(
+  expect(primaryRoute.account.id.$ref()).toBe(
     '/account/123?_sidebar=/friends/transfer',
   );
 });
@@ -345,22 +347,22 @@ test('parallel whitelist should take effect', async () => {
 
   await nap();
 
-  rootRoute.onlySidebar.$push();
+  primaryRoute.onlySidebar.$push();
 
   await nap();
 
-  expect(rootRoute.onlySidebar.$matched).toBe(true);
+  expect(primaryRoute.onlySidebar.$matched).toBe(true);
   expect(sidebarRoute.friends.call.$matched).toBe(true);
   expect(popupRoute.invite.$matched).toBe(false);
   expect(router.$ref()).toBe(
     '/only-sidebar?_sidebar=/friends/call&_popup=/invite',
   );
 
-  rootRoute.onlySidebar.onlyChat.$push();
+  primaryRoute.onlySidebar.onlyChat.$push();
 
   await nap();
 
-  expect(rootRoute.onlySidebar.onlyChat.$matched).toBe(true);
+  expect(primaryRoute.onlySidebar.onlyChat.$matched).toBe(true);
   expect(sidebarRoute.friends.call.$matched).toBe(false);
   expect(popupRoute.invite.$matched).toBe(false);
   expect(router.$ref()).toBe(
@@ -371,18 +373,18 @@ test('parallel whitelist should take effect', async () => {
 
   await nap();
 
-  expect(rootRoute.onlySidebar.onlyChat.$matched).toBe(true);
+  expect(primaryRoute.onlySidebar.onlyChat.$matched).toBe(true);
   expect(sidebarRoute.groups.chat.$matched).toBe(true);
   expect(popupRoute.invite.$matched).toBe(false);
   expect(router.$ref()).toBe(
     '/only-sidebar/only-chat?_sidebar=/groups/chat&_popup=/invite',
   );
 
-  rootRoute.onlyFriends.$push();
+  primaryRoute.onlyFriends.$push();
 
   await nap();
 
-  expect(rootRoute.onlyFriends.$matched).toBe(true);
+  expect(primaryRoute.onlyFriends.$matched).toBe(true);
   expect(sidebarRoute.groups.chat.$matched).toBe(false);
   expect(popupRoute.invite.$matched).toBe(false);
 
@@ -392,7 +394,7 @@ test('parallel whitelist should take effect', async () => {
 
   expect(sidebarRoute.friends.chat.$matched).toBe(true);
 
-  rootRoute.onlyFriends.onlyTransfer.$replace();
+  primaryRoute.onlyFriends.onlyTransfer.$replace();
 
   await nap();
 
@@ -407,7 +409,7 @@ test('parallel whitelist should take effect', async () => {
     '/only-friends/only-transfer?_sidebar=/friends/transfer&_popup=/invite',
   );
 
-  rootRoute.onlyPopup.$replace();
+  primaryRoute.onlyPopup.$replace();
 
   await nap();
 
@@ -423,7 +425,7 @@ test("should leave and visit group 'sidebar' and 'popup' again", async () => {
 
   await nap();
 
-  rootRoute.$push(undefined, {leaves: ['sidebar'], rest: true});
+  primaryRoute.$push(undefined, {leaves: ['sidebar'], rest: true});
 
   await nap();
 
@@ -447,7 +449,7 @@ test("should leave and visit group 'sidebar' and 'popup' again", async () => {
 });
 
 test("should leave parallel routes by 'leaves' options when push a new route", async () => {
-  rootRoute.account.$push();
+  primaryRoute.account.$push();
 
   await nap();
 
@@ -459,19 +461,19 @@ test("should leave parallel routes by 'leaves' options when push a new route", a
 
   await nap();
 
-  expect(rootRoute.account.$matched).toBe(true);
+  expect(primaryRoute.account.$matched).toBe(true);
   expect(sidebarRoute.friends.$matched).toBe(true);
   expect(popupRoute.invite.$matched).toBe(true);
 
-  rootRoute.default.$push({}, {leaves: ['popup']});
+  primaryRoute.default.$push({}, {leaves: ['popup']});
 
   await nap();
 
-  expect(rootRoute.default.$matched).toBe(true);
+  expect(primaryRoute.default.$matched).toBe(true);
   expect(sidebarRoute.friends.$matched).toBe(true);
   expect(popupRoute.invite.$matched).toBe(false);
 
-  rootRoute.account.$push({}, {leaves: ['sidebar']});
+  primaryRoute.account.$push({}, {leaves: ['sidebar']});
 
   await nap();
 
@@ -479,7 +481,7 @@ test("should leave parallel routes by 'leaves' options when push a new route", a
 
   await nap();
 
-  expect(rootRoute.account.$matched).toBe(true);
+  expect(primaryRoute.account.$matched).toBe(true);
   expect(sidebarRoute.friends.$matched).toBe(false);
   expect(popupRoute.invite.$matched).toBe(true);
 
@@ -487,7 +489,7 @@ test("should leave parallel routes by 'leaves' options when push a new route", a
 });
 
 test('should leave all parallel routes', async () => {
-  rootRoute.$push(undefined, {leaves: '*', rest: true});
+  primaryRoute.$push(undefined, {leaves: '*', rest: true});
 
   await nap();
 
@@ -495,12 +497,12 @@ test('should leave all parallel routes', async () => {
 });
 
 test('should build route with multiple matches', async () => {
-  rootRoute.account.id.$push({id: '123'});
+  primaryRoute.account.id.$push({id: '123'});
 
   await nap();
 
   router
-    .$build(rootRoute.account, {callback: 'foo'}, {rest: true})
+    .$build(primaryRoute.account, {callback: 'foo'}, {rest: true})
     .$and(popupRoute.invite)
     .$push();
 

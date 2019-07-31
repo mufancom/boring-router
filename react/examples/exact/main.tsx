@@ -10,7 +10,7 @@ const history = createBrowserHistory();
 
 const router = new Router(history);
 
-const rootRoute = router.route({
+const primaryRoute = router.route({
   default: {
     $match: '',
   },
@@ -28,23 +28,23 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={rootRoute.default}>
+        <Route match={primaryRoute.default}>
           <p>Home page</p>
           <div>
-            <Link to={rootRoute.account}>Account</Link>
+            <Link to={primaryRoute.account}>Account</Link>
           </div>
         </Route>
-        <Route match={rootRoute.account}>
+        <Route match={primaryRoute.account}>
           <p>Account page</p>
-          <Link to={rootRoute.default}>Home</Link>
+          <Link to={primaryRoute.default}>Home</Link>
           <hr />
-          <Route match={rootRoute.account} exact>
+          <Route match={primaryRoute.account} exact>
             <p>Exact account page</p>
-            <Link to={rootRoute.account.details}>Account details</Link>
+            <Link to={primaryRoute.account.details}>Account details</Link>
           </Route>
-          <Route match={rootRoute.account.details}>
+          <Route match={primaryRoute.account.details}>
             <p>Account details page</p>
-            <Link to={rootRoute.account}>Account</Link>
+            <Link to={primaryRoute.account}>Account</Link>
           </Route>
         </Route>
       </>
