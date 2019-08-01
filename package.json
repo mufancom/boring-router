@@ -9,7 +9,7 @@
     "test": "yarn test:boring-router && yarn test:boring-router-react"
   },
   "devDependencies": {
-    "@magicspace/configs": "^0.1.49",
+    "@magicspace/configs": "0.1.49",
     "@types/react": "^16.8.19",
     "lerna": "^3.14.1",
     "mobx": "^5.10.0",
