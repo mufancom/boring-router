@@ -90,7 +90,7 @@ export abstract class RouteMatchShared<
   protected _matchPattern: string | symbol | RegExp;
 
   /** @internal */
-  protected _router: Router | undefined;
+  protected _router: Router;
 
   constructor(
     name: string,
@@ -371,14 +371,10 @@ export abstract class RouteMatchShared<
 
     let onCompleteListenerId = getNextId();
 
-    let router = this._router;
-
-    if (router) {
-      router._onRouteCompleteListenerMap.set(
-        onCompleteListenerId,
-        onCompleteListener,
-      );
-    }
+    this._router._onRouteCompleteListenerMap.set(
+      onCompleteListenerId,
+      onCompleteListener,
+    );
 
     return {
       onCompleteListenerId,
