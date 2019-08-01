@@ -441,8 +441,6 @@ export class RouteMatch<
 
   /** @internal */
   _match(upperRest: string): RouteMatchInternalResult {
-    let segment: string | undefined;
-    let rest: string;
     let pattern = this._matchPattern;
 
     if (typeof pattern === 'symbol') {
@@ -456,7 +454,12 @@ export class RouteMatch<
       }
 
       throw new Error(`Unrecognized symbol pattern [${pattern.description}]`);
-    } else if (upperRest) {
+    }
+
+    let segment: string | undefined;
+    let rest: string;
+
+    if (upperRest) {
       if (!upperRest.startsWith('/')) {
         throw new Error(
           `Expecting rest of path to be started with "/", but got ${JSON.stringify(

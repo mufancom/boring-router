@@ -30,8 +30,8 @@ export class Route<TRouteMatch extends RouteMatch> extends Component<
 
     let matches = Array.isArray(match) ? match : [match];
 
-    let firstMatch = matches.find(
-      match => (exact ? match.$exact : match.$matched),
+    let firstMatch = matches.find(match =>
+      exact ? match.$exact : match.$matched,
     );
 
     if (firstMatch) {

@@ -171,11 +171,15 @@ export abstract class RouteMatchShared<
     let matchPattern = this._matchPattern;
     let segment = this._segment;
 
+    if (typeof matchPattern === 'string') {
+      return {
+        ...upperSegmentDict,
+      };
+    }
+
     return {
       ...upperSegmentDict,
-      ...(typeof matchPattern === 'string'
-        ? undefined
-        : {[this.$name]: segment}),
+      [this.$name]: segment,
     };
   }
 
@@ -192,14 +196,14 @@ export abstract class RouteMatchShared<
       typeof matchPattern === 'symbol' &&
       matchPattern === ROUTE_MATCH_START_ANCHOR
     ) {
-      return upperSegmentDict || {};
+      return {
+        ...upperSegmentDict,
+      };
     }
 
     return {
       ...upperSegmentDict,
-      ...{
-        [this.$name]: typeof matchPattern === 'string' ? matchPattern : segment,
-      },
+      [this.$name]: typeof matchPattern === 'string' ? matchPattern : segment,
     };
   }
 
