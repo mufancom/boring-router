@@ -10,7 +10,7 @@ import {
   GeneralParamDict,
   GeneralQueryDict,
   GeneralSegmentDict,
-  ROUTE_MATCH_START_ANCHOR as ROUTE_MATCH_START_ANCHOR_PATTERN,
+  ROUTE_MATCH_START_ANCHOR_PATTERN,
   RouteMatchShared,
   RouteMatchSharedOptions,
 } from './route-match-shared';
@@ -267,7 +267,7 @@ export class RouteMatch<
     callback: RouteBeforeUpdateCallback<this>,
     options?: RouteBeforeUpdateOptions,
   ): RouteHookRemovalCallback {
-    let entry: RouteBeforeUpdateEntry = {
+    let entry: RouteBeforeUpdateEntry<this> = {
       callback,
       options,
     };
@@ -320,10 +320,10 @@ export class RouteMatch<
   }
 
   $intercept(
-    callback: RouteInterceptCallback,
+    callback: RouteInterceptCallback<this>,
     options?: RouteInterceptOptions,
   ): RouteHookRemovalCallback {
-    let beforeUpdateEntry: RouteBeforeUpdateEntry = {
+    let beforeUpdateEntry: RouteBeforeUpdateEntry<this> = {
       callback,
       options,
     };
@@ -567,7 +567,7 @@ export class RouteMatch<
 
     let results = await Promise.all([
       ...Array.from(this._beforeUpdateEntrySet)
-        .filter(({options: options}) =>
+        .filter(({options}) =>
           triggerByDescendants ? options && options.traceDescendants : true,
         )
         .map(({callback}) =>

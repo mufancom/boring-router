@@ -11,7 +11,7 @@ import {
 
 import {RouteMatchEntry, RouteSource} from './route-match';
 
-export const ROUTE_MATCH_START_ANCHOR = Symbol('^');
+export const ROUTE_MATCH_START_ANCHOR_PATTERN = Symbol('^');
 
 export type GeneralSegmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
@@ -194,7 +194,7 @@ export abstract class RouteMatchShared<
 
     if (
       typeof matchPattern === 'symbol' &&
-      matchPattern === ROUTE_MATCH_START_ANCHOR
+      matchPattern === ROUTE_MATCH_START_ANCHOR_PATTERN
     ) {
       return {
         ...upperSegmentDict,

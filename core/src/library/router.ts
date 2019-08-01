@@ -16,7 +16,7 @@ import {RouteBuilder, RouteBuilderBuildOptions} from './route-builder';
 import {
   GeneralQueryDict,
   NextRouteMatch,
-  ROUTE_MATCH_START_ANCHOR,
+  ROUTE_MATCH_START_ANCHOR_PATTERN,
   RouteMatch,
   RouteMatchEntry,
   RouteMatchOptions,
@@ -81,7 +81,7 @@ type RouteMatchSegmentType<
     | Extract<keyof RouteQuerySchemaType<TRouteSchemaDict[K]>, string>,
     TSpecificGroupName,
     TGroupName
-  >;
+  >
 };
 
 type __RouteMatchType<
@@ -142,7 +142,7 @@ type NextRouteMatchSegmentType<
     | Extract<keyof RouteQuerySchemaType<TRouteSchemaDict[K]>, string>,
     TSpecificGroupName,
     TGroupName
-  >;
+  >
 };
 
 type __NextRouteMatchType<
@@ -355,7 +355,7 @@ export class Router<TGroupName extends string = string> {
     }
 
     let routeMatch = this._buildRouteMatch(group, '', undefined, undefined, {
-      match: ROUTE_MATCH_START_ANCHOR,
+      match: ROUTE_MATCH_START_ANCHOR_PATTERN,
       exact: false,
       query: undefined,
       children: schema,
@@ -546,10 +546,9 @@ export class Router<TGroupName extends string = string> {
           groupToMatchToMatchEntryMapMap.set(
             group,
             new Map(
-              entries.map((entry): [RouteMatch, RouteMatchEntry] => [
-                entry.match,
-                entry,
-              ]),
+              entries.map(
+                (entry): [RouteMatch, RouteMatchEntry] => [entry.match, entry],
+              ),
             ),
           );
         }
