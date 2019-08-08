@@ -1,2 +1,7 @@
+.cache/
+
+dist/
+bld/
+
 package.json
 lerna.json

@@ -7,7 +7,7 @@
     "test:boring-router": "yarn workspace boring-router test",
     "test:boring-router-react": "yarn workspace boring-router-react test",
     "test": "yarn lint-prettier && yarn test:boring-router && yarn test:boring-router-react",
-    "lint-prettier": "prettier --ignore-path .gitignore --list-different \"**/*.{ts,tsx,js,jsx,json,md}\""
+    "lint-prettier": "prettier --list-different \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "devDependencies": {
     "@magicspace/configs": "0.1.49",
@@ -15,7 +15,7 @@
     "lerna": "^3.14.1",
     "mobx": "^5.10.0",
     "mobx-react": "^5.4.4",
-    "prettier": "^1.17.1",
+    "prettier": "^1.18.2",
     "react": "^16.8.6",
     "rimraf": "^2.6.3",
     "tslib": "^1.9.3",

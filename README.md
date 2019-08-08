@@ -3,7 +3,7 @@
 
 # Boring Router
 
-A light-weight, type-safe, yet reactive router service using MobX.
+A ~~light-weight~~, type-safe, yet reactive router service using MobX.
 
 ## Why
 
