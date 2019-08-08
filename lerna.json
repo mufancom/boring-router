@@ -6,9 +6,6 @@
       "npmClient": "npm"
     }
   },
-  "packages": [
-    "core",
-    "react"
-  ],
+  "packages": ["core", "react"],
   "useWorkspaces": true
 }

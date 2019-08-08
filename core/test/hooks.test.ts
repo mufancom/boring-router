@@ -11,62 +11,61 @@ configure({
 
 let history = createMemoryHistory();
 
-let router = Router.create(
-  {
-    default: {
-      $match: '',
-    },
-    about: true,
-    redirect: true,
-    revert: true,
-    persist: true,
-    parent: {
-      $exact: true,
-      $children: {
-        nested: true,
-      },
+let router = new Router(history);
+
+let primaryRoute = router.route({
+  default: {
+    $match: '',
+  },
+  about: true,
+  redirect: true,
+  revert: true,
+  persist: true,
+  parent: {
+    $exact: true,
+    $children: {
+      nested: true,
     },
   },
-  history,
-);
+});
 
 let redirectBeforeEnter = jest.fn(() => {
-  router.about.$push();
+  primaryRoute.about.$push();
 });
 let redirectAfterEnter = jest.fn();
 
-router.redirect.$beforeEnter(redirectBeforeEnter);
-router.redirect.$afterEnter(redirectAfterEnter);
+primaryRoute.redirect.$beforeEnter(redirectBeforeEnter);
+primaryRoute.redirect.$afterEnter(redirectAfterEnter);
 
 let revertBeforeEnter = jest.fn(() => false);
 let revertAfterEnter = jest.fn();
 
-router.revert.$beforeEnter(revertBeforeEnter);
-router.revert.$afterEnter(revertAfterEnter);
+primaryRoute.revert.$beforeEnter(revertBeforeEnter);
+primaryRoute.revert.$afterEnter(revertAfterEnter);
 
 let persistBeforeLeave = jest.fn(() => false);
 
-router.persist.$beforeLeave(persistBeforeLeave);
+primaryRoute.persist.$beforeLeave(persistBeforeLeave);
 
 let parentBeforeEnter = jest.fn();
 let parentBeforeUpdate = jest.fn();
 
-router.parent.$beforeEnter(parentBeforeEnter);
-router.parent.$beforeUpdate(parentBeforeUpdate);
+primaryRoute.parent.$beforeEnter(parentBeforeEnter);
+primaryRoute.parent.$beforeUpdate(parentBeforeUpdate);
 
 let aboutBeforeEnter = jest.fn();
 let aboutAfterEnter = jest.fn();
 let aboutBeforeLeave = jest.fn();
 let aboutAfterLeave = jest.fn();
 
-router.about.$beforeEnter(aboutBeforeEnter);
-router.about.$afterEnter(aboutAfterEnter);
-router.about.$beforeLeave(aboutBeforeLeave);
-router.about.$afterLeave(aboutAfterLeave);
+primaryRoute.about.$beforeEnter(aboutBeforeEnter);
+primaryRoute.about.$afterEnter(aboutAfterEnter);
+primaryRoute.about.$beforeLeave(aboutBeforeLeave);
+primaryRoute.about.$afterLeave(aboutAfterLeave);
 
 let canceledAboutAfterEnter = jest.fn();
 
-let removalCallback = router.about.$afterEnter(canceledAboutAfterEnter);
+let removalCallback = primaryRoute.about.$afterEnter(canceledAboutAfterEnter);
 
 removalCallback();
 
@@ -76,8 +75,8 @@ test('should navigate from `redirect` to `about`', async () => {
   await nap();
 
   expect(history.location.pathname).toBe('/about');
-  expect(router.about.$matched).toBe(true);
-  expect(router.redirect.$matched).toBe(false);
+  expect(primaryRoute.about.$matched).toBe(true);
+  expect(primaryRoute.redirect.$matched).toBe(false);
 
   expect(redirectBeforeEnter).toHaveBeenCalled();
   expect(redirectAfterEnter).not.toHaveBeenCalled();
@@ -92,8 +91,8 @@ test('should revert navigation from `about` to `revert` by `revert.$beforeEnter`
   await nap();
 
   expect(history.location.pathname).toBe('/about');
-  expect(router.about.$matched).toBe(true);
-  expect(router.revert.$matched).toBe(false);
+  expect(primaryRoute.about.$matched).toBe(true);
+  expect(primaryRoute.revert.$matched).toBe(false);
 
   expect(revertBeforeEnter).toHaveBeenCalled();
   expect(revertAfterEnter).not.toHaveBeenCalled();
@@ -125,7 +124,7 @@ test('should not call hooks that have been canceled.', async () => {
   await nap();
 
   expect(history.location.pathname).toBe('/about');
-  expect(router.about.$matched).toBe(true);
+  expect(primaryRoute.about.$matched).toBe(true);
 
   expect(canceledAboutAfterEnter).not.toHaveBeenCalled();
 });
@@ -140,8 +139,8 @@ test('should revert navigation from `persist` to `about` by `persist.$beforeLeav
   await nap();
 
   expect(history.location.pathname).toBe('/persist');
-  expect(router.about.$matched).toBe(false);
-  expect(router.persist.$matched).toBe(true);
+  expect(primaryRoute.about.$matched).toBe(false);
+  expect(primaryRoute.persist.$matched).toBe(true);
 
   expect(persistBeforeLeave).toHaveBeenCalled();
 

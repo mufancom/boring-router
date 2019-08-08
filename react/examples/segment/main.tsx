@@ -8,22 +8,21 @@ import {Link, Route} from '../../bld/library';
 
 const history = createBrowserHistory();
 
-const router = Router.create(
-  {
-    default: {
-      $match: '',
-    },
-    account: {
-      $exact: true,
-      $children: {
-        id: {
-          $match: RouteMatch.segment,
-        },
+const router = new Router(history);
+
+const primaryRoute = router.route({
+  default: {
+    $match: '',
+  },
+  account: {
+    $exact: true,
+    $children: {
+      id: {
+        $match: RouteMatch.segment,
       },
     },
   },
-  history,
-);
+});
 
 @observer
 export class App extends Component {
@@ -31,20 +30,20 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={router.default}>
+        <Route match={primaryRoute.default}>
           <p>Home page</p>
           <div>
-            <Link to={router.account.id} params={{id: '123'}}>
+            <Link to={primaryRoute.account.id} params={{id: '123'}}>
               Account 123
             </Link>
           </div>
         </Route>
-        <Route match={router.account}>
+        <Route match={primaryRoute.account}>
           <p>Account page</p>
-          <Link to={router.default}>Home</Link>
+          <Link to={primaryRoute.default}>Home</Link>
           <hr />
-          <Route match={router.account.id}>
-            <p>Account {router.account.id.$params.id} details page</p>
+          <Route match={primaryRoute.account.id}>
+            <p>Account {primaryRoute.account.id.$params.id} details page</p>
           </Route>
         </Route>
       </>

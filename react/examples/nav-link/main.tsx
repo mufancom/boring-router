@@ -8,21 +8,20 @@ import {NavLink} from '../../bld/library';
 
 const history = createBrowserHistory();
 
-const router = Router.create(
-  {
-    default: {
-      $match: '',
-    },
-    account: {
-      $exact: true,
-      $children: {
-        settings: true,
-      },
-    },
-    about: true,
+const router = new Router(history);
+
+const primaryRoute = router.route({
+  default: {
+    $match: '',
   },
-  history,
-);
+  account: {
+    $exact: true,
+    $children: {
+      settings: true,
+    },
+  },
+  about: true,
+});
 
 @observer
 export class App extends Component {
@@ -30,13 +29,13 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <NavLink to={router.default}>Home</NavLink>{' '}
-        <NavLink to={router.account}>Account</NavLink>{' '}
-        <NavLink to={router.account} exact>
+        <NavLink to={primaryRoute.default}>Home</NavLink>{' '}
+        <NavLink to={primaryRoute.account}>Account</NavLink>{' '}
+        <NavLink to={primaryRoute.account} exact>
           Account Exact
         </NavLink>{' '}
-        <NavLink to={router.account.settings}>Account Settings</NavLink>{' '}
-        <NavLink activeClassName="boring-active" to={router.about}>
+        <NavLink to={primaryRoute.account.settings}>Account Settings</NavLink>{' '}
+        <NavLink activeClassName="boring-active" to={primaryRoute.about}>
           About
         </NavLink>
       </>

@@ -10,8 +10,9 @@ import {
 
 export class NextRouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict,
+  TSpecificGroupName extends string | undefined = string | undefined,
   TGroupName extends string = string
-> extends RouteMatchShared<TParamDict, TGroupName> {
+> extends RouteMatchShared<TParamDict, TSpecificGroupName, TGroupName> {
   readonly $parent: NextRouteMatch | undefined;
 
   /** @internal */
@@ -24,33 +25,16 @@ export class NextRouteMatch<
     source: RouteSource,
     parent: NextRouteMatch<TParamDict> | undefined,
     origin: RouteMatch<TParamDict>,
-    extension: object,
     history: IHistory,
     options: RouteMatchSharedOptions,
   ) {
     super(name, prefix, router, source, parent, history, options);
 
     this._origin = origin;
-
-    for (let key of Object.keys(extension)) {
-      Object.defineProperty(this, key, {
-        get() {
-          return (origin as any)[key];
-        },
-      });
-    }
-  }
-
-  /**
-   * A reactive value indicates whether this route is exactly matched.
-   */
-  get $exact(): boolean {
-    let entry = this._getMatchEntry();
-    return !!entry && entry.exact;
   }
 
   /** @internal */
-  _getMatchEntry(): RouteMatchEntry | undefined {
-    return this._origin._getMatchEntry(this._source);
+  _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined {
+    return this._origin._getMatchEntry(source);
   }
 }

@@ -10,38 +10,96 @@ import {
   GeneralParamDict,
   GeneralQueryDict,
   GeneralSegmentDict,
+  ROUTE_MATCH_START_ANCHOR_PATTERN,
   RouteMatchShared,
   RouteMatchSharedOptions,
 } from './route-match-shared';
+
+//////////////////////
+// life-cycle hooks //
+//////////////////////
+
+// before enter //
 
 /**
  * Route before enter callback.
  * @return Return `true` or `undefined` to do nothing; return `false` to revert
  * this history change; return full path to redirect.
  */
-export type RouteBeforeEnter<TRouteMatch extends RouteMatch = RouteMatch> = (
-  next: TRouteMatch['$next'],
-) => Promise<boolean | void> | boolean | void;
+export type RouteBeforeEnterCallback<
+  TRouteMatch extends RouteMatch = RouteMatch
+> = (next: TRouteMatch['$next']) => Promise<boolean | void> | boolean | void;
+
+// before update //
+
+export interface RouteBeforeUpdateCallbackData {
+  descendants: boolean;
+}
 
 /**
  * Route before update callback.
  * @return Return `true` or `undefined` to do nothing; return `false` to revert
  * this history change; return full path to redirect.
  */
-export type RouteBeforeUpdate<TRouteMatch extends RouteMatch = RouteMatch> = (
+export type RouteBeforeUpdateCallback<
+  TRouteMatch extends RouteMatch = RouteMatch
+> = (
   next: TRouteMatch['$next'],
+  data: RouteBeforeUpdateCallbackData,
 ) => Promise<boolean | void> | boolean | void;
+
+export interface RouteBeforeUpdateOptions {
+  traceDescendants: boolean;
+}
+
+export interface RouteBeforeUpdateEntry<
+  TRouteMatch extends RouteMatch = RouteMatch
+> {
+  callback: RouteBeforeUpdateCallback<TRouteMatch>;
+  options?: RouteBeforeUpdateOptions;
+}
+
+// before leave //
 
 /**
  * Route before leave callback.
  * @return Return `true` or `undefined` to do nothing; return `false` to revert
  * this history change.
  */
-export type RouteBeforeLeave = () => Promise<boolean | void> | boolean | void;
+export type RouteBeforeLeaveCallback = () =>
+  | Promise<boolean | void>
+  | boolean
+  | void;
 
-export type RouteAfterEnter = () => void;
-export type RouteAfterUpdate = () => void;
-export type RouteAfterLeave = () => void;
+// after enter //
+
+export type RouteAfterEnterCallback = () => void;
+
+// after update //
+
+export interface RouteAfterUpdateCallbackData {
+  descendants: boolean;
+}
+
+/**
+ * Route after update callback.
+ */
+export type RouteAfterUpdateCallback = (
+  data: RouteAfterUpdateCallbackData,
+) => void;
+
+export interface RouteAfterUpdateOptions {
+  traceDescendants: boolean;
+}
+
+export interface RouteAfterUpdateEntry {
+  options?: RouteAfterUpdateOptions;
+  callback: RouteAfterUpdateCallback;
+}
+
+// after leave //
+
+export type RouteAfterLeaveCallback = () => void;
 
 export type RouteHookRemovalCallback = () => void;
 
@@ -49,19 +107,27 @@ export type RouteInterceptCallback<
   TRouteMatch extends RouteMatch = RouteMatch
 > = (next: TRouteMatch['$next']) => Promise<boolean | void> | boolean | void;
 
+export interface RouteInterceptOptions {
+  traceDescendants: boolean;
+}
+
 export type RouteReactCallback = () => void;
 
 export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
 ) => IRouteService<TRouteMatch> | Promise<IRouteService<TRouteMatch>>;
 
+export interface RouteServiceOptions {
+  traceDescendants?: boolean;
+}
+
 export type IRouteService<TRouteMatch extends RouteMatch = RouteMatch> = {
-  beforeEnter?: RouteBeforeEnter<TRouteMatch>;
-  afterEnter?: RouteAfterEnter;
-  beforeUpdate?: RouteBeforeUpdate<TRouteMatch>;
-  afterUpdate?: RouteAfterUpdate;
-  beforeLeave?: RouteBeforeLeave;
-  afterLeave?: RouteAfterLeave;
+  beforeEnter?: RouteBeforeEnterCallback<TRouteMatch>;
+  afterEnter?: RouteAfterEnterCallback;
+  beforeUpdate?: RouteBeforeUpdateCallback<TRouteMatch>;
+  afterUpdate?: RouteAfterUpdateCallback;
+  beforeLeave?: RouteBeforeLeaveCallback;
+  afterLeave?: RouteAfterLeaveCallback;
 } & RouteServiceExtension<TRouteMatch>;
 
 export type RouteServiceExtension<
@@ -115,29 +181,30 @@ export class RouteMatch<
   TNextRouteMatch extends NextRouteMatch<TParamDict> = NextRouteMatch<
     TParamDict
   >,
+  TSpecificGroupName extends string | undefined = string | undefined,
   TGroupName extends string = string
-> extends RouteMatchShared<TParamDict, TGroupName> {
+> extends RouteMatchShared<TParamDict, TSpecificGroupName, TGroupName> {
   readonly $parent: RouteMatch | undefined;
 
   readonly $next!: TNextRouteMatch;
 
   /** @internal */
-  private _beforeEnterCallbackSet = new Set<RouteBeforeEnter>();
+  private _beforeEnterCallbackSet = new Set<RouteBeforeEnterCallback>();
 
   /** @internal */
-  private _beforeUpdateCallbackSet = new Set<RouteBeforeUpdate>();
+  private _beforeUpdateEntrySet = new Set<RouteBeforeUpdateEntry>();
 
   /** @internal */
-  private _beforeLeaveCallbackSet = new Set<RouteBeforeLeave>();
+  private _beforeLeaveCallbackSet = new Set<RouteBeforeLeaveCallback>();
 
   /** @internal */
-  private _afterEnterCallbackSet = new Set<RouteAfterEnter>();
+  private _afterEnterCallbackSet = new Set<RouteAfterEnterCallback>();
 
   /** @internal */
-  private _afterUpdateCallbackSet = new Set<RouteAfterUpdate>();
+  private _afterUpdateEntrySet = new Set<RouteAfterUpdateEntry>();
 
   /** @internal */
-  private _afterLeaveCallbackSet = new Set<RouteAfterLeave>();
+  private _afterLeaveCallbackSet = new Set<RouteAfterLeaveCallback>();
 
   /** @internal */
   @observable
@@ -164,58 +231,55 @@ export class RouteMatch<
     router: Router,
     source: RouteSource,
     parent: RouteMatch | undefined,
-    extension: object,
+    extension: object | undefined,
     history: IHistory,
     {exact, ...sharedOptions}: RouteMatchOptions,
   ) {
     super(name, prefix, router, source, parent, history, sharedOptions);
 
-    for (let [key, defaultValue] of Object.entries(extension)) {
-      Object.defineProperty(this, key, {
-        get() {
-          let service = (this as RouteMatch).$matched
-            ? (this as RouteMatch)._service
-            : undefined;
-          return service ? (service as any)[key] : defaultValue;
-        },
-      });
+    if (extension) {
+      for (let [key, defaultValue] of Object.entries(extension)) {
+        Object.defineProperty(this, key, {
+          get() {
+            let service = (this as RouteMatch).$matched
+              ? (this as RouteMatch)._service
+              : undefined;
+            return service ? (service as any)[key] : defaultValue;
+          },
+        });
+      }
     }
 
     this._allowExact = exact;
   }
 
-  /**
-   * A reactive value indicates whether this route is matched.
-   */
-  get $matched(): boolean {
-    return !!this._matchEntry;
-  }
-
-  /**
-   * A reactive value indicates whether this route is exactly matched.
-   */
-  get $exact(): boolean {
-    let entry = this._matchEntry;
-    return !!entry && entry.exact;
-  }
-
-  $beforeEnter(callback: RouteBeforeEnter<this>): RouteHookRemovalCallback {
-    this._beforeEnterCallbackSet.add(callback as RouteBeforeEnter);
+  $beforeEnter(
+    callback: RouteBeforeEnterCallback<this>,
+  ): RouteHookRemovalCallback {
+    this._beforeEnterCallbackSet.add(callback);
 
     return () => {
       this._beforeEnterCallbackSet.delete(callback);
     };
   }
 
-  $beforeUpdate(callback: RouteBeforeUpdate<this>): RouteHookRemovalCallback {
-    this._beforeUpdateCallbackSet.add(callback as RouteBeforeUpdate);
+  $beforeUpdate(
+    callback: RouteBeforeUpdateCallback<this>,
+    options?: RouteBeforeUpdateOptions,
+  ): RouteHookRemovalCallback {
+    let entry: RouteBeforeUpdateEntry<this> = {
+      callback,
+      options,
+    };
+
+    this._beforeUpdateEntrySet.add(entry);
 
     return () => {
-      this._beforeUpdateCallbackSet.delete(callback);
+      this._beforeUpdateEntrySet.delete(entry);
     };
   }
 
-  $beforeLeave(callback: RouteBeforeLeave): RouteHookRemovalCallback {
+  $beforeLeave(callback: RouteBeforeLeaveCallback): RouteHookRemovalCallback {
     this._beforeLeaveCallbackSet.add(callback);
 
     return () => {
@@ -223,7 +287,7 @@ export class RouteMatch<
     };
   }
 
-  $afterEnter(callback: RouteAfterEnter): RouteHookRemovalCallback {
+  $afterEnter(callback: RouteAfterEnterCallback): RouteHookRemovalCallback {
     this._afterEnterCallbackSet.add(callback);
 
     return () => {
@@ -231,15 +295,23 @@ export class RouteMatch<
     };
   }
 
-  $afterUpdate(callback: RouteAfterUpdate): RouteHookRemovalCallback {
-    this._afterUpdateCallbackSet.add(callback);
+  $afterUpdate(
+    callback: RouteAfterUpdateCallback,
+    options?: RouteAfterUpdateOptions,
+  ): RouteHookRemovalCallback {
+    let afterUpdateEntry: RouteAfterUpdateEntry = {
+      callback,
+      options,
+    };
+
+    this._afterUpdateEntrySet.add(afterUpdateEntry);
 
     return () => {
-      this._afterUpdateCallbackSet.delete(callback);
+      this._afterUpdateEntrySet.delete(afterUpdateEntry);
     };
   }
 
-  $afterLeave(callback: RouteAfterLeave): RouteHookRemovalCallback {
+  $afterLeave(callback: RouteAfterLeaveCallback): RouteHookRemovalCallback {
     this._afterLeaveCallbackSet.add(callback);
 
     return () => {
@@ -247,23 +319,39 @@ export class RouteMatch<
     };
   }
 
-  $intercept(callback: RouteInterceptCallback): RouteHookRemovalCallback {
+  $intercept(
+    callback: RouteInterceptCallback<this>,
+    options?: RouteInterceptOptions,
+  ): RouteHookRemovalCallback {
+    let beforeUpdateEntry: RouteBeforeUpdateEntry<this> = {
+      callback,
+      options,
+    };
+
     this._beforeEnterCallbackSet.add(callback);
-    this._beforeUpdateCallbackSet.add(callback);
+    this._beforeUpdateEntrySet.add(beforeUpdateEntry);
 
     return () => {
       this._beforeEnterCallbackSet.delete(callback);
-      this._beforeUpdateCallbackSet.delete(callback);
+      this._beforeUpdateEntrySet.delete(beforeUpdateEntry);
     };
   }
 
-  $react(callback: RouteReactCallback): RouteHookRemovalCallback {
+  $react(
+    callback: RouteReactCallback,
+    afterUpdateOptions?: RouteAfterUpdateOptions,
+  ): RouteHookRemovalCallback {
+    let afterUpdateEntry: RouteAfterUpdateEntry = {
+      callback,
+      options: afterUpdateOptions,
+    };
+
     this._afterEnterCallbackSet.add(callback);
-    this._afterUpdateCallbackSet.add(callback);
+    this._afterUpdateEntrySet.add(afterUpdateEntry);
 
     return () => {
       this._afterEnterCallbackSet.delete(callback);
-      this._afterUpdateCallbackSet.delete(callback);
+      this._afterUpdateEntrySet.delete(afterUpdateEntry);
     };
   }
 
@@ -353,6 +441,21 @@ export class RouteMatch<
 
   /** @internal */
   _match(upperRest: string): RouteMatchInternalResult {
+    let pattern = this._matchPattern;
+
+    if (typeof pattern === 'symbol') {
+      if (pattern === ROUTE_MATCH_START_ANCHOR_PATTERN) {
+        return {
+          matched: true,
+          exactlyMatched: false,
+          segment: undefined,
+          rest: upperRest,
+        };
+      }
+
+      throw new Error(`Unrecognized symbol pattern [${pattern.description}]`);
+    }
+
     let segment: string | undefined;
     let rest: string;
 
@@ -366,8 +469,6 @@ export class RouteMatch<
       }
 
       upperRest = upperRest.slice(1);
-
-      let pattern = this._matchPattern;
 
       if (typeof pattern === 'string') {
         if (testPathPrefix(upperRest, pattern)) {
@@ -459,13 +560,19 @@ export class RouteMatch<
   }
 
   /** @internal */
-  async _beforeUpdate(): Promise<boolean> {
+  async _beforeUpdate(
+    triggerByDescendants: boolean,
+  ): Promise<boolean | RouteMatch> {
     let next = this.$next;
 
     let results = await Promise.all([
-      ...Array.from(this._beforeUpdateCallbackSet).map(callback =>
-        tolerate(callback, next),
-      ),
+      ...Array.from(this._beforeUpdateEntrySet)
+        .filter(({options}) =>
+          triggerByDescendants ? options && options.traceDescendants : true,
+        )
+        .map(({callback}) =>
+          tolerate(callback, next, {descendants: triggerByDescendants}),
+        ),
       (async () => {
         let service = await this._getService();
 
@@ -473,7 +580,9 @@ export class RouteMatch<
           return undefined;
         }
 
-        return tolerate(() => service!.beforeUpdate!(next));
+        return tolerate(() =>
+          service!.beforeUpdate!(next, {descendants: triggerByDescendants}),
+        );
       })(),
     ]);
 
@@ -511,9 +620,11 @@ export class RouteMatch<
   }
 
   /** @internal */
-  async _afterUpdate(): Promise<void> {
-    for (let callback of this._afterUpdateCallbackSet) {
-      tolerate(callback);
+  async _afterUpdate(triggerByDescendants: boolean): Promise<void> {
+    for (let {callback, options} of this._afterUpdateEntrySet) {
+      if (!triggerByDescendants || (options && options.traceDescendants)) {
+        tolerate(callback, {descendants: triggerByDescendants});
+      }
     }
 
     let service = await this._getService();
@@ -522,7 +633,7 @@ export class RouteMatch<
       return;
     }
 
-    tolerate(() => service!.afterUpdate!());
+    tolerate(() => service!.afterUpdate!({descendants: triggerByDescendants}));
   }
 
   /** @internal */

@@ -13,10 +13,10 @@ import {
 } from './@utils';
 import {IHistory, Location} from './history';
 import {RouteBuilder, RouteBuilderBuildOptions} from './route-builder';
-import {RouteGroup} from './route-group';
 import {
   GeneralQueryDict,
   NextRouteMatch,
+  ROUTE_MATCH_START_ANCHOR_PATTERN,
   RouteMatch,
   RouteMatchEntry,
   RouteMatchOptions,
@@ -24,7 +24,7 @@ import {
   RouteMatchSharedToParamDict,
   RouteSource,
 } from './route-match';
-import {GroupToRouteSchemaDictDict, RouteSchemaDict} from './schema';
+import {RouteSchemaDict} from './schema';
 
 export type SegmentMatcherCallback = (key: string) => string;
 
@@ -49,7 +49,7 @@ interface RouteSchemaChildrenSection<TRouteSchemaDict> {
   $children: TRouteSchemaDict;
 }
 
-export type NestedRouteSchemaDictType<
+type NestedRouteSchemaDictType<
   TRouteSchema
 > = TRouteSchema extends RouteSchemaChildrenSection<
   infer TNestedRouteSchemaDict
@@ -61,16 +61,17 @@ interface RouteSchemaExtensionSection<TRouteMatchExtension> {
   $extension: TRouteMatchExtension;
 }
 
-export type RouteMatchExtensionType<
+type RouteMatchExtensionType<
   TRouteSchema
 > = TRouteSchema extends RouteSchemaExtensionSection<infer TRouteMatchExtension>
   ? TRouteMatchExtension
   : {};
 
-export type RouteMatchSegmentType<
+type RouteMatchSegmentType<
   TRouteSchemaDict,
   TSegmentKey extends string,
   TQueryKey extends string,
+  TSpecificGroupName extends string | undefined,
   TGroupName extends string
 > = {
   [K in Extract<keyof TRouteSchemaDict, string>]: RouteMatchType<
@@ -78,30 +79,36 @@ export type RouteMatchSegmentType<
     TSegmentKey | FilterRouteMatchNonStringSegment<TRouteSchemaDict[K], K>,
     | TQueryKey
     | Extract<keyof RouteQuerySchemaType<TRouteSchemaDict[K]>, string>,
+    TSpecificGroupName,
     TGroupName
-  >
+  >;
 };
 
 type __RouteMatchType<
   TRouteSchema,
   TSegmentKey extends string,
   TQueryKey extends string,
+  TSpecificGroupName extends string | undefined,
   TGroupName extends string,
   TParamDict extends Dict<string | undefined>
 > = RouteMatch<
   TParamDict,
-  NextRouteMatch<TParamDict, TGroupName> &
-    NextRouteMatchSegmentType<
-      NestedRouteSchemaDictType<TRouteSchema>,
-      TSegmentKey,
-      TGroupName
-    >,
+  __NextRouteMatchType<
+    TRouteSchema,
+    TSegmentKey,
+    TQueryKey,
+    TSpecificGroupName,
+    TGroupName,
+    TParamDict
+  >,
+  TSpecificGroupName,
   TGroupName
 > &
   RouteMatchSegmentType<
     NestedRouteSchemaDictType<TRouteSchema>,
     TSegmentKey,
     TQueryKey,
+    TSpecificGroupName,
     TGroupName
   > &
   RouteMatchExtensionType<TRouteSchema>;
@@ -110,77 +117,77 @@ export type RouteMatchType<
   TRouteSchema,
   TSegmentKey extends string,
   TQueryKey extends string,
+  TSpecificGroupName extends string | undefined,
   TGroupName extends string
 > = __RouteMatchType<
   TRouteSchema,
   TSegmentKey,
   TQueryKey,
+  TSpecificGroupName,
   TGroupName,
   Record<TQueryKey, string | undefined> & Record<TSegmentKey, string>
 >;
 
-export type NextRouteMatchSegmentType<
+type NextRouteMatchSegmentType<
   TRouteSchemaDict,
   TSegmentKey extends string,
+  TQueryKey extends string,
+  TSpecificGroupName extends string | undefined,
   TGroupName extends string
 > = {
   [K in Extract<keyof TRouteSchemaDict, string>]: NextRouteMatchType<
     TRouteSchemaDict[K],
     TSegmentKey | FilterRouteMatchNonStringSegment<TRouteSchemaDict[K], K>,
+    | TQueryKey
+    | Extract<keyof RouteQuerySchemaType<TRouteSchemaDict[K]>, string>,
+    TSpecificGroupName,
     TGroupName
-  >
+  >;
 };
 
-export type NextRouteMatchType<
+type __NextRouteMatchType<
   TRouteSchema,
   TSegmentKey extends string,
-  TGroupName extends string
-> = NextRouteMatch<
-  Record<
-    Extract<keyof RouteQuerySchemaType<TRouteSchema>, string>,
-    string | undefined
-  > &
-    Record<TSegmentKey, string>,
-  TGroupName
-> &
+  TQueryKey extends string,
+  TSpecificGroupName extends string | undefined,
+  TGroupName extends string,
+  TParamDict extends Dict<string | undefined>
+> = NextRouteMatch<TParamDict, TSpecificGroupName, TGroupName> &
   NextRouteMatchSegmentType<
     NestedRouteSchemaDictType<TRouteSchema>,
     TSegmentKey,
+    TQueryKey,
+    TSpecificGroupName,
     TGroupName
   >;
 
-export type RouteGroupType<
-  TThisGroupName extends string,
-  TRouteSchemaDict,
+type NextRouteMatchType<
+  TRouteSchema,
+  TSegmentKey extends string,
+  TQueryKey extends string,
+  TSpecificGroupName extends string | undefined,
   TGroupName extends string
-> = RouteGroup<
-  TThisGroupName,
-  NextRouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>
-> &
-  RouteMatchSegmentType<TRouteSchemaDict, never, never, TGroupName>;
+> = __NextRouteMatchType<
+  TRouteSchema,
+  TSegmentKey,
+  TQueryKey,
+  TSpecificGroupName,
+  TGroupName,
+  Record<TQueryKey, string | undefined> & Record<TSegmentKey, string>
+>;
 
-type __RouterType<
+export type RootRouteMatchType<
   TRouteSchemaDict,
-  TGroupToRouteSchemaDictDict,
+  TSegmentKey extends string,
+  TQueryKey extends string,
+  TSpecificGroupName extends string | undefined,
   TGroupName extends string
-> = Router<
-  {
-    [K in keyof TGroupToRouteSchemaDictDict]: K extends string
-      ? RouteGroupType<K, TGroupToRouteSchemaDictDict[K], TGroupName>
-      : never
-  },
-  NextRouteMatchSegmentType<TRouteSchemaDict, never, TGroupName>,
+> = RouteMatchType<
+  {$children: TRouteSchemaDict},
+  TSegmentKey,
+  TQueryKey,
+  TSpecificGroupName,
   TGroupName
-> &
-  RouteMatchSegmentType<TRouteSchemaDict, never, never, TGroupName>;
-
-export type RouterType<
-  TRouteSchemaDict,
-  TGroupToRouteSchemaDictDict
-> = __RouterType<
-  TRouteSchemaDict,
-  TGroupToRouteSchemaDictDict,
-  Extract<keyof TGroupToRouteSchemaDictDict, string>
 >;
 
 export type RouterOnLeave = (path: string) => void;
@@ -213,22 +220,22 @@ export interface RouterRefOptions<TGroupName extends string> {
   /**
    * Parallel route group(s) to leave. Set to `'*'` to leave all.
    */
-  leaves?: '*' | TGroupName | TGroupName[];
+  leaves?: TGroupName | TGroupName[] | '*';
   /**
    * Whether to preserve values in current query string.
    */
   preserveQuery?: boolean;
 }
 
-export class Router<
-  TParallelRouteGroupDict extends object = object,
-  TNextRouteMatchDict extends object = object,
-  TGroupName extends string = string
-> {
-  readonly $ = {} as TParallelRouteGroupDict;
+interface BuildRouteMatchOptions {
+  match: string | symbol | RegExp;
+  exact: boolean;
+  query: Dict<boolean> | undefined;
+  children: RouteSchemaDict | undefined;
+  extension: object | undefined;
+}
 
-  readonly $next = {} as TNextRouteMatchDict;
-
+export class Router<TGroupName extends string = string> {
   /** @internal */
   private _history: IHistory;
 
@@ -272,17 +279,12 @@ export class Router<
   private _changing = Promise.resolve();
 
   /** @internal */
-  private _groupSet: Set<string>;
-
-  /** @internal */
-  _groupToChildrenMap = new Map<string | undefined, RouteMatch[]>();
+  private _groupToRouteMatchMap = new Map<string | undefined, RouteMatch>();
 
   /** @internal */
   _onRouteCompleteListenerMap = new Map<number, RouterOnRouteComplete>();
 
-  private constructor(
-    primarySchema: RouteSchemaDict,
-    groupToSchemaDict: GroupToRouteSchemaDictDict | undefined,
+  constructor(
     history: IHistory,
     {
       segmentMatcher,
@@ -290,7 +292,7 @@ export class Router<
       prefix = '',
       onLeave,
       onChange,
-    }: RouterOptions,
+    }: RouterOptions = {},
   ) {
     this._history = history;
     this._default = parsePath(defaultPath);
@@ -300,36 +302,69 @@ export class Router<
 
     this._segmentMatcher = segmentMatcher || DEFAULT_SEGMENT_MATCHER_CALLBACK;
 
-    this._groupSet = new Set();
-
-    let groupToChildrenMap = this._groupToChildrenMap;
-    let groupSet = this._groupSet;
-
-    groupToChildrenMap.set(
-      undefined,
-      this._build(primarySchema, this, this.$next),
-    );
-
-    if (groupToSchemaDict) {
-      let parallelRouteDict = this.$ as Dict<RouteGroup>;
-
-      for (let [group, schema] of Object.entries(groupToSchemaDict)) {
-        let routeGroup = new RouteGroup(group);
-
-        parallelRouteDict[group] = routeGroup;
-
-        groupToChildrenMap.set(
-          group,
-          this._build(schema, routeGroup, routeGroup.$next),
-        );
-        groupSet.add(group);
-      }
-    }
-
     then(() => {
       history.listen(this._onLocationChange);
       this._onLocationChange(history.location);
     });
+  }
+
+  /** @internal */
+  private get _groupSet(): Set<string> {
+    return new Set(
+      Array.from(this._groupToRouteMatchMap.keys()).filter(
+        (group): group is string => !!group,
+      ),
+    );
+  }
+
+  route<TPrimaryRouteSchemaDict extends RouteSchemaDict>(
+    schema: TPrimaryRouteSchemaDict,
+  ): RootRouteMatchType<
+    TPrimaryRouteSchemaDict,
+    never,
+    never,
+    undefined,
+    TGroupName
+  >;
+  route<
+    TRouteSchemaDict extends RouteSchemaDict,
+    TSpecificGroupName extends TGroupName
+  >(
+    group: TSpecificGroupName,
+    schema: TRouteSchemaDict,
+  ): RootRouteMatchType<
+    TRouteSchemaDict,
+    never,
+    never,
+    TSpecificGroupName,
+    TGroupName
+  >;
+  route(
+    groupOrSchema: TGroupName | RouteSchemaDict,
+    schemaOrUndefined?: RouteSchemaDict,
+  ): RouteMatch {
+    let group: TGroupName | undefined;
+    let schema: RouteSchemaDict;
+
+    if (typeof groupOrSchema === 'string') {
+      group = groupOrSchema;
+      schema = schemaOrUndefined!;
+    } else {
+      group = undefined;
+      schema = groupOrSchema;
+    }
+
+    let routeMatch = this._buildRouteMatch(group, '', undefined, undefined, {
+      match: ROUTE_MATCH_START_ANCHOR_PATTERN,
+      exact: false,
+      query: undefined,
+      children: schema,
+      extension: undefined,
+    });
+
+    this._groupToRouteMatchMap.set(group, routeMatch);
+
+    return routeMatch;
   }
 
   /**
@@ -359,22 +394,6 @@ export class Router<
     return buildRef(this._prefix, pathMap, {
       ...(preserveQuery ? (sourceQueryDict as Dict<string>) : undefined),
     });
-  }
-
-  /**
-   * Perform a `history.push()` with `this.$ref(options)`.
-   */
-  $push(options?: RouterRefOptions<TGroupName>): void {
-    let ref = this.$ref(options);
-    this._history.push(ref);
-  }
-
-  /**
-   * Perform a `history.replace()` with `this.$ref(options)`.
-   */
-  $replace(options?: RouterRefOptions<TGroupName>): void {
-    let ref = this.$ref(options);
-    this._history.replace(ref);
   }
 
   $build<TRouteMatchShared extends RouteMatchShared>(
@@ -480,12 +499,13 @@ export class Router<
       RouteMatchEntry[]
     >();
 
-    let groupToChildrenMap = this._groupToChildrenMap;
+    let groupToRouteMatchMap = this._groupToRouteMatchMap;
 
     for (let [group, path] of pathMap) {
-      let routeMatches = groupToChildrenMap.get(group) || [];
+      let routeMatch = groupToRouteMatchMap.get(group);
 
-      let routeMatchEntries = this._match(routeMatches, path) || [];
+      let routeMatchEntries =
+        this._routerMatch(routeMatch ? [routeMatch] : [], path) || [];
 
       if (!routeMatchEntries.length) {
         continue;
@@ -526,9 +546,10 @@ export class Router<
           groupToMatchToMatchEntryMapMap.set(
             group,
             new Map(
-              entries.map(
-                (entry): [RouteMatch, RouteMatchEntry] => [entry.match, entry],
-              ),
+              entries.map((entry): [RouteMatch, RouteMatchEntry] => [
+                entry.match,
+                entry,
+              ]),
             ),
           );
         }
@@ -612,6 +633,8 @@ export class Router<
 
     let enteringAndUpdatingMatchSet = new Set(nextMatchSet);
 
+    let triggerByDescendanceMatchSet = new Set<RouteMatch>();
+
     for (let match of previousMatchSet) {
       if (!enteringAndUpdatingMatchSet.has(match)) {
         continue;
@@ -623,11 +646,13 @@ export class Router<
         isShallowlyEqual(match._pathSegments, nextMatch._pathSegments) &&
         match.$exact === nextMatch.$exact
       ) {
-        enteringAndUpdatingMatchSet.delete(match);
+        if (match._rest === nextMatch._rest) {
+          enteringAndUpdatingMatchSet.delete(match);
+        } else {
+          triggerByDescendanceMatchSet.add(match);
+        }
       }
     }
-
-    // Process before hooks
 
     for (let match of reversedLeavingMatches) {
       let result = await match._beforeLeave();
@@ -646,7 +671,7 @@ export class Router<
       let update = previousMatchSet.has(match);
 
       let result = update
-        ? await match._beforeUpdate()
+        ? await match._beforeUpdate(triggerByDescendanceMatchSet.has(match))
         : await match._beforeEnter();
 
       if (this._isNextLocationOutDated(nextLocation)) {
@@ -694,7 +719,7 @@ export class Router<
       let update = previousMatchSet.has(match);
 
       if (update) {
-        await match._afterUpdate();
+        await match._afterUpdate(triggerByDescendanceMatchSet.has(match));
       } else {
         await match._afterEnter();
       }
@@ -712,7 +737,7 @@ export class Router<
   }
 
   /** @internal */
-  private _match(
+  private _routerMatch(
     routeMatches: RouteMatch[],
     upperRest: string,
   ): RouteMatchEntry[] | undefined {
@@ -736,7 +761,7 @@ export class Router<
         ];
       }
 
-      let result = this._match(routeMatch._children || [], rest);
+      let result = this._routerMatch(routeMatch._children || [], rest);
 
       if (!result) {
         continue;
@@ -757,118 +782,101 @@ export class Router<
   }
 
   /** @internal */
-  private _build(
+  private _buildRouteMatches(
+    group: string | undefined,
     schemaDict: RouteSchemaDict,
-    parent: RouteMatch | RouteGroup | Router,
-    matchingParent: object,
+    parent: RouteMatch,
+    matchingParent: NextRouteMatch,
   ): RouteMatch[] {
-    let routeMatches: RouteMatch[] = [];
-
-    let source = this._source;
-    let matchingSource = this._matchingSource;
-    let history = this._history;
-    let prefix = this._prefix;
-
-    let group = '$group' in parent ? parent.$group : undefined;
-
-    for (let [routeName, schema] of Object.entries(schemaDict)) {
+    return Object.entries(schemaDict).map(([routeName, schema]) => {
       if (typeof schema === 'boolean') {
         schema = {};
       }
 
       let {
         $match: match = this._segmentMatcher(routeName),
-        $query: query,
         $exact: exact = false,
+        $query: query,
         $children: children,
-        $extension: extension = {},
+        $extension: extension,
       } = schema;
 
-      let options: RouteMatchOptions = {
-        match,
-        query,
-        exact,
+      let routeMatch = this._buildRouteMatch(
         group,
-      };
-
-      let routeMatch = new RouteMatch(
         routeName,
-        prefix,
-        this,
-        source,
-        parent instanceof RouteMatch ? parent : undefined,
-        extension,
-        history,
-        options,
+        parent,
+        matchingParent,
+        {
+          match,
+          exact,
+          query,
+          children,
+          extension,
+        },
       );
-
-      let nextRouteMatch = new NextRouteMatch(
-        routeName,
-        prefix,
-        this,
-        matchingSource,
-        matchingParent instanceof NextRouteMatch ? matchingParent : undefined,
-        routeMatch,
-        extension,
-        history,
-        options,
-      );
-
-      (routeMatch as any).$next = nextRouteMatch;
-
-      routeMatches.push(routeMatch);
 
       (parent as any)[routeName] = routeMatch;
-      (matchingParent as any)[routeName] = nextRouteMatch;
+      (matchingParent as any)[routeName] = routeMatch.$next;
 
-      if (!children) {
-        continue;
-      }
-
-      routeMatch._children = this._build(children, routeMatch, nextRouteMatch);
-    }
-
-    return routeMatches;
+      return routeMatch;
+    });
   }
 
-  static create<TPrimaryRouteSchemaDict extends RouteSchemaDict>(
-    primarySchema: TPrimaryRouteSchemaDict,
-    history: IHistory,
-    options?: RouterOptions,
-  ): RouterType<TPrimaryRouteSchemaDict, object>;
-  static create<
-    TPrimaryRouteSchemaDict extends RouteSchemaDict,
-    TGroupToRouteSchemaDictDict extends GroupToRouteSchemaDictDict
-  >(
-    primarySchema: TPrimaryRouteSchemaDict,
-    groupSchema: TGroupToRouteSchemaDictDict,
-    history: IHistory,
-    options?: RouterOptions,
-  ): RouterType<TPrimaryRouteSchemaDict, TGroupToRouteSchemaDictDict>;
-  static create(
-    primarySchema: any,
-    groupSchema: any,
-    history: any = {},
-    options: any = {},
-  ): Router {
-    if (isHistory(groupSchema)) {
-      options = history;
-      history = groupSchema;
-      groupSchema = {};
+  /** @internal */
+  private _buildRouteMatch(
+    group: string | undefined,
+    routeName: string,
+    parent: RouteMatch | undefined,
+    matchingParent: NextRouteMatch | undefined,
+    {match, exact, query, children, extension}: BuildRouteMatchOptions,
+  ): RouteMatch {
+    let source = this._source;
+    let matchingSource = this._matchingSource;
+    let history = this._history;
+    let prefix = this._prefix;
+
+    let options: RouteMatchOptions = {
+      match,
+      query,
+      exact,
+      group,
+    };
+
+    let routeMatch = new RouteMatch(
+      routeName,
+      prefix,
+      this,
+      source,
+      parent,
+      extension,
+      history,
+      options,
+    );
+
+    let nextRouteMatch = new NextRouteMatch(
+      routeName,
+      prefix,
+      this,
+      matchingSource,
+      matchingParent,
+      routeMatch,
+      history,
+      options,
+    );
+
+    (routeMatch as any).$next = nextRouteMatch;
+
+    if (children) {
+      routeMatch._children = this._buildRouteMatches(
+        group,
+        children,
+        routeMatch,
+        nextRouteMatch,
+      );
     }
 
-    return new Router(primarySchema, groupSchema, history, options);
+    return routeMatch;
   }
-}
-
-function isHistory(object: any): object is IHistory {
-  return (
-    object &&
-    object.location &&
-    typeof object.push === 'function' &&
-    typeof object.replace === 'function' &&
-    typeof object.listen === 'function'
-  );
 }
 
 function isRouterOnRouteCompleteLocationState(

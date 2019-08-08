@@ -21,8 +21,8 @@ There are multiple reasons pushing me to write Boring Router instead of sticking
 yarn add history react mobx mobx-react
 
 # boring router packages
-yarn add boring-router@next
-yarn add boring-router-react@next
+yarn add boring-router
+yarn add boring-router-react
 ```
 
 ## Usage
@@ -36,16 +36,15 @@ import React, {Component} from 'react';
 
 const history = createBrowserHistory();
 
-const router = Router.create(
-  {
-    account: true,
-    about: true,
-    notFound: {
-      $match: RouteMatch.rest,
-    },
+const router = new Router(history);
+
+const primaryRoute = router.route({
+  account: true,
+  about: true,
+  notFound: {
+    $match: RouteMatch.rest,
   },
-  history,
-);
+});
 
 @observer
 class App extends Component {
@@ -339,19 +338,18 @@ class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
   }
 }
 
-let router = Router.create(
-  {
-    accountId: {
-      $match: RouteMatch.segment,
-      // Define extension defaults with types
-      $extension: {
-        account: undefined! as Account,
-        name: undefined! as string,
-      },
+let router = new Router(history);
+
+let primaryRoute = router.route({
+  accountId: {
+    $match: RouteMatch.segment,
+    // Define extension defaults with types
+    $extension: {
+      account: undefined! as Account,
+      name: undefined! as string,
     },
   },
-  history,
-);
+});
 
 // Method `$service` accepts an asynchronous function as well.
 router.accountId.$service(match => new AccountRouteService(match));

@@ -3,13 +3,14 @@
   "private": true,
   "scripts": {
     "link-global": "yarn workspace boring-router link && yarn workspace boring-router-react link",
-    "lerna:publish": "lerna publish prerelease --npm-tag next --registry=https://registry.npmjs.org",
+    "lerna:publish": "lerna publish prerelease --registry=https://registry.npmjs.org",
     "test:boring-router": "yarn workspace boring-router test",
     "test:boring-router-react": "yarn workspace boring-router-react test",
-    "test": "yarn test:boring-router && yarn test:boring-router-react"
+    "test": "yarn lint-prettier && yarn test:boring-router && yarn test:boring-router-react",
+    "lint-prettier": "prettier --ignore-path .gitignore --list-different \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "devDependencies": {
-    "@magicspace/configs": "^0.1.49",
+    "@magicspace/configs": "0.1.49",
     "@types/react": "^16.8.19",
     "lerna": "^3.14.1",
     "mobx": "^5.10.0",

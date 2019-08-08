@@ -11,6 +11,8 @@ import {
 
 import {RouteMatchEntry, RouteSource} from './route-match';
 
+export const ROUTE_MATCH_START_ANCHOR_PATTERN = Symbol('^');
+
 export type GeneralSegmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
@@ -29,7 +31,7 @@ export interface RouterMatchRefOptions<TGroupName extends string> {
   /**
    * Parallel route groups to leave.
    */
-  leaves?: TGroupName[];
+  leaves?: TGroupName[] | '*';
   /**
    * Whether to preserve rest path of current match, defaults to `false`.
    */
@@ -46,13 +48,14 @@ export interface RouterMatchRefOptions<TGroupName extends string> {
 }
 
 export interface RouteMatchSharedOptions {
-  match: string | RegExp;
+  match: string | symbol | RegExp;
   query: Dict<boolean> | undefined;
   group: string | undefined;
 }
 
 export abstract class RouteMatchShared<
   TParamDict extends GeneralParamDict = GeneralParamDict,
+  TSpecificGroupName extends string | undefined = string | undefined,
   TGroupName extends string = string
 > {
   /**
@@ -64,7 +67,7 @@ export abstract class RouteMatchShared<
   /**
    * Group of this `RouteMatch`, specified in the root route.
    */
-  readonly $group: TGroupName | undefined;
+  readonly $group: TSpecificGroupName | undefined;
 
   /**
    * Parent of this route match.
@@ -84,7 +87,7 @@ export abstract class RouteMatchShared<
   protected _history: IHistory;
 
   /** @internal */
-  protected _matchPattern: string | RegExp;
+  protected _matchPattern: string | symbol | RegExp;
 
   /** @internal */
   protected _router: Router;
@@ -99,7 +102,7 @@ export abstract class RouteMatchShared<
     {match, query, group}: RouteMatchSharedOptions,
   ) {
     this.$name = name;
-    this.$group = group as TGroupName;
+    this.$group = group as TSpecificGroupName;
     this.$parent = parent;
     this._prefix = prefix;
     this._router = router;
@@ -131,6 +134,21 @@ export abstract class RouteMatchShared<
     } as TParamDict;
   }
 
+  /**
+   * A reactive value indicates whether this route is exactly matched.
+   */
+  get $exact(): boolean {
+    let entry = this._matchEntry;
+    return !!entry && entry.exact;
+  }
+
+  /**
+   * A reactive value indicates whether this route is matched.
+   */
+  get $matched(): boolean {
+    return !!this._matchEntry;
+  }
+
   /** @internal */
   @computed
   protected get _matchEntry(): RouteMatchEntry | undefined {
@@ -153,11 +171,15 @@ export abstract class RouteMatchShared<
     let matchPattern = this._matchPattern;
     let segment = this._segment;
 
+    if (typeof matchPattern === 'string') {
+      return {
+        ...upperSegmentDict,
+      };
+    }
+
     return {
       ...upperSegmentDict,
-      ...(typeof matchPattern === 'string'
-        ? undefined
-        : {[this.$name]: segment}),
+      [this.$name]: segment,
     };
   }
 
@@ -170,11 +192,18 @@ export abstract class RouteMatchShared<
     let matchPattern = this._matchPattern;
     let segment = this._segment;
 
+    if (
+      typeof matchPattern === 'symbol' &&
+      matchPattern === ROUTE_MATCH_START_ANCHOR_PATTERN
+    ) {
+      return {
+        ...upperSegmentDict,
+      };
+    }
+
     return {
       ...upperSegmentDict,
-      ...{
-        [this.$name]: typeof matchPattern === 'string' ? matchPattern : segment,
-      },
+      [this.$name]: typeof matchPattern === 'string' ? matchPattern : segment,
     };
   }
 
@@ -223,19 +252,23 @@ export abstract class RouteMatchShared<
     }: RouterMatchRefOptions<TGroupName> = {},
   ): string {
     let group = this.$group;
-    let beingPrimaryRoute = group === undefined;
+    let primary = group === undefined;
 
     let restParamKeySet = new Set(Object.keys(params));
     let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
 
     let pathMap = new Map(sourcePathMap);
 
-    for (let item of leaves) {
-      pathMap.delete(item);
+    if (Array.isArray(leaves)) {
+      for (let item of leaves) {
+        pathMap.delete(item);
+      }
+    } else if (leaves === '*') {
+      pathMap = new Map([[undefined, sourcePathMap.get(undefined)!]]);
     }
 
     if (leave) {
-      if (beingPrimaryRoute) {
+      if (primary) {
         throw new Error('Cannot leave the primary route');
       }
 
@@ -243,12 +276,12 @@ export abstract class RouteMatchShared<
     } else {
       let segmentDict = this._pathSegments;
 
-      let path = Object.keys(segmentDict)
-        .map(key => {
+      let path = Object.entries(segmentDict)
+        .map(([key, defaultSegment]) => {
           restParamKeySet.delete(key);
 
           let param = params[key];
-          let segment = typeof param === 'string' ? param : segmentDict[key];
+          let segment = typeof param === 'string' ? param : defaultSegment;
 
           if (typeof segment !== 'string') {
             throw new Error(`Parameter "${key}" is required`);
@@ -267,7 +300,7 @@ export abstract class RouteMatchShared<
 
     let preservedQueryDict: GeneralQueryDict = {};
 
-    if (beingPrimaryRoute) {
+    if (primary) {
       preservedQueryDict = {};
 
       let queryKeySet = this._queryKeySet;

@@ -8,35 +8,34 @@ import {Link, Route} from '../../bld/library';
 
 const history = createBrowserHistory();
 
-const router = Router.create(
-  {
-    default: {
-      $match: '',
-    },
-    account: true,
-    profile: {
-      $exact: true,
-      $children: {
-        details: true,
-      },
-    },
-    about: {
-      $query: {
-        source: true,
-      },
-    },
-    notFound: {
-      $match: RouteMatch.rest,
+const router = new Router(history);
+
+const primaryRoute = router.route({
+  default: {
+    $match: '',
+  },
+  account: true,
+  profile: {
+    $exact: true,
+    $children: {
+      details: true,
     },
   },
-  history,
-);
-
-router.account.$beforeEnter(() => {
-  router.about.$push({source: 'reaction'});
+  about: {
+    $query: {
+      source: true,
+    },
+  },
+  notFound: {
+    $match: RouteMatch.rest,
+  },
 });
 
-router.profile.$beforeEnter(match => {
+primaryRoute.account.$beforeEnter(() => {
+  primaryRoute.about.$push({source: 'reaction'});
+});
+
+primaryRoute.profile.$beforeEnter(match => {
   console.info('before enter profile');
   console.info('before enter ref', match.$ref());
 
@@ -45,15 +44,15 @@ router.profile.$beforeEnter(match => {
   }
 });
 
-router.profile.$afterEnter(() => {
+primaryRoute.profile.$afterEnter(() => {
   console.info('after enter profile');
 });
 
-router.profile.$beforeLeave(() => {
+primaryRoute.profile.$beforeLeave(() => {
   console.info('before leave profile');
 });
 
-router.profile.$afterLeave(() => {
+primaryRoute.profile.$afterLeave(() => {
   console.info('after leave profile');
 });
 
@@ -63,25 +62,25 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={router.default}>
+        <Route match={primaryRoute.default}>
           <p>Home page</p>
           <div>
-            <Link to={router.account}>Account</Link>
+            <Link to={primaryRoute.account}>Account</Link>
           </div>
           <div>
-            <Link to={router.profile}>Profile</Link>
+            <Link to={primaryRoute.profile}>Profile</Link>
           </div>
           <div>
-            <Link to={router.about}>About</Link>
+            <Link to={primaryRoute.about}>About</Link>
           </div>
         </Route>
-        <Route match={router.profile.details}>
+        <Route match={primaryRoute.profile.details}>
           <p>Profile details page</p>
-          <Link to={router.default}>Home</Link>
+          <Link to={primaryRoute.default}>Home</Link>
         </Route>
-        <Route match={router.about}>
+        <Route match={primaryRoute.about}>
           <p>About page</p>
-          <Link to={router.default}>Home</Link>
+          <Link to={primaryRoute.default}>Home</Link>
         </Route>
       </>
     );
