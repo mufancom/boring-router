@@ -10,6 +10,7 @@
 
 ### Breaking changes
 
+- `Router.create()` is removed in favor of `new Router().route()`.
 - Names related to `fragment` has been changed to `segment`.
 - The router will no longer match parent if it has no matching child.
 - By default, the router will no longer match a route if it has children but the path is ended at the route itself. For example, if the path is `/account`, and route `account` has `$children`, `account` will not be matched by default. An option `$exact` is added for this scenario, and applies only to route schema with `$children`.
