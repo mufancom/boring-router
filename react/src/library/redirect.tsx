@@ -15,7 +15,6 @@ export interface RedirectProps<
   params?: TToRouteMatch extends RouteMatch<infer TParamDict>
     ? Partial<TParamDict> & EmptyObjectPatch
     : never;
-  preserveQuery?: boolean;
   push?: boolean;
 }
 
@@ -45,12 +44,12 @@ export class Redirect<
   }
 
   private redirect(): void {
-    let {to, params, preserveQuery, push} = this.props;
+    let {to, params, push} = this.props;
 
     if (push) {
-      to.$push(params, {preserveQuery});
+      to.$push(params);
     } else {
-      to.$replace(params, {preserveQuery});
+      to.$replace(params);
     }
   }
 }

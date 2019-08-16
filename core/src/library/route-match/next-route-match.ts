@@ -20,7 +20,6 @@ export class NextRouteMatch<
 
   constructor(
     name: string,
-    prefix: string,
     router: Router,
     source: RouteSource,
     parent: NextRouteMatch<TParamDict> | undefined,
@@ -28,7 +27,7 @@ export class NextRouteMatch<
     history: IHistory,
     options: RouteMatchSharedOptions,
   ) {
-    super(name, prefix, router, source, parent, history, options);
+    super(name, router, source, parent, history, options);
 
     this._origin = origin;
   }

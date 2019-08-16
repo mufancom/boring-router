@@ -32,7 +32,6 @@
     "@types/classnames": "^2.2.8",
     "@types/history": "^4.7.2",
     "@types/react-dom": "^16.8.4",
-    "history": "^4.9.0",
     "react-dom": "^16.8.6"
   },
   "dependencies": {

@@ -220,14 +220,10 @@ export class RouteMatch<
   private _allowExact: boolean;
 
   /** @internal */
-  _children: RouteMatch[] | undefined;
-
-  /** @internal */
   _parallel: RouteMatchParallelOptions<TGroupName> | undefined;
 
   constructor(
     name: string,
-    prefix: string,
     router: Router,
     source: RouteSource,
     parent: RouteMatch | undefined,
@@ -235,7 +231,7 @@ export class RouteMatch<
     history: IHistory,
     {exact, ...sharedOptions}: RouteMatchOptions,
   ) {
-    super(name, prefix, router, source, parent, history, sharedOptions);
+    super(name, router, source, parent, history, sharedOptions);
 
     if (extension) {
       for (let [key, defaultValue] of Object.entries(extension)) {
@@ -560,18 +556,16 @@ export class RouteMatch<
   }
 
   /** @internal */
-  async _beforeUpdate(
-    triggerByDescendants: boolean,
-  ): Promise<boolean | RouteMatch> {
+  async _beforeUpdate(byDescendants: boolean): Promise<boolean | RouteMatch> {
     let next = this.$next;
 
     let results = await Promise.all([
       ...Array.from(this._beforeUpdateEntrySet)
         .filter(({options}) =>
-          triggerByDescendants ? options && options.traceDescendants : true,
+          byDescendants ? options && options.traceDescendants : true,
         )
         .map(({callback}) =>
-          tolerate(callback, next, {descendants: triggerByDescendants}),
+          tolerate(callback, next, {descendants: byDescendants}),
         ),
       (async () => {
         let service = await this._getService();
@@ -581,7 +575,7 @@ export class RouteMatch<
         }
 
         return tolerate(() =>
-          service!.beforeUpdate!(next, {descendants: triggerByDescendants}),
+          service!.beforeUpdate!(next, {descendants: byDescendants}),
         );
       })(),
     ]);

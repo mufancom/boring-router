@@ -1,16 +1,15 @@
 import {RouteMatch, Router} from 'boring-router';
-import {createBrowserHistory} from 'history';
 import {observer} from 'mobx-react';
 import React, {Component, ReactNode} from 'react';
 import ReactDOM from 'react-dom';
 
-import {Link, Redirect, Route} from '../../bld/library';
+import {BrowserHistory, Link, Redirect, Route} from '../../bld/library';
 
-const history = createBrowserHistory();
+const history = new BrowserHistory();
 
 const router = new Router(history);
 
-const primaryRoute = router.route({
+const route = router.$route({
   default: {
     $match: '',
   },
@@ -32,35 +31,32 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={primaryRoute.default}>
+        <Route match={route.default}>
           <p>Home page</p>
           <div>
-            <Link to={primaryRoute.account}>Account</Link>
+            <Link to={route.account}>Account</Link>
           </div>
           <div>
-            <Link to={primaryRoute.about}>About</Link>
+            <Link to={route.about}>About</Link>
           </div>
           <div>
-            <Link to={primaryRoute.notFound} params={{notFound: 'boring'}}>
+            <Link to={route.notFound} params={{notFound: 'boring'}}>
               Boring
             </Link>
           </div>
         </Route>
-        <Route match={primaryRoute.account}>
+        <Route match={route.account}>
           <p>Account page</p>
-          <Link to={primaryRoute.default}>Home</Link>
+          <Link to={route.default}>Home</Link>
         </Route>
-        <Route match={primaryRoute.about}>
+        <Route match={route.about}>
           <p>About page</p>
-          <Link to={primaryRoute.default}>Home</Link>
+          <Link to={route.default}>Home</Link>
         </Route>
+        <Redirect match={[route.account, route.profile]} to={route.about} />
         <Redirect
-          match={[primaryRoute.account, primaryRoute.profile]}
-          to={primaryRoute.about}
-        />
-        <Redirect
-          match={primaryRoute.notFound}
-          to={primaryRoute.about}
+          match={route.notFound}
+          to={route.about}
           params={{source: 'not-found'}}
         />
       </>

@@ -1,7 +1,6 @@
-import {createMemoryHistory} from 'history';
 import {configure} from 'mobx';
 
-import {RouteMatch, Router} from '../bld/library';
+import {MemoryHistory, RouteMatch, Router} from '../bld/library';
 
 import {nap} from './@utils';
 
@@ -9,11 +8,11 @@ configure({
   enforceActions: 'observed',
 });
 
-let history = createMemoryHistory();
+let history = new MemoryHistory();
 
 let router = new Router<'popup' | 'sidebar'>(history);
 
-let primaryRoute = router.route({
+let primaryRoute = router.$route({
   default: {
     $match: '',
   },
@@ -61,13 +60,13 @@ let primaryRoute = router.route({
   },
 });
 
-let popupRoute = router.route('popup', {
+let popupRoute = router.$route('popup', {
   invite: {
     $exact: true,
   },
 });
 
-let sidebarRoute = router.route('sidebar', {
+let sidebarRoute = router.$route('sidebar', {
   groups: {
     $exact: true,
     $children: {
@@ -107,7 +106,7 @@ test('should match `default`', async () => {
 });
 
 test('should match `notFound`', async () => {
-  history.push('/boring');
+  await history.push('/boring');
 
   await nap();
 
@@ -115,7 +114,7 @@ test('should match `notFound`', async () => {
   expect(primaryRoute.notFound.$exact).toBe(true);
   expect({...primaryRoute.notFound.$params}).toEqual({notFound: 'boring'});
 
-  history.push('/boring/router?foo=bar');
+  await history.push('/boring/router?foo=bar');
 
   await nap();
 
@@ -127,7 +126,7 @@ test('should match `notFound`', async () => {
 });
 
 test('should match `account`', async () => {
-  history.push('/account');
+  await history.push('/account');
 
   await nap();
 
@@ -148,7 +147,7 @@ test('should match `account`', async () => {
 });
 
 test('should match `notFound`', async () => {
-  history.push('/account/boring');
+  await history.push('/account/boring');
 
   await nap();
 
@@ -160,7 +159,7 @@ test('should match `notFound`', async () => {
 });
 
 test('should match `account.id`', async () => {
-  history.push('/account/123');
+  await history.push('/account/123');
 
   await nap();
 
@@ -176,7 +175,7 @@ test('should match `account.id`', async () => {
 });
 
 test('should match `account.id.settings`', async () => {
-  history.push('/account/123/settings');
+  await history.push('/account/123/settings');
 
   await nap();
 
@@ -196,7 +195,7 @@ test('should match `account.id.settings`', async () => {
 });
 
 test('should match `account.id.billings`', async () => {
-  history.push('/account/123/billings?callback=/redirect');
+  await history.push('/account/123/billings?callback=/redirect');
 
   await nap();
 
@@ -216,9 +215,9 @@ test('should match `account.id.billings`', async () => {
   });
 
   expect(primaryRoute.account.$ref({})).toBe('/account?callback=%2Fredirect');
-  expect(
-    primaryRoute.account.id.billings.$ref({}, {preserveQuery: false}),
-  ).toBe('/account/123/billings');
+  expect(primaryRoute.account.id.billings.$ref({callback: undefined})).toBe(
+    '/account/123/billings',
+  );
   expect(primaryRoute.account.id.billings.$ref({})).toBe(
     '/account/123/billings?callback=%2Fredirect',
   );
@@ -228,7 +227,7 @@ test('should match `account.id.billings`', async () => {
 });
 
 test('should match `multiple.number`', async () => {
-  history.push('/multiple/123');
+  await history.push('/multiple/123');
 
   await nap();
 
@@ -239,7 +238,7 @@ test('should match `multiple.number`', async () => {
 });
 
 test('should match `multiple.mixed`', async () => {
-  history.push('/multiple/123abc');
+  await history.push('/multiple/123abc');
 
   await nap();
 
@@ -248,7 +247,7 @@ test('should match `multiple.mixed`', async () => {
 
   expect(primaryRoute.multiple.number.$matched).toBe(false);
 
-  history.push('/multiple/abc123');
+  await history.push('/multiple/abc123');
 
   await nap();
 
@@ -266,7 +265,7 @@ test('should match `$group`', async () => {
 });
 
 test('should match parallel `account`, `friends` and `invite`', async () => {
-  history.push('/account');
+  await history.push('/account');
 
   await nap();
 
@@ -294,7 +293,7 @@ test('should match parallel `account`, `friends` and `invite`', async () => {
 });
 
 test('should match `friends.chat` then `friends.transfer`', async () => {
-  history.push('/account/123');
+  await history.push('/account/123');
 
   await nap();
 
@@ -325,7 +324,7 @@ test('should match `friends.chat` then `friends.transfer`', async () => {
 });
 
 test('should switch from `friends.call` to `groups`', async () => {
-  history.push('/account/123');
+  await history.push('/account/123');
 
   await nap();
 
@@ -343,7 +342,7 @@ test('should switch from `friends.call` to `groups`', async () => {
 });
 
 test('parallel whitelist should take effect', async () => {
-  history.push('/account?_sidebar=/friends/call&_popup=/invite');
+  await history.push('/account?_sidebar=/friends/call&_popup=/invite');
 
   await nap();
 
@@ -421,11 +420,11 @@ test('parallel whitelist should take effect', async () => {
 });
 
 test("should leave and visit group 'sidebar' and 'popup' again", async () => {
-  history.push('/account?_sidebar=/friends/call&_popup=/invite');
+  await history.push('/account?_sidebar=/friends/call&_popup=/invite');
 
   await nap();
 
-  primaryRoute.$push(undefined, {leaves: ['sidebar'], rest: true});
+  primaryRoute.$rest.$push(undefined, {leaves: ['sidebar']});
 
   await nap();
 
@@ -489,7 +488,10 @@ test("should leave parallel routes by 'leaves' options when push a new route", a
 });
 
 test('should leave all parallel routes', async () => {
-  primaryRoute.$push(undefined, {leaves: '*', rest: true});
+  router
+    .$scratch()
+    .$(primaryRoute.$rest)
+    .$push(undefined);
 
   await nap();
 
@@ -502,8 +504,9 @@ test('should build route with multiple matches', async () => {
   await nap();
 
   router
-    .$build(primaryRoute.account, {callback: 'foo'}, {rest: true})
-    .$and(popupRoute.invite)
+    .$scratch()
+    .$(primaryRoute.account.$rest, {callback: 'foo'})
+    .$(popupRoute.invite)
     .$push();
 
   await nap();

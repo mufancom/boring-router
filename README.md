@@ -29,16 +29,15 @@ yarn add boring-router-react
 
 ```tsx
 import {RouteMatch, Router} from 'boring-router';
-import {Link, Route} from 'boring-router-react';
+import {BrowserHistory, Link, Route} from 'boring-router-react';
 import {observer} from 'mobx-react';
-import {createBrowserHistory} from 'history';
 import React, {Component} from 'react';
 
-const history = createBrowserHistory();
+const history = new BrowserHistory();
 
 const router = new Router(history);
 
-const primaryRoute = router.route({
+const route = router.$route({
   account: true,
   about: true,
   notFound: {
@@ -51,13 +50,13 @@ class App extends Component {
   render() {
     return (
       <>
-        <Route match={router.account}>
+        <Route match={route.account}>
           Account page
           <hr />
-          <Link to={router.about}>About</Link>
+          <Link to={route.about}>About</Link>
         </Route>
-        <Route match={router.about}>About page</Route>
-        <Route match={router.notFound}>Not found</Route>
+        <Route match={route.about}>About page</Route>
+        <Route match={route.notFound}>Not found</Route>
       </>
     );
   }
@@ -73,7 +72,7 @@ class App extends Component {
   Basic usage.
 
   ```tsx
-  <Route match={router.account}>
+  <Route match={route.account}>
     <p>Account page</p>
   </Route>
   ```
@@ -83,7 +82,7 @@ class App extends Component {
   Match exact path.
 
   ```tsx
-  <Route match={router.account} exact>
+  <Route match={route.account} exact>
     <p>Exact account page</p>
   </Route>
   ```
@@ -93,14 +92,14 @@ class App extends Component {
   Boring Router's version of `/account/:id` alike parameter.
 
   ```tsx
-  <Link to={router.account.id} params={{id: '123'}}>
+  <Link to={route.account.id} params={{id: '123'}}>
     Account 123
   </Link>
   ```
 
   ```tsx
-  <Route match={router.account.id}>
-    <p>Account {router.account.id.$params.id} details page</p>
+  <Route match={route.account.id}>
+    <p>Account {route.account.id.$params.id} details page</p>
   </Route>
   ```
 
@@ -109,14 +108,14 @@ class App extends Component {
   Handle query string parameter.
 
   ```tsx
-  <Link to={router.account} params={{id: '123'}}>
+  <Link to={route.account} params={{id: '123'}}>
     Account 123
   </Link>
   ```
 
   ```tsx
-  <Route match={router.account}>
-    <p>Account {router.account.$params.id} details page</p>
+  <Route match={route.account}>
+    <p>Account {route.account.$params.id} details page</p>
   </Route>
   ```
 
@@ -125,7 +124,7 @@ class App extends Component {
   Redirect on match.
 
   ```tsx
-  <Redirect match={router.notFound} to={router.account} params={{id: '123'}} />
+  <Redirect match={route.notFound} to={route.account} params={{id: '123'}} />
   ```
 
 - [NavLink](react/examples/nav-link/main.tsx)
@@ -133,7 +132,7 @@ class App extends Component {
   Like `<Link>` but will add a class name if `to` matches.
 
   ```tsx
-  <NavLink to={router.account}>Account</NavLink>
+  <NavLink to={route.account}>Account</NavLink>
   ```
 
 - [Function as Child](react/examples/function-as-child/main.tsx)
@@ -141,7 +140,7 @@ class App extends Component {
   Use `<Route />` with a function child.
 
   ```tsx
-  <Route match={router.account}>
+  <Route match={route.account}>
     {match => <p>Account {match.$params.id} details page</p>}
   </Route>
   ```
@@ -151,7 +150,7 @@ class App extends Component {
   Use `<Route />` with a route component.
 
   ```tsx
-  <Route match={router.account} component={AccountPage} />
+  <Route match={route.account} component={AccountPage} />
   ```
 
   ```tsx
@@ -166,7 +165,7 @@ class App extends Component {
 
   ```tsx
   <Route
-    match={[router.account.signUp, router.account.resetPassword]}
+    match={[route.account.signUp, route.account.resetPassword]}
     component={AccountPage}
   />
   ```
@@ -176,8 +175,8 @@ class App extends Component {
   Match parallel routes for separate views.
 
   ```tsx
-  <Route match={router.account} component={AccountPage} />
-  <Route match={router.$.popup} component={PopupView} />
+  <Route match={primaryRoute.account} component={AccountPage} />
+  <Route match={popupRoute.popup} component={PopupView} />
   ```
 
 - [Hooks](react/examples/hooks/main.tsx)
@@ -185,8 +184,8 @@ class App extends Component {
   Add hooks to route match.
 
   ```tsx
-  router.account.$beforeEnter(() => {
-    router.about.$push();
+  route.account.$beforeEnter(() => {
+    route.about.$push();
   });
   ```
 
@@ -195,7 +194,7 @@ class App extends Component {
   Add service to route match.
 
   ```tsx
-  router.account.$service(match => new AccountRouteService(match));
+  route.account.$service(match => new AccountRouteService(match));
   ```
 
 ### Run an example
@@ -233,7 +232,7 @@ function schema<T extends RouteSchemaDict>(schema: T): T;
 
 ## Route match
 
-The value of expression like `router.account` in the usage example above is a `RouteMatch`, and it has the following reactive properties and methods:
+The value of expression like `route.account` in the usage example above is a `RouteMatch`, and it has the following reactive properties and methods:
 
 ```ts
 interface RouteMatch<TParamDict> {
@@ -310,7 +309,7 @@ Service is a combination of hooks and route match extension provider.
 Check out the following example:
 
 ```ts
-type AccountIdRouteMatch = typeof router.account.accountId;
+type AccountIdRouteMatch = typeof route.account.accountId;
 
 class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
   // Match the property `account` with `$extension.account`.
@@ -340,7 +339,7 @@ class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
 
 let router = new Router(history);
 
-let primaryRoute = router.route({
+let route = router.$route({
   accountId: {
     $match: RouteMatch.segment,
     // Define extension defaults with types
@@ -352,18 +351,18 @@ let primaryRoute = router.route({
 });
 
 // Method `$service` accepts an asynchronous function as well.
-router.accountId.$service(match => new AccountRouteService(match));
+route.accountId.$service(match => new AccountRouteService(match));
 
 // Access the extension:
-router.accountId.account;
-router.accountId.name;
+route.accountId.account;
+route.accountId.name;
 ```
 
 ## Parallel routes
 
 Sometimes when a page is separated into different views, we might want separate routes. For example, a dashboard may have "main content view", "side bar view" and an "overlay" at the same time. If we want to cooperate them all with routes, the parallel-routes feature could be useful.
 
-A parallel route behaves like a primary route most of the time, and can be accessed by `router.$.xxx`. For more information, check out [this example](react/examples/parallel-routes/main.tsx).
+A parallel route behaves like a primary route most of the time. For more information, check out [this example](react/examples/parallel-routes/main.tsx).
 
 ## License
 

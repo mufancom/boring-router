@@ -13,7 +13,6 @@ export interface LinkProps<TRouteMatch extends RouteMatch>
   params?: TRouteMatch extends RouteMatch<infer TParamDict>
     ? Partial<TParamDict> & EmptyObjectPatch
     : never;
-  preserveQuery?: boolean;
   replace?: boolean;
   toggle?: boolean;
   leave?: boolean;
@@ -32,7 +31,6 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
       className,
       to,
       params,
-      preserveQuery,
       replace,
       toggle,
       onMouseEnter,
@@ -53,12 +51,10 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     );
   }
 
-  @action
   private onMouseEnter = (): void => {
     this.updateHref();
   };
 
-  @action
   private onFocus = (): void => {
     this.updateHref();
   };
@@ -74,31 +70,25 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
 
     event.preventDefault();
 
-    let {
-      to,
-      params,
-      preserveQuery,
-      replace,
-      toggle = false,
-      leave,
-    } = this.props;
+    let {to, params, replace, toggle = false, leave} = this.props;
 
     if (leave === undefined) {
       leave = toggle && to.$matched;
     }
 
     if (replace) {
-      to.$replace(params, {preserveQuery, leave});
+      to.$replace(params, {leave});
     } else {
-      to.$push(params, {preserveQuery, leave});
+      to.$push(params, {leave});
     }
   };
 
+  @action
   private updateHref(): void {
-    let {to, params, preserveQuery} = this.props;
+    let {to, params} = this.props;
 
     try {
-      this.href = to.$ref(params, {preserveQuery});
+      this.href = to.$href(params);
     } catch (error) {
       this.href = 'javascript:;';
     }

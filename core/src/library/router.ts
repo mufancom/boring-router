@@ -1,19 +1,13 @@
 import hyphenate from 'hyphenate';
+import _ from 'lodash';
 import {observable, runInAction} from 'mobx';
 import {Dict, EmptyObjectPatch} from 'tslang';
 
+import {hasOwnProperty, parseRef} from './@utils';
+import {HistorySnapshot, IHistory, getActiveHistoryEntry} from './history';
+import {RouteBuilder} from './route-builder';
 import {
-  buildRef,
-  hasOwnProperty,
-  isLocationEqual,
-  isShallowlyEqual,
-  parsePath,
-  testPathPrefix,
-  then,
-} from './@utils';
-import {IHistory, Location} from './history';
-import {RouteBuilder, RouteBuilderBuildOptions} from './route-builder';
-import {
+  GeneralParamDict,
   GeneralQueryDict,
   NextRouteMatch,
   ROUTE_MATCH_START_ANCHOR_PATTERN,
@@ -192,12 +186,10 @@ export type RootRouteMatchType<
 
 export type RouterOnLeave = (path: string) => void;
 
-export type RouterOnChange = (from: Location | undefined, to: Location) => void;
+export type RouterOnNavigateComplete = () => void;
 
-export type RouterOnRouteComplete = () => void;
-
-export interface RouterOnRouteCompleteLocationState {
-  onCompleteListenerId: number;
+export interface RouterHistoryEntryData {
+  navigateCompleteListener?: RouterOnNavigateComplete;
 }
 
 export interface RouterOptions {
@@ -206,26 +198,9 @@ export interface RouterOptions {
    * transformation.
    */
   segmentMatcher?: SegmentMatcherCallback;
-  /** Default path on error. */
-  default?: string;
-  /** Prefix for path. */
-  prefix?: string;
-  /** Called when routing out current prefix. */
-  onLeave?: RouterOnLeave;
-  /** Called when route changes. */
-  onChange?: RouterOnChange;
 }
 
-export interface RouterRefOptions<TGroupName extends string> {
-  /**
-   * Parallel route group(s) to leave. Set to `'*'` to leave all.
-   */
-  leaves?: TGroupName | TGroupName[] | '*';
-  /**
-   * Whether to preserve values in current query string.
-   */
-  preserveQuery?: boolean;
-}
+export type RouterBuildTuple = [RouteMatchShared, GeneralParamDict];
 
 interface BuildRouteMatchOptions {
   match: string | symbol | RegExp;
@@ -235,30 +210,29 @@ interface BuildRouteMatchOptions {
   extension: object | undefined;
 }
 
+export interface RouterNavigateOptions {
+  /**
+   * The callback that will be called after a route completed (after all the hooks).
+   */
+  onComplete?: RouterOnNavigateComplete;
+}
+
+export type RouterHistory = IHistory<unknown, RouterHistoryEntryData>;
+
+type RouterHistorySnapshot = HistorySnapshot<unknown, RouterHistoryEntryData>;
+
 export class Router<TGroupName extends string = string> {
   /** @internal */
-  private _history: IHistory;
+  readonly _history: RouterHistory;
 
   /** @internal */
   private _segmentMatcher: SegmentMatcherCallback;
 
   /** @internal */
-  private _default: Location;
+  private _snapshot: RouterHistorySnapshot | undefined;
 
   /** @internal */
-  private _prefix: string;
-
-  /** @internal */
-  private _onLeave?: RouterOnLeave;
-
-  /** @internal */
-  private _onChange?: RouterOnChange;
-
-  /** @internal */
-  private _location: Location | undefined;
-
-  /** @internal */
-  private _nextLocation: Location | undefined;
+  private _nextSnapshot: RouterHistorySnapshot | undefined;
 
   /** @internal */
   private _source: RouteSource = observable({
@@ -281,31 +255,24 @@ export class Router<TGroupName extends string = string> {
   /** @internal */
   private _groupToRouteMatchMap = new Map<string | undefined, RouteMatch>();
 
-  /** @internal */
-  _onRouteCompleteListenerMap = new Map<number, RouterOnRouteComplete>();
-
-  constructor(
-    history: IHistory,
-    {
-      segmentMatcher,
-      default: defaultPath = '/',
-      prefix = '',
-      onLeave,
-      onChange,
-    }: RouterOptions = {},
-  ) {
+  constructor(history: RouterHistory, {segmentMatcher}: RouterOptions = {}) {
     this._history = history;
-    this._default = parsePath(defaultPath);
-    this._prefix = prefix;
-    this._onLeave = onLeave;
-    this._onChange = onChange;
 
     this._segmentMatcher = segmentMatcher || DEFAULT_SEGMENT_MATCHER_CALLBACK;
 
-    then(() => {
-      history.listen(this._onLocationChange);
-      this._onLocationChange(history.location);
-    });
+    history.listen(this._onHistoryChange);
+  }
+
+  get $current(): RouteBuilder<TGroupName> {
+    let {pathMap, queryDict} = this._source;
+
+    return new RouteBuilder(pathMap, queryDict, this);
+  }
+
+  get $next(): RouteBuilder<TGroupName> {
+    let {pathMap, queryDict} = this._matchingSource;
+
+    return new RouteBuilder(pathMap, queryDict, this);
   }
 
   /** @internal */
@@ -317,7 +284,7 @@ export class Router<TGroupName extends string = string> {
     );
   }
 
-  route<TPrimaryRouteSchemaDict extends RouteSchemaDict>(
+  $route<TPrimaryRouteSchemaDict extends RouteSchemaDict>(
     schema: TPrimaryRouteSchemaDict,
   ): RootRouteMatchType<
     TPrimaryRouteSchemaDict,
@@ -326,7 +293,7 @@ export class Router<TGroupName extends string = string> {
     undefined,
     TGroupName
   >;
-  route<
+  $route<
     TRouteSchemaDict extends RouteSchemaDict,
     TSpecificGroupName extends TGroupName
   >(
@@ -339,7 +306,7 @@ export class Router<TGroupName extends string = string> {
     TSpecificGroupName,
     TGroupName
   >;
-  route(
+  $route(
     groupOrSchema: TGroupName | RouteSchemaDict,
     schemaOrUndefined?: RouteSchemaDict,
   ): RouteMatch {
@@ -354,7 +321,7 @@ export class Router<TGroupName extends string = string> {
       schema = groupOrSchema;
     }
 
-    let routeMatch = this._buildRouteMatch(group, '', undefined, undefined, {
+    let [routeMatch] = this._buildRouteMatch(group, '', undefined, undefined, {
       match: ROUTE_MATCH_START_ANCHOR_PATTERN,
       exact: false,
       query: undefined,
@@ -367,83 +334,87 @@ export class Router<TGroupName extends string = string> {
     return routeMatch;
   }
 
-  /**
-   * Generates a string reference that can be used for history navigation.
-   */
-  $ref({
-    leaves = [],
-    preserveQuery = true,
-  }: RouterRefOptions<TGroupName> = {}): string {
-    let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
-    let pathMap: Map<string | undefined, string>;
-
-    if (leaves === '*') {
-      pathMap = new Map([[undefined, sourcePathMap.get(undefined)!]]);
-    } else {
-      if (typeof leaves === 'string') {
-        leaves = [leaves];
-      }
-
-      pathMap = new Map(sourcePathMap);
-
-      for (let group of leaves) {
-        pathMap.delete(group);
-      }
-    }
-
-    return buildRef(this._prefix, pathMap, {
-      ...(preserveQuery ? (sourceQueryDict as Dict<string>) : undefined),
-    });
+  $ref(): string {
+    return this.$current.$ref();
   }
 
-  $build<TRouteMatchShared extends RouteMatchShared>(
+  $href(): string {
+    return this.$current.$href();
+  }
+
+  $<TRouteMatchShared extends RouteMatchShared>(
     match: TRouteMatchShared,
     params?: Partial<RouteMatchSharedToParamDict<TRouteMatchShared>> &
       EmptyObjectPatch,
-    options?: RouteBuilderBuildOptions,
+  ): RouteBuilder<TGroupName>;
+  $(
+    match: RouteMatchShared,
+    params: GeneralParamDict = {},
   ): RouteBuilder<TGroupName> {
-    return new RouteBuilder(match._prefix, match._source, this._history).$and(
-      match,
-      params,
-      options,
+    let {pathMap, queryDict} = this._source;
+
+    return new RouteBuilder(pathMap, queryDict, this, [
+      {
+        match,
+        params,
+      },
+    ]);
+  }
+
+  $scratch(tuples: RouterBuildTuple[] = []): RouteBuilder<TGroupName> {
+    return new RouteBuilder(
+      new Map(),
+      {},
+      this,
+      tuples.map(([match, params]) => {
+        return {
+          match,
+          params,
+        };
+      }),
     );
   }
 
   /** @internal */
-  private _onLocationChange = (location: Location): void => {
-    this._nextLocation = location;
+  _push(ref: string, {onComplete}: RouterNavigateOptions = {}): void {
+    this._history
+      .push(ref, {navigateCompleteListener: onComplete})
+      .catch(console.error);
+  }
+
+  /** @internal */
+  _replace(ref: string, {onComplete}: RouterNavigateOptions = {}): void {
+    this._history
+      .push(ref, {navigateCompleteListener: onComplete})
+      .catch(console.error);
+  }
+
+  /** @internal */
+  private _onHistoryChange = (snapshot: RouterHistorySnapshot): void => {
+    this._nextSnapshot = snapshot;
 
     this._changing = this._changing
-      .then(() => this._asyncOnLocationChange(location))
+      .then(() => this._asyncOnHistoryChange(snapshot))
       .catch(console.error);
   };
 
   /** @internal */
-  private _asyncOnLocationChange = async (
-    nextLocation: Location,
+  private _asyncOnHistoryChange = async (
+    nextSnapshot: RouterHistorySnapshot,
   ): Promise<void> => {
-    let onCompleteListener: RouterOnRouteComplete | undefined;
-
-    let state = nextLocation.state;
-
-    if (isRouterOnRouteCompleteLocationState(state)) {
-      let onCompleteListenerId = state.onCompleteListenerId;
-
-      onCompleteListener = this._onRouteCompleteListenerMap.get(
-        onCompleteListenerId,
-      );
-      this._onRouteCompleteListenerMap.delete(onCompleteListenerId);
-    }
-
-    if (this._isNextLocationOutDated(nextLocation)) {
+    if (this._isNextSnapshotOutDated(nextSnapshot)) {
       return;
     }
 
-    let {pathname, search} = nextLocation;
+    let {ref, data} = getActiveHistoryEntry(nextSnapshot);
 
-    let location = this._location;
+    let navigateCompleteListener = data && data.navigateCompleteListener;
 
-    if (location && isLocationEqual(location, nextLocation)) {
+    let {pathname, search} = parseRef(ref);
+
+    let snapshot = this._snapshot;
+
+    if (snapshot && _.isEqual(snapshot, nextSnapshot)) {
       return;
     }
 
@@ -457,24 +428,9 @@ export class Router<TGroupName extends string = string> {
       {} as GeneralQueryDict,
     );
 
-    let prefix = this._prefix;
-
     let pathMap = new Map<string | undefined, string>();
 
-    // Process primary route path
-    if (!testPathPrefix(pathname, prefix)) {
-      let onLeave = this._onLeave;
-
-      if (onLeave) {
-        onLeave(pathname);
-      }
-
-      return;
-    }
-
-    let pathWithoutPrefix = pathname.slice(prefix.length) || '/';
-
-    pathMap.set(undefined, pathWithoutPrefix);
+    pathMap.set(undefined, pathname || '/');
 
     // Extract group route paths in query
     for (let group of this._groupSet) {
@@ -565,7 +521,7 @@ export class Router<TGroupName extends string = string> {
     });
 
     await this._update(
-      nextLocation,
+      nextSnapshot,
       undefined,
       groupToMatchToMatchEntryMapMap.get(undefined),
     );
@@ -577,25 +533,21 @@ export class Router<TGroupName extends string = string> {
     await Promise.all(
       Array.from(groupSet).map(group =>
         this._update(
-          nextLocation,
+          nextSnapshot,
           group,
           groupToMatchToMatchEntryMapMap.get(group),
         ),
       ),
     );
 
-    if (this._onChange) {
-      this._onChange(location, nextLocation);
-    }
-
-    if (onCompleteListener) {
-      onCompleteListener();
+    if (navigateCompleteListener) {
+      navigateCompleteListener();
     }
   };
 
   /** @internal */
   private async _update(
-    nextLocation: Location,
+    nextSnapshot: RouterHistorySnapshot,
     group: string | undefined,
     matchToMatchEntryMap: Map<RouteMatch, RouteMatchEntry> | undefined,
   ): Promise<void> {
@@ -621,19 +573,19 @@ export class Router<TGroupName extends string = string> {
     }
 
     let previousMatchSet = new Set(previousMatchToMatchEntryMap.keys());
-    let nextMatchSet = new Set(matchToMatchEntryMap.keys());
+    let matchSet = new Set(matchToMatchEntryMap.keys());
 
     let leavingMatchSet = new Set(previousMatchSet);
 
-    for (let match of nextMatchSet) {
+    for (let match of matchSet) {
       leavingMatchSet.delete(match);
     }
 
     let reversedLeavingMatches = Array.from(leavingMatchSet).reverse();
 
-    let enteringAndUpdatingMatchSet = new Set(nextMatchSet);
+    let enteringAndUpdatingMatchSet = new Set(matchSet);
 
-    let triggerByDescendanceMatchSet = new Set<RouteMatch>();
+    let descendantUpdatingMatchSet = new Set<RouteMatch>();
 
     for (let match of previousMatchSet) {
       if (!enteringAndUpdatingMatchSet.has(match)) {
@@ -643,13 +595,13 @@ export class Router<TGroupName extends string = string> {
       let nextMatch = match.$next;
 
       if (
-        isShallowlyEqual(match._pathSegments, nextMatch._pathSegments) &&
+        _.isEqual(match._pathSegments, nextMatch._pathSegments) &&
         match.$exact === nextMatch.$exact
       ) {
         if (match._rest === nextMatch._rest) {
           enteringAndUpdatingMatchSet.delete(match);
         } else {
-          triggerByDescendanceMatchSet.add(match);
+          descendantUpdatingMatchSet.add(match);
         }
       }
     }
@@ -657,7 +609,7 @@ export class Router<TGroupName extends string = string> {
     for (let match of reversedLeavingMatches) {
       let result = await match._beforeLeave();
 
-      if (this._isNextLocationOutDated(nextLocation)) {
+      if (this._isNextSnapshotOutDated(nextSnapshot)) {
         return;
       }
 
@@ -671,10 +623,10 @@ export class Router<TGroupName extends string = string> {
       let update = previousMatchSet.has(match);
 
       let result = update
-        ? await match._beforeUpdate(triggerByDescendanceMatchSet.has(match))
+        ? await match._beforeUpdate(descendantUpdatingMatchSet.has(match))
         : await match._beforeEnter();
 
-      if (this._isNextLocationOutDated(nextLocation)) {
+      if (this._isNextSnapshotOutDated(nextSnapshot)) {
         return;
       }
 
@@ -686,7 +638,7 @@ export class Router<TGroupName extends string = string> {
 
     // Update
 
-    this._location = nextLocation;
+    this._snapshot = nextSnapshot;
 
     runInAction(() => {
       let source = this._source;
@@ -719,7 +671,7 @@ export class Router<TGroupName extends string = string> {
       let update = previousMatchSet.has(match);
 
       if (update) {
-        await match._afterUpdate(triggerByDescendanceMatchSet.has(match));
+        await match._afterUpdate(descendantUpdatingMatchSet.has(match));
       } else {
         await match._afterEnter();
       }
@@ -727,13 +679,19 @@ export class Router<TGroupName extends string = string> {
   }
 
   /** @internal */
-  private _isNextLocationOutDated(location: Location): boolean {
-    return location !== this._nextLocation;
+  private _isNextSnapshotOutDated(snapshot: RouterHistorySnapshot): boolean {
+    return this._nextSnapshot !== snapshot;
   }
 
   /** @internal */
   private _revert(): void {
-    this._history.replace(this._location || this._default);
+    let snapshot = this._snapshot;
+
+    if (!snapshot) {
+      throw new Error('Cannot revert the very first snapshot');
+    }
+
+    this._history.restore(snapshot).catch(console.error);
   }
 
   /** @internal */
@@ -787,39 +745,45 @@ export class Router<TGroupName extends string = string> {
     schemaDict: RouteSchemaDict,
     parent: RouteMatch,
     matchingParent: NextRouteMatch,
-  ): RouteMatch[] {
-    return Object.entries(schemaDict).map(([routeName, schema]) => {
-      if (typeof schema === 'boolean') {
-        schema = {};
-      }
+  ): [RouteMatch[], NextRouteMatch[]] {
+    return Object.entries(schemaDict).reduce<[RouteMatch[], NextRouteMatch[]]>(
+      ([routeMatches, nextRouteMatches], [routeName, schema]) => {
+        if (typeof schema === 'boolean') {
+          schema = {};
+        }
 
-      let {
-        $match: match = this._segmentMatcher(routeName),
-        $exact: exact = false,
-        $query: query,
-        $children: children,
-        $extension: extension,
-      } = schema;
+        let {
+          $match: match = this._segmentMatcher(routeName),
+          $exact: exact = false,
+          $query: query,
+          $children: children,
+          $extension: extension,
+        } = schema;
 
-      let routeMatch = this._buildRouteMatch(
-        group,
-        routeName,
-        parent,
-        matchingParent,
-        {
-          match,
-          exact,
-          query,
-          children,
-          extension,
-        },
-      );
+        let [routeMatch, nextRouteMatch] = this._buildRouteMatch(
+          group,
+          routeName,
+          parent,
+          matchingParent,
+          {
+            match,
+            exact,
+            query,
+            children,
+            extension,
+          },
+        );
 
-      (parent as any)[routeName] = routeMatch;
-      (matchingParent as any)[routeName] = routeMatch.$next;
+        (parent as any)[routeName] = routeMatch;
+        (matchingParent as any)[routeName] = nextRouteMatch;
 
-      return routeMatch;
-    });
+        return [
+          [...routeMatches, routeMatch],
+          [...nextRouteMatches, nextRouteMatch],
+        ];
+      },
+      [[], []],
+    );
   }
 
   /** @internal */
@@ -829,11 +793,10 @@ export class Router<TGroupName extends string = string> {
     parent: RouteMatch | undefined,
     matchingParent: NextRouteMatch | undefined,
     {match, exact, query, children, extension}: BuildRouteMatchOptions,
-  ): RouteMatch {
+  ): [RouteMatch, NextRouteMatch] {
     let source = this._source;
     let matchingSource = this._matchingSource;
     let history = this._history;
-    let prefix = this._prefix;
 
     let options: RouteMatchOptions = {
       match,
@@ -844,7 +807,6 @@ export class Router<TGroupName extends string = string> {
 
     let routeMatch = new RouteMatch(
       routeName,
-      prefix,
       this,
       source,
       parent,
@@ -855,7 +817,6 @@ export class Router<TGroupName extends string = string> {
 
     let nextRouteMatch = new NextRouteMatch(
       routeName,
-      prefix,
       this,
       matchingSource,
       matchingParent,
@@ -867,20 +828,17 @@ export class Router<TGroupName extends string = string> {
     (routeMatch as any).$next = nextRouteMatch;
 
     if (children) {
-      routeMatch._children = this._buildRouteMatches(
+      let [childRouteMatches, childNextRouteMatches] = this._buildRouteMatches(
         group,
         children,
         routeMatch,
         nextRouteMatch,
       );
+
+      routeMatch._children = childRouteMatches;
+      nextRouteMatch._children = childNextRouteMatches;
     }
 
-    return routeMatch;
+    return [routeMatch, nextRouteMatch];
   }
-}
-
-function isRouterOnRouteCompleteLocationState(
-  object: any,
-): object is RouterOnRouteCompleteLocationState {
-  return object && typeof object.onCompleteListenerId === 'number';
 }

@@ -1,7 +1,6 @@
-import {createMemoryHistory} from 'history';
 import {computed, configure, observable} from 'mobx';
 
-import {IRouteService, RouteMatch, Router} from '../bld/library';
+import {IRouteService, MemoryHistory, RouteMatch, Router} from '../bld/library';
 
 import {nap} from './@utils';
 
@@ -9,7 +8,7 @@ configure({
   enforceActions: 'observed',
 });
 
-let history = createMemoryHistory();
+let history = new MemoryHistory();
 
 class Account {
   constructor(readonly id: string) {}
@@ -17,7 +16,7 @@ class Account {
 
 let router = new Router(history);
 
-let primaryRoute = router.route({
+let primaryRoute = router.$route({
   default: {
     $match: '',
   },
@@ -93,11 +92,11 @@ test('should navigate from `default` to `account` and triggers `$beforeEnter`', 
   let id = 'abc';
   let path = `/account/${encodeURIComponent(id)}`;
 
-  history.push(path);
+  await history.push(path);
 
   await nap();
 
-  expect(history.location.pathname).toBe(path);
+  expect(await router.$ref()).toBe(path);
   expect(primaryRoute.account.accountId.account.id).toBe(id);
   expect(primaryRoute.account.accountId.name).toBe(`[${id}]`);
 
@@ -112,11 +111,11 @@ test('should navigate from `default` to `account` and triggers `$beforeUpdate`',
   let id = 'def';
   let path = `/account/${encodeURIComponent(id)}`;
 
-  history.push(path);
+  await history.push(path);
 
   await nap();
 
-  expect(history.location.pathname).toBe(path);
+  expect(await router.$ref()).toBe(path);
   expect(primaryRoute.account.accountId.account.id).toBe(id);
   expect(primaryRoute.account.accountId.name).toBe(`[${id}]`);
 
@@ -130,7 +129,7 @@ test('should navigate from `account` to `default`', async () => {
 
   await nap();
 
-  expect(history.location.pathname).toBe('/');
+  expect(await router.$ref()).toBe('/');
   expect(primaryRoute.account.accountId.account).toBeUndefined();
   expect(primaryRoute.account.accountId.name).toBeUndefined();
 

@@ -1,7 +1,6 @@
-import {createMemoryHistory} from 'history';
 import {configure} from 'mobx';
 
-import {Router} from '../bld/library';
+import {MemoryHistory, Router} from '../bld/library';
 
 import {nap} from './@utils';
 
@@ -9,11 +8,11 @@ configure({
   enforceActions: 'observed',
 });
 
-let history = createMemoryHistory();
+let history = new MemoryHistory();
 
 let router = new Router(history);
 
-let primaryRoute = router.route({
+let primaryRoute = router.$route({
   default: {
     $match: '',
   },
@@ -70,11 +69,11 @@ let removalCallback = primaryRoute.about.$afterEnter(canceledAboutAfterEnter);
 removalCallback();
 
 test('should navigate from `redirect` to `about`', async () => {
-  history.push('/redirect');
+  await history.push('/redirect');
 
   await nap();
 
-  expect(history.location.pathname).toBe('/about');
+  expect(router.$ref()).toBe('/about');
   expect(primaryRoute.about.$matched).toBe(true);
   expect(primaryRoute.redirect.$matched).toBe(false);
 
@@ -86,11 +85,11 @@ test('should navigate from `redirect` to `about`', async () => {
 });
 
 test('should revert navigation from `about` to `revert` by `revert.$beforeEnter`', async () => {
-  history.push('/revert');
+  await history.push('/revert');
 
   await nap();
 
-  expect(history.location.pathname).toBe('/about');
+  expect(router.$ref()).toBe('/about');
   expect(primaryRoute.about.$matched).toBe(true);
   expect(primaryRoute.revert.$matched).toBe(false);
 
@@ -104,14 +103,14 @@ test('should revert navigation from `about` to `revert` by `revert.$beforeEnter`
 });
 
 test('should trigger `parent.$beforeUpdate` on `$exact` change', async () => {
-  history.push('/parent/nested');
+  await history.push('/parent/nested');
 
   await nap();
 
   expect(parentBeforeEnter).toHaveBeenCalled();
   expect(parentBeforeUpdate).not.toHaveBeenCalled();
 
-  history.push('/parent');
+  await history.push('/parent');
 
   await nap();
 
@@ -119,26 +118,26 @@ test('should trigger `parent.$beforeUpdate` on `$exact` change', async () => {
 });
 
 test('should not call hooks that have been canceled.', async () => {
-  history.push('/about');
+  await history.push('/about');
 
   await nap();
 
-  expect(history.location.pathname).toBe('/about');
+  expect(router.$ref()).toBe('/about');
   expect(primaryRoute.about.$matched).toBe(true);
 
   expect(canceledAboutAfterEnter).not.toHaveBeenCalled();
 });
 
 test('should revert navigation from `persist` to `about` by `persist.$beforeLeave`', async () => {
-  history.push('/persist');
+  await history.push('/persist');
 
   await nap();
 
-  history.push('/about');
+  await history.push('/about');
 
   await nap();
 
-  expect(history.location.pathname).toBe('/persist');
+  expect(router.$ref()).toBe('/persist');
   expect(primaryRoute.about.$matched).toBe(false);
   expect(primaryRoute.persist.$matched).toBe(true);
 
