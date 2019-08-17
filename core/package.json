@@ -1,6 +1,6 @@
 {
   "name": "boring-router",
-  "version": "0.3.0-alpha.34",
+  "version": "0.3.0-alpha.35",
   "description": "A light-weight, type-safe, yet reactive router service using MobX.",
   "repository": {
     "type": "git",
@@ -27,14 +27,14 @@
   },
   "devDependencies": {
     "@types/history": "^4.7.2",
-    "@types/lodash": "^4.14.136",
     "@types/jest": "^24.0.13",
+    "@types/lodash": "^4.14.136",
     "jest": "^24.8.0",
     "ts-jest": "^24.0.2"
   },
   "dependencies": {
-    "lodash": "^4.17.15",
     "hyphenate": "^0.2.4",
+    "lodash": "^4.17.15",
     "tslang": "^0.1.15"
   },
   "gitHead": "967f6cb251a3bc95ab26ac19cc975b452ce411a4"
