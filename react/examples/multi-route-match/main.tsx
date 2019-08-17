@@ -1,16 +1,20 @@
 import {Router} from 'boring-router';
-import {createBrowserHistory} from 'history';
 import {observer} from 'mobx-react';
 import React, {Component, ReactNode} from 'react';
 import ReactDOM from 'react-dom';
 
-import {Link, Route, RouteComponentProps} from '../../bld/library';
+import {
+  BrowserHistory,
+  Link,
+  Route,
+  RouteComponentProps,
+} from '../../bld/library';
 
-const history = createBrowserHistory();
+const history = new BrowserHistory();
 
 const router = new Router(history);
 
-const primaryRoute = router.route({
+const route = router.$route({
   default: {
     $match: '',
   },
@@ -23,10 +27,10 @@ const primaryRoute = router.route({
   },
 });
 
-export type RouterType = typeof primaryRoute;
+export type RouteType = typeof route;
 
 export type AccountPageProps = RouteComponentProps<
-  RouterType['account']['signUp' | 'resetPassword']
+  RouteType['account']['signUp' | 'resetPassword']
 >;
 
 export class AccountPage extends Component<AccountPageProps> {
@@ -34,12 +38,12 @@ export class AccountPage extends Component<AccountPageProps> {
     return (
       <>
         <p>Account page</p>
-        <Link to={primaryRoute.default}>Home</Link>
+        <Link to={route.default}>Home</Link>
         <hr />
-        <Route match={primaryRoute.account.signUp}>
+        <Route match={route.account.signUp}>
           <p>Sign up</p>
         </Route>
-        <Route match={primaryRoute.account.resetPassword}>
+        <Route match={route.account.resetPassword}>
           <p>Reset password</p>
         </Route>
       </>
@@ -53,28 +57,25 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={primaryRoute.default}>
+        <Route match={route.default}>
           <p>Home page</p>
           <div>
-            <Link to={primaryRoute.account.signUp}>Sign up</Link>
+            <Link to={route.account.signUp}>Sign up</Link>
           </div>
           <div>
-            <Link to={primaryRoute.account.resetPassword}>Reset password</Link>
+            <Link to={route.account.resetPassword}>Reset password</Link>
           </div>
           <div>
-            <Link to={primaryRoute.account.settings}>Settings</Link>
+            <Link to={route.account.settings}>Settings</Link>
           </div>
         </Route>
         <Route
-          match={[
-            primaryRoute.account.signUp,
-            primaryRoute.account.resetPassword,
-          ]}
+          match={[route.account.signUp, route.account.resetPassword]}
           component={AccountPage}
         />
-        <Route match={primaryRoute.account.settings}>
+        <Route match={route.account.settings}>
           <p>Account settings</p>
-          <Link to={primaryRoute.default}>Home</Link>
+          <Link to={route.default}>Home</Link>
         </Route>
       </>
     );

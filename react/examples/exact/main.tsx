@@ -1,16 +1,15 @@
 import {Router} from 'boring-router';
-import {createBrowserHistory} from 'history';
 import {observer} from 'mobx-react';
 import React, {Component, ReactNode} from 'react';
 import ReactDOM from 'react-dom';
 
-import {Link, Route} from '../../bld/library';
+import {BrowserHistory, Link, Route} from '../../bld/library';
 
-const history = createBrowserHistory();
+const history = new BrowserHistory();
 
 const router = new Router(history);
 
-const primaryRoute = router.route({
+const route = router.$route({
   default: {
     $match: '',
   },
@@ -28,23 +27,23 @@ export class App extends Component {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={primaryRoute.default}>
+        <Route match={route.default}>
           <p>Home page</p>
           <div>
-            <Link to={primaryRoute.account}>Account</Link>
+            <Link to={route.account}>Account</Link>
           </div>
         </Route>
-        <Route match={primaryRoute.account}>
+        <Route match={route.account}>
           <p>Account page</p>
-          <Link to={primaryRoute.default}>Home</Link>
+          <Link to={route.default}>Home</Link>
           <hr />
-          <Route match={primaryRoute.account} exact>
+          <Route match={route.account} exact>
             <p>Exact account page</p>
-            <Link to={primaryRoute.account.details}>Account details</Link>
+            <Link to={route.account.details}>Account details</Link>
           </Route>
-          <Route match={primaryRoute.account.details}>
+          <Route match={route.account.details}>
             <p>Account details page</p>
-            <Link to={primaryRoute.account}>Account</Link>
+            <Link to={route.account}>Account</Link>
           </Route>
         </Route>
       </>

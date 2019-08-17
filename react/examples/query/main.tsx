@@ -1,16 +1,15 @@
 import {Router} from 'boring-router';
-import {createBrowserHistory} from 'history';
 import {observer} from 'mobx-react';
 import React, {Component, ReactNode} from 'react';
 import ReactDOM from 'react-dom';
 
-import {Link, Route} from '../../bld/library';
+import {BrowserHistory, Link, Route} from '../../bld/library';
 
-const history = createBrowserHistory();
+const history = new BrowserHistory();
 
 const router = new Router(history);
 
-const primaryRoute = router.route({
+const primaryRoute = router.$route({
   default: {
     $match: '',
   },

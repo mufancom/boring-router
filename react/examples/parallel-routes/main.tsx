@@ -1,16 +1,15 @@
 import {RouteMatch, Router} from 'boring-router';
-import {createBrowserHistory} from 'history';
 import {observer} from 'mobx-react';
 import React, {Component, ReactNode} from 'react';
 import ReactDOM from 'react-dom';
 
-import {Link, Route} from '../../bld/library';
+import {BrowserHistory, Link, Route} from '../../bld/library';
 
-const history = createBrowserHistory();
+const history = new BrowserHistory();
 
 const router = new Router<'popup' | 'sidebar'>(history);
 
-const primaryRoute = router.route({
+const primaryRoute = router.$route({
   default: {
     $match: '',
   },
@@ -27,7 +26,7 @@ const primaryRoute = router.route({
   },
 });
 
-const popupRoute = router.route('popup', {
+const popupRoute = router.$route('popup', {
   account: {
     $exact: true,
     $children: {
@@ -38,7 +37,7 @@ const popupRoute = router.route('popup', {
   profile: true,
 });
 
-const sidebarRoute = router.route('sidebar', {
+const sidebarRoute = router.$route('sidebar', {
   cart: true,
 });
 

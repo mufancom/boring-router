@@ -1,4 +1,5 @@
 import {IHistory} from '../history';
+import {RouteBuilder} from '../route-builder';
 import {Router} from '../router';
 
 import {RouteMatch, RouteMatchEntry, RouteSource} from './route-match';
@@ -20,7 +21,6 @@ export class NextRouteMatch<
 
   constructor(
     name: string,
-    prefix: string,
     router: Router,
     source: RouteSource,
     parent: NextRouteMatch<TParamDict> | undefined,
@@ -28,7 +28,7 @@ export class NextRouteMatch<
     history: IHistory,
     options: RouteMatchSharedOptions,
   ) {
-    super(name, prefix, router, source, parent, history, options);
+    super(name, router, source, parent, history, options);
 
     this._origin = origin;
   }
@@ -36,5 +36,10 @@ export class NextRouteMatch<
   /** @internal */
   _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined {
     return this._origin._getMatchEntry(source);
+  }
+
+  /** @internal */
+  protected _getBuilder(): RouteBuilder {
+    return this._router.$next;
   }
 }

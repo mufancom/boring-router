@@ -1,16 +1,15 @@
 import {Router} from 'boring-router';
-import {createBrowserHistory} from 'history';
 import {observer} from 'mobx-react';
 import React, {Component, ReactNode} from 'react';
 import ReactDOM from 'react-dom';
 
-import {Link, Route} from '../../bld/library';
+import {BrowserHistory, Link, Route} from '../../bld/library';
 
-const history = createBrowserHistory();
+const history = new BrowserHistory();
 
 const router = new Router(history);
 
-const primaryRoute = router.route({
+const route = router.$route({
   default: {
     $match: '',
   },
@@ -21,25 +20,23 @@ const primaryRoute = router.route({
   },
 });
 
-export type RouterType = typeof primaryRoute;
-
 @observer
 export class App extends Component {
   render(): ReactNode {
     return (
       <>
         <h1>Boring Router</h1>
-        <Route match={primaryRoute.default}>
+        <Route match={route.default}>
           <p>Home page</p>
-          <Link to={primaryRoute.account} params={{id: '123'}}>
+          <Link to={route.account} params={{id: '123'}}>
             Account 123
           </Link>
         </Route>
-        <Route match={primaryRoute.account}>
+        <Route match={route.account}>
           {match => (
             <>
               <p>Account {match.$params.id} page</p>
-              <Link to={primaryRoute.default}>Home</Link>
+              <Link to={route.default}>Home</Link>
             </>
           )}
         </Route>

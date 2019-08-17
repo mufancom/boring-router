@@ -1,13 +1,9 @@
 import {computed} from 'mobx';
 import {Dict, EmptyObjectPatch} from 'tslang';
 
-import {buildRef, getNextId} from '../@utils';
 import {IHistory} from '../history';
-import {
-  Router,
-  RouterOnRouteComplete,
-  RouterOnRouteCompleteLocationState,
-} from '../router';
+import {RouteBuilder} from '../route-builder';
+import {Router, RouterNavigateOptions} from '../router';
 
 import {RouteMatchEntry, RouteSource} from './route-match';
 
@@ -23,7 +19,7 @@ export type RouteMatchSharedToParamDict<
   ? TParamDict
   : never;
 
-export interface RouterMatchRefOptions<TGroupName extends string> {
+export interface RouteMatchRefOptions<TGroupName extends string> {
   /**
    * Whether to leave this match's group.
    */
@@ -31,21 +27,12 @@ export interface RouterMatchRefOptions<TGroupName extends string> {
   /**
    * Parallel route groups to leave.
    */
-  leaves?: TGroupName[] | '*';
-  /**
-   * Whether to preserve rest path of current match, defaults to `false`.
-   */
-  rest?: boolean;
-  /**
-   * Whether to preserve query string that matches the target ref, defaults to
-   * `true`.
-   */
-  preserveQuery?: boolean;
-  /**
-   * The callback that will be called after a route completed (after all the hooks).
-   */
-  onComplete?: RouterOnRouteComplete;
+  leaves?: TGroupName | TGroupName[];
 }
+
+export interface RouteMatchNavigateOptions<TGroupName extends string>
+  extends RouteMatchRefOptions<TGroupName>,
+    RouterNavigateOptions {}
 
 export interface RouteMatchSharedOptions {
   match: string | symbol | RegExp;
@@ -75,13 +62,13 @@ export abstract class RouteMatchShared<
   readonly $parent: RouteMatchShared | undefined;
 
   /** @internal */
-  readonly _prefix: string;
-
-  /** @internal */
   readonly _source: RouteSource;
 
   /** @internal */
   readonly _queryKeySet: Set<string>;
+
+  /** @internal */
+  _children: this[] | undefined;
 
   /** @internal */
   protected _history: IHistory;
@@ -94,7 +81,6 @@ export abstract class RouteMatchShared<
 
   constructor(
     name: string,
-    prefix: string,
     router: Router,
     source: RouteSource,
     parent: RouteMatchShared | undefined,
@@ -104,7 +90,6 @@ export abstract class RouteMatchShared<
     this.$name = name;
     this.$group = group as TSpecificGroupName;
     this.$parent = parent;
-    this._prefix = prefix;
     this._router = router;
     this._source = source;
     this._history = history;
@@ -147,6 +132,17 @@ export abstract class RouteMatchShared<
    */
   get $matched(): boolean {
     return !!this._matchEntry;
+  }
+
+  /**
+   * Get the deepest matching descendant.
+   */
+  get $rest(): this {
+    let children = this._children;
+
+    let matchingChild = children && children.find(match => match.$matched);
+
+    return matchingChild ? matchingChild.$rest : this;
   }
 
   /** @internal */
@@ -235,98 +231,29 @@ export abstract class RouteMatchShared<
 
   /**
    * Generates a string reference that can be used for history navigation.
+   *
    * @param params A dictionary of the combination of query string and
    * segments.
    */
   $ref(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouterMatchRefOptions<TGroupName>,
-  ): string;
-  $ref(
-    params: Partial<TParamDict> & EmptyObjectPatch = {},
-    {
-      leave = false,
-      rest = false,
-      preserveQuery = true,
-      leaves = [],
-    }: RouterMatchRefOptions<TGroupName> = {},
+    options?: RouteMatchRefOptions<TGroupName>,
   ): string {
-    let group = this.$group;
-    let primary = group === undefined;
+    return this._build(params, options).$ref();
+  }
 
-    let restParamKeySet = new Set(Object.keys(params));
-    let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this._source;
-
-    let pathMap = new Map(sourcePathMap);
-
-    if (Array.isArray(leaves)) {
-      for (let item of leaves) {
-        pathMap.delete(item);
-      }
-    } else if (leaves === '*') {
-      pathMap = new Map([[undefined, sourcePathMap.get(undefined)!]]);
-    }
-
-    if (leave) {
-      if (primary) {
-        throw new Error('Cannot leave the primary route');
-      }
-
-      pathMap.delete(group);
-    } else {
-      let segmentDict = this._pathSegments;
-
-      let path = Object.entries(segmentDict)
-        .map(([key, defaultSegment]) => {
-          restParamKeySet.delete(key);
-
-          let param = params[key];
-          let segment = typeof param === 'string' ? param : defaultSegment;
-
-          if (typeof segment !== 'string') {
-            throw new Error(`Parameter "${key}" is required`);
-          }
-
-          return `/${segment}`;
-        })
-        .join('');
-
-      if (rest) {
-        path += this._rest;
-      }
-
-      pathMap.set(group, path);
-    }
-
-    let preservedQueryDict: GeneralQueryDict = {};
-
-    if (primary) {
-      preservedQueryDict = {};
-
-      let queryKeySet = this._queryKeySet;
-
-      for (let [key, value] of Object.entries(sourceQueryDict)) {
-        if (queryKeySet.has(key)) {
-          preservedQueryDict[key] = value;
-        }
-      }
-
-      for (let key of restParamKeySet) {
-        if (!queryKeySet.has(key)) {
-          throw new Error(
-            `Parameter "${key}" is defined as neither segment nor query`,
-          );
-        }
-
-        preservedQueryDict[key] = params[key];
-      }
-    } else {
-      preservedQueryDict = sourceQueryDict;
-    }
-
-    let queryDict = preserveQuery ? preservedQueryDict : {};
-
-    return buildRef(this._prefix, pathMap, queryDict);
+  /**
+   * Generates a string reference that can be used for displaying and
+   * navigating by the browser.
+   *
+   * @param params A dictionary of the combination of query string and
+   * segments.
+   */
+  $href(
+    params?: Partial<TParamDict> & EmptyObjectPatch,
+    options?: RouteMatchRefOptions<TGroupName>,
+  ): string {
+    return this._build(params, options).$href();
   }
 
   /**
@@ -334,12 +261,13 @@ export abstract class RouteMatchShared<
    */
   $push(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouterMatchRefOptions<TGroupName>,
+    {onComplete, ...options}: RouteMatchNavigateOptions<TGroupName> = {},
   ): void {
     let ref = this.$ref(params, options);
-    let state = this._generateState(options);
 
-    this._history.push(ref, state);
+    this._router._push(ref, {
+      onComplete,
+    });
   }
 
   /**
@@ -347,37 +275,42 @@ export abstract class RouteMatchShared<
    */
   $replace(
     params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouterMatchRefOptions<TGroupName>,
+    {onComplete, ...options}: RouteMatchNavigateOptions<TGroupName> = {},
   ): void {
     let ref = this.$ref(params, options);
-    let state = this._generateState(options);
 
-    this._history.replace(ref, state);
+    this._router._replace(ref, {
+      onComplete,
+    });
   }
 
   /** @internal */
-  protected abstract _getMatchEntry(
-    source: RouteSource,
-  ): RouteMatchEntry | undefined;
+  abstract _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined;
 
-  private _generateState({
-    onComplete: onCompleteListener,
-  }: RouterMatchRefOptions<TGroupName> = {}):
-    | RouterOnRouteCompleteLocationState
-    | undefined {
-    if (!onCompleteListener) {
-      return undefined;
+  /** @internal */
+  protected abstract _getBuilder(): RouteBuilder;
+
+  /** @internal */
+  private _build(
+    params: Partial<TParamDict> & EmptyObjectPatch = {},
+    {leave = false, leaves = []}: RouteMatchRefOptions<TGroupName> = {},
+  ): RouteBuilder {
+    if (typeof leaves === 'string') {
+      leaves = [leaves];
     }
 
-    let onCompleteListenerId = getNextId();
+    if (leave) {
+      let group = this.$group;
 
-    this._router._onRouteCompleteListenerMap.set(
-      onCompleteListenerId,
-      onCompleteListener,
-    );
+      if (group === undefined) {
+        throw new Error('Cannot leave primary route');
+      }
 
-    return {
-      onCompleteListenerId,
-    };
+      leaves.push((group as string) as TGroupName);
+    }
+
+    return this._getBuilder()
+      .$(this, params as object)
+      .$leave(leaves);
   }
 }

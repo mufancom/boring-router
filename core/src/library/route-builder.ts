@@ -1,74 +1,77 @@
 import {EmptyObjectPatch} from 'tslang';
 
 import {buildRef} from './@utils';
-import {IHistory} from './history';
 import {
+  GeneralParamDict,
   GeneralQueryDict,
   RouteMatchShared,
   RouteMatchSharedToParamDict,
-  RouteSource,
 } from './route-match';
+import {Router, RouterNavigateOptions} from './router';
 
-export interface RouteBuilderRefOptions<TGroupName extends string> {
-  /**
-   * Parallel route groups to leave.
-   */
-  leaves?: TGroupName[];
-  /**
-   * Whether to preserve query string that matches the target ref, defaults to
-   * `true`.
-   */
-  preserveQuery?: boolean;
-}
-
-export interface RouteBuilderBuildOptions {
-  /**
-   * Whether to leave this match's group.
-   */
-  leave?: boolean;
-  /**
-   * Whether to preserve rest path of current match, defaults to `false`.
-   */
-  rest?: boolean;
+export interface RouteBuilderBuildingPart {
+  match: RouteMatchShared;
+  params: GeneralParamDict;
 }
 
 export class RouteBuilder<TGroupName extends string = string> {
-  private overridingPathMap = new Map<string | undefined, string | false>();
-
-  private preservedQueryDict: GeneralQueryDict | undefined;
-
   constructor(
-    private prefix: string,
-    private source: RouteSource,
-    private history: IHistory,
+    private sourcePathMap: Map<string | undefined, string>,
+    private sourceQueryDict: GeneralQueryDict,
+    private router: Router<TGroupName>,
+    private buildingParts: RouteBuilderBuildingPart[] = [],
+    private leavingGroupSet = new Set<string>(),
   ) {}
 
-  $and<TRouteMatchShared extends RouteMatchShared>(
+  $<TRouteMatchShared extends RouteMatchShared>(
     match: TRouteMatchShared,
     params?: Partial<RouteMatchSharedToParamDict<TRouteMatchShared>> &
       EmptyObjectPatch,
-    options?: RouteBuilderBuildOptions,
-  ): this;
-  $and<TRouteMatchShared extends RouteMatchShared>(
-    match: TRouteMatchShared,
-    params: Partial<RouteMatchSharedToParamDict<TRouteMatchShared>> &
-      EmptyObjectPatch = {},
-    {leave = false, rest = false}: RouteBuilderBuildOptions = {},
-  ): this {
-    let group = match.$group;
-    let primary = group === undefined;
+  ): RouteBuilder<TGroupName>;
+  $(
+    match: RouteMatchShared,
+    params: GeneralParamDict = {},
+  ): RouteBuilder<TGroupName> {
+    return new RouteBuilder(
+      this.sourcePathMap,
+      this.sourceQueryDict,
+      this.router,
+      [
+        ...this.buildingParts,
+        {
+          match,
+          params,
+        },
+      ],
+    );
+  }
 
-    let restParamKeySet = new Set(Object.keys(params));
+  $leave(groups: TGroupName | TGroupName[]): RouteBuilder<TGroupName> {
+    if (typeof groups === 'string') {
+      groups = [groups];
+    }
 
-    let overridingPathMap = this.overridingPathMap;
+    let leavingGroupSet = new Set([...this.leavingGroupSet, ...groups]);
 
-    if (leave) {
-      if (primary) {
-        throw new Error('Cannot leave the primary route');
-      }
+    return new RouteBuilder(
+      this.sourcePathMap,
+      this.sourceQueryDict,
+      this.router,
+      this.buildingParts,
+      leavingGroupSet,
+    );
+  }
 
-      overridingPathMap.set(group!, false);
-    } else {
+  $ref(): string {
+    let pathMap = new Map(this.sourcePathMap);
+    let queryDict = this.sourceQueryDict;
+
+    for (let {match, params} of this.buildingParts) {
+      let group = match.$group;
+      let primary = group === undefined;
+
+      let restParamKeySet = new Set(Object.keys(params));
+
       let segmentDict = match._pathSegments;
 
       let path = Object.entries(segmentDict)
@@ -86,83 +89,62 @@ export class RouteBuilder<TGroupName extends string = string> {
         })
         .join('');
 
-      if (rest) {
-        path += match._rest;
-      }
+      pathMap.set(group, path);
 
-      overridingPathMap.set(group, path);
-    }
+      if (primary) {
+        let {queryDict: sourceQueryDict} = match._source;
 
-    if (primary) {
-      let {queryDict: sourceQueryDict} = match._source;
+        let queryKeySet = match._queryKeySet;
 
-      let queryKeySet = match._queryKeySet;
+        queryDict = {};
 
-      let preservedQueryDict: GeneralQueryDict = {};
-
-      for (let [key, value] of Object.entries(sourceQueryDict)) {
-        if (queryKeySet.has(key)) {
-          preservedQueryDict[key] = value;
-        }
-      }
-
-      for (let key of restParamKeySet) {
-        if (!queryKeySet.has(key)) {
-          throw new Error(
-            `Parameter "${key}" is defined as neither segment nor query`,
-          );
+        for (let [key, value] of Object.entries(sourceQueryDict)) {
+          if (queryKeySet.has(key)) {
+            queryDict[key] = value;
+          }
         }
 
-        preservedQueryDict[key] = params[key];
-      }
+        for (let key of restParamKeySet) {
+          if (!queryKeySet.has(key)) {
+            throw new Error(
+              `Parameter "${key}" is defined as neither segment nor query`,
+            );
+          }
 
-      this.preservedQueryDict = preservedQueryDict;
-    }
-
-    return this;
-  }
-
-  $ref(options?: RouteBuilderRefOptions<TGroupName>): string;
-  $ref({
-    preserveQuery = true,
-    leaves = [],
-  }: RouteBuilderRefOptions<TGroupName> = {}): string {
-    let {pathMap: sourcePathMap, queryDict: sourceQueryDict} = this.source;
-
-    let pathMap = new Map(sourcePathMap);
-
-    for (let [group, path] of this.overridingPathMap) {
-      if (typeof path === 'string') {
-        pathMap.set(group, path);
-      } else {
-        pathMap.delete(group);
+          queryDict[key] = params[key];
+        }
       }
     }
 
-    for (let group of leaves) {
+    for (let group of this.leavingGroupSet) {
       pathMap.delete(group);
     }
 
-    let preservedQueryDict = this.preservedQueryDict || sourceQueryDict;
+    if (!pathMap.has(undefined)) {
+      throw new Error('Primary route match is required for building ref');
+    }
 
-    let queryDict = preserveQuery ? preservedQueryDict : {};
+    return buildRef(pathMap, queryDict);
+  }
 
-    return buildRef(this.prefix, pathMap, queryDict);
+  $href(): string {
+    let ref = this.$ref();
+    return this.router._history.getHRefByRef(ref);
   }
 
   /**
-   * Perform a `history.push()` with `this.$ref(options)`.
+   * Perform a `history.push()` with `this.$ref()`.
    */
-  $push(options?: RouteBuilderRefOptions<TGroupName>): void {
-    let ref = this.$ref(options);
-    this.history.push(ref);
+  $push(options?: RouterNavigateOptions): void {
+    let ref = this.$ref();
+    this.router._push(ref, options);
   }
 
   /**
-   * Perform a `history.replace()` with `this.$ref(options)`.
+   * Perform a `history.replace()` with `this.$ref()`.
    */
-  $replace(options?: RouteBuilderRefOptions<TGroupName>): void {
-    let ref = this.$ref(options);
-    this.history.replace(ref);
+  $replace(options?: RouterNavigateOptions): void {
+    let ref = this.$ref();
+    this.router._replace(ref, options);
   }
 }
