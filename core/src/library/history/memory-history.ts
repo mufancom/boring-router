@@ -119,7 +119,11 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
     let index = getActiveHistoryEntryIndex(snapshot);
 
     snapshot = {
-      entries: [...entries].splice(index, 1, {id: activeId, ref, data}),
+      entries: [
+        ...entries.slice(0, index),
+        {id: activeId, ref, data},
+        ...entries.slice(index + 1),
+      ],
       active: activeId,
     };
 
