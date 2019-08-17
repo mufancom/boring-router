@@ -172,14 +172,12 @@ type NextRouteMatchType<
 
 export type RootRouteMatchType<
   TRouteSchemaDict,
-  TSegmentKey extends string,
-  TQueryKey extends string,
   TSpecificGroupName extends string | undefined,
   TGroupName extends string
 > = RouteMatchType<
   {$children: TRouteSchemaDict},
-  TSegmentKey,
-  TQueryKey,
+  never,
+  never,
   TSpecificGroupName,
   TGroupName
 >;
@@ -286,26 +284,14 @@ export class Router<TGroupName extends string = string> {
 
   $route<TPrimaryRouteSchemaDict extends RouteSchemaDict>(
     schema: TPrimaryRouteSchemaDict,
-  ): RootRouteMatchType<
-    TPrimaryRouteSchemaDict,
-    never,
-    never,
-    undefined,
-    TGroupName
-  >;
+  ): RootRouteMatchType<TPrimaryRouteSchemaDict, undefined, TGroupName>;
   $route<
     TRouteSchemaDict extends RouteSchemaDict,
     TSpecificGroupName extends TGroupName
   >(
     group: TSpecificGroupName,
     schema: TRouteSchemaDict,
-  ): RootRouteMatchType<
-    TRouteSchemaDict,
-    never,
-    never,
-    TSpecificGroupName,
-    TGroupName
-  >;
+  ): RootRouteMatchType<TRouteSchemaDict, TSpecificGroupName, TGroupName>;
   $route(
     groupOrSchema: TGroupName | RouteSchemaDict,
     schemaOrUndefined?: RouteSchemaDict,
@@ -385,7 +371,7 @@ export class Router<TGroupName extends string = string> {
   /** @internal */
   _replace(ref: string, {onComplete}: RouterNavigateOptions = {}): void {
     this._history
-      .push(ref, {navigateCompleteListener: onComplete})
+      .replace(ref, {navigateCompleteListener: onComplete})
       .catch(console.error);
   }
 

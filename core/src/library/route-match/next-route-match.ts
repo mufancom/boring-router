@@ -1,4 +1,5 @@
 import {IHistory} from '../history';
+import {RouteBuilder} from '../route-builder';
 import {Router} from '../router';
 
 import {RouteMatch, RouteMatchEntry, RouteSource} from './route-match';
@@ -35,5 +36,10 @@ export class NextRouteMatch<
   /** @internal */
   _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined {
     return this._origin._getMatchEntry(source);
+  }
+
+  /** @internal */
+  protected _getBuilder(): RouteBuilder {
+    return this._router.$next;
   }
 }

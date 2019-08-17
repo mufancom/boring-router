@@ -40,9 +40,9 @@ abstract class History<TEntryId, TData> {
 
   abstract forward(): Promise<void>;
 
-  abstract push(ref: string, data: unknown): Promise<void>;
+  abstract push(ref: string, data?: unknown): Promise<void>;
 
-  abstract replace(ref: string, data: unknown): Promise<void>;
+  abstract replace(ref: string, data?: unknown): Promise<void>;
 
   abstract restore(snapshot: HistorySnapshot<TEntryId, TData>): Promise<void>;
 
@@ -66,7 +66,7 @@ export function isHistoryEntryEqual<TEntryId, TData>(
   x: HistoryEntry<TEntryId, TData>,
   y: HistoryEntry<TEntryId, TData>,
 ): boolean {
-  return x.id === y.id && x.ref === y.ref;
+  return x.id === y.id && x.ref === y.ref && x.data === y.data;
 }
 
 export function getActiveHistoryEntryIndex<TEntryId, TData>({

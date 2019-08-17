@@ -3,6 +3,7 @@ import {OmitValueOfKey, OmitValueWithType} from 'tslang';
 
 import {testPathPrefix, tolerate} from '../@utils';
 import {IHistory} from '../history';
+import {RouteBuilder} from '../route-builder';
 import {Router} from '../router';
 
 import {NextRouteMatch} from './next-route-match';
@@ -637,6 +638,11 @@ export class RouteMatch<
     );
 
     return matchToMatchEntryMap && matchToMatchEntryMap.get(this);
+  }
+
+  /** @internal */
+  protected _getBuilder(): RouteBuilder {
+    return this._router.$current;
   }
 
   /** @internal */

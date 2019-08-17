@@ -285,10 +285,12 @@ export abstract class RouteMatchShared<
   }
 
   /** @internal */
-  protected abstract _getMatchEntry(
-    source: RouteSource,
-  ): RouteMatchEntry | undefined;
+  abstract _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined;
 
+  /** @internal */
+  protected abstract _getBuilder(): RouteBuilder;
+
+  /** @internal */
   private _build(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
     {leave = false, leaves = []}: RouteMatchRefOptions<TGroupName> = {},
@@ -307,6 +309,8 @@ export abstract class RouteMatchShared<
       leaves.push((group as string) as TGroupName);
     }
 
-    return this._router.$(this, params as object).$leave(leaves);
+    return this._getBuilder()
+      .$(this, params as object)
+      .$leave(leaves);
   }
 }
