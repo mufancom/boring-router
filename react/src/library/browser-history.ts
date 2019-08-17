@@ -2,6 +2,7 @@ import {
   AbstractHistory,
   HistoryEntry,
   HistorySnapshot,
+  getActiveHistoryEntryIndex,
   isHistoryEntryEqual,
 } from 'boring-router';
 
@@ -115,6 +116,8 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       data,
     });
 
+    console.debug('push', snapshot);
+
     this.snapshot = snapshot;
 
     this.emitChange(snapshot);
@@ -123,7 +126,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
   async replace(ref: string, data?: TData): Promise<void> {
     await this.restoringPromise;
 
-    let id = this.tracked.active;
+    let {active: id} = this.tracked;
 
     let snapshot = this.replaceEntry({
       id,
@@ -131,12 +134,16 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       data,
     });
 
+    console.debug('replace', snapshot);
+
     this.snapshot = snapshot;
 
     this.emitChange(snapshot);
   }
 
   async restore(snapshot: BrowserHistorySnapshot<TData>): Promise<void> {
+    console.debug('restore', snapshot);
+
     this.snapshot = snapshot;
 
     if (this.restoring) {
@@ -198,57 +205,42 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     this.snapshot = snapshot;
 
+    console.debug('pop', snapshot);
+
     this.emitChange(snapshot);
   };
 
   private stepRestoration(): void {
-    let {entries: expectedEntries, active: expectedActiveId} = this.snapshot;
-    let {entries: trackedEntries, active: trackedActiveId} = this.tracked;
-
     console.debug('step restoration');
-    console.debug(this.snapshot, this.tracked);
+    console.debug('expected', this.snapshot);
+    console.debug('tracked', this.tracked);
+
+    this.restoreEntries();
+  }
+
+  private restoreEntries(): void {
+    let expected = this.snapshot;
+    let tracked = this.tracked;
+
+    let {entries: expectedEntries} = expected;
+    let {entries: trackedEntries} = tracked;
 
     let lastExpectedIndex = expectedEntries.length - 1;
     let lastTrackedIndex = trackedEntries.length - 1;
 
-    let expectedActiveIndex = expectedEntries.findIndex(
-      entry => entry.id === expectedActiveId,
-    );
-    let trackedActiveIndex = trackedEntries.findIndex(
-      entry => entry.id === trackedActiveId,
-    );
-
-    if (
-      // expected  a -> b
-      // tracked   a -> c -> d
-      //                     ^ active
-      trackedActiveIndex > lastExpectedIndex ||
-      // expected  a -> b
-      // tracked   a -> c -> d
-      //                ^ active
-      (trackedActiveIndex === lastExpectedIndex &&
-        trackedActiveIndex < lastTrackedIndex &&
-        // exclude:
-        // expected  a
-        // tracked   b -> c
-        //           ^ active
-        trackedActiveIndex > 0)
-    ) {
-      history.back();
-      return;
-    }
+    let trackedActiveIndex = getActiveHistoryEntryIndex(tracked);
 
     let minLength = Math.min(expectedEntries.length, trackedEntries.length);
 
-    let firstMismatchingIndex = 0;
+    let firstMismatchedIndex = 0;
 
     for (
-      firstMismatchingIndex;
-      firstMismatchingIndex < minLength;
-      firstMismatchingIndex++
+      firstMismatchedIndex;
+      firstMismatchedIndex < minLength;
+      firstMismatchedIndex++
     ) {
-      let expectedEntry = expectedEntries[firstMismatchingIndex];
-      let trackedEntry = trackedEntries[firstMismatchingIndex];
+      let expectedEntry = expectedEntries[firstMismatchedIndex];
+      let trackedEntry = trackedEntries[firstMismatchedIndex];
 
       if (!isHistoryEntryEqual(expectedEntry, trackedEntry)) {
         break;
@@ -256,56 +248,83 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     }
 
     if (
+      firstMismatchedIndex > lastExpectedIndex &&
+      (lastExpectedIndex === lastTrackedIndex || lastExpectedIndex === 0)
+    ) {
+      // 1. Exactly identical.
+      // 2. Not exactly identical but there's not much that can be done:
+      //    ```
+      //    expected  a
+      //    tracked   a -> b
+      //                   ^ mismatch
+      //    ```
+      //    In this case we cannot remove the extra entries.
+
+      this.restoreActive();
+      return;
+    }
+
+    if (
       // expected  a -> b -> c
-      // tracked   a -> e -> e
+      // tracked   a -> d -> e
       //                ^ mismatch
       //                     ^ active
-      trackedActiveIndex > firstMismatchingIndex
+      trackedActiveIndex > firstMismatchedIndex ||
+      // expected  a -> b
+      // tracked   a -> b -> c
+      //                     ^ mismatch
+      //                     ^ active
+      trackedActiveIndex > lastExpectedIndex ||
+      // expected  a -> b
+      // tracked   a -> b -> c
+      //                     ^ mismatch
+      //                ^ active
+      // expected  a -> b
+      // tracked   a -> c -> d
+      //                ^ mismatch
+      //                ^ active
+      (trackedActiveIndex === lastExpectedIndex &&
+        trackedActiveIndex < lastTrackedIndex)
     ) {
       history.back();
       return;
     }
 
-    if (
-      // If the tracked entries is not identical to expected entries, there are
-      // two situations:
-      // 1. The first mismatch is within the range of expected entries, thus
-      //    they are certainly not identical.
-      firstMismatchingIndex <= lastExpectedIndex ||
-      // 2. If the tracked entries is longer than the expected entries (if it's
-      //    short it would satisfy the first test). But we need to exclude a
-      //    special case that cannot be fully restored:
-      //
-      //    ```
-      //    expected  a
-      //    tracked   a -> b
-      //    ```
-      //
-      //    In this case it's already the best shape.
-      (lastTrackedIndex > lastExpectedIndex && lastExpectedIndex > 0)
-    ) {
-      if (trackedActiveIndex === firstMismatchingIndex) {
-        this.replaceEntry(expectedEntries[trackedActiveIndex]);
-      }
-
-      for (let entry of expectedEntries.slice(trackedActiveIndex + 1)) {
-        this.pushEntry(entry);
-      }
-
-      trackedActiveIndex = lastExpectedIndex;
+    if (trackedActiveIndex === firstMismatchedIndex) {
+      this.replaceEntry(
+        expectedEntries[trackedActiveIndex],
+        trackedActiveIndex,
+      );
     }
+
+    for (let entry of expectedEntries.slice(trackedActiveIndex + 1)) {
+      this.pushEntry(entry);
+    }
+
+    this.restoreActive();
+  }
+
+  private restoreActive(): void {
+    let expectedActiveIndex = getActiveHistoryEntryIndex(this.snapshot);
+    let trackedActiveIndex = getActiveHistoryEntryIndex(this.tracked);
 
     if (trackedActiveIndex < expectedActiveIndex) {
       history.forward();
     } else if (trackedActiveIndex > expectedActiveIndex) {
       history.back();
     } else {
-      this.restoring = false;
-      this.restoringPromiseResolver!();
-      this.restoringPromiseResolver = undefined;
-
-      console.debug('restore end');
+      this.completeRestoration();
     }
+  }
+
+  private completeRestoration(): void {
+    this.restoring = false;
+    this.restoringPromiseResolver!();
+    this.restoringPromiseResolver = undefined;
+
+    console.debug('restore end');
+    console.debug('expected', this.snapshot);
+    console.debug('tracked', this.tracked);
   }
 
   private pushEntry({
@@ -313,9 +332,11 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     ref,
     data,
   }: BrowserHistoryEntry<TData>): BrowserHistorySnapshot<TData> {
-    let {entries, active: activeId} = this.tracked;
+    let tracked = this.tracked;
 
-    let activeIndex = entries.findIndex(entry => entry.id === activeId);
+    let {entries} = tracked;
+
+    let activeIndex = getActiveHistoryEntryIndex(tracked);
 
     let snapshot: BrowserHistorySnapshot<TData> = {
       entries: [...entries.slice(0, activeIndex + 1), {id, ref, data}],
@@ -329,17 +350,18 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     return snapshot;
   }
 
-  private replaceEntry({
-    id,
-    ref,
-    data,
-  }: BrowserHistoryEntry<TData>): BrowserHistorySnapshot<TData> {
-    let {entries, active: activeId} = this.tracked;
+  private replaceEntry(
+    {id, ref, data}: BrowserHistoryEntry<TData>,
+    index?: number,
+  ): BrowserHistorySnapshot<TData> {
+    let {entries} = this.tracked;
 
-    let index = entries.findIndex(entry => entry.id === id);
+    if (index === undefined) {
+      index = entries.findIndex(entry => entry.id === id);
 
-    if (index < 0) {
-      throw new Error(`Cannot find entry with id ${id} to replace`);
+      if (index < 0) {
+        throw new Error(`Cannot find entry with id ${id} to replace`);
+      }
     }
 
     let snapshot: BrowserHistorySnapshot<TData> = {
@@ -348,7 +370,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
         {id, ref, data},
         ...entries.slice(index + 1),
       ],
-      active: activeId,
+      active: id,
     };
 
     this.tracked = snapshot;

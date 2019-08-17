@@ -1,6 +1,6 @@
 import hyphenate from 'hyphenate';
 import _ from 'lodash';
-import {observable, runInAction} from 'mobx';
+import {action, observable, runInAction} from 'mobx';
 import {Dict, EmptyObjectPatch} from 'tslang';
 
 import {hasOwnProperty, parseRef} from './@utils';
@@ -219,6 +219,13 @@ export type RouterHistory = IHistory<unknown, RouterHistoryEntryData>;
 
 type RouterHistorySnapshot = HistorySnapshot<unknown, RouterHistoryEntryData>;
 
+interface InterUpdateData {
+  reversedLeavingMatches: RouteMatch[];
+  enteringAndUpdatingMatchSet: Set<RouteMatch>;
+  previousMatchSet: Set<RouteMatch>;
+  descendantUpdatingMatchSet: Set<RouteMatch>;
+}
+
 export class Router<TGroupName extends string = string> {
   /** @internal */
   readonly _history: RouterHistory;
@@ -274,11 +281,9 @@ export class Router<TGroupName extends string = string> {
   }
 
   /** @internal */
-  private get _groupSet(): Set<string> {
-    return new Set(
-      Array.from(this._groupToRouteMatchMap.keys()).filter(
-        (group): group is string => !!group,
-      ),
+  private get _groups(): TGroupName[] {
+    return Array.from(this._groupToRouteMatchMap.keys()).filter(
+      (group): group is TGroupName => !!group,
     );
   }
 
@@ -418,8 +423,10 @@ export class Router<TGroupName extends string = string> {
 
     pathMap.set(undefined, pathname || '/');
 
+    let groups = this._groups;
+
     // Extract group route paths in query
-    for (let group of this._groupSet) {
+    for (let group of groups) {
       let key = `_${group}`;
 
       if (!hasOwnProperty(queryDict, key)) {
@@ -506,24 +513,28 @@ export class Router<TGroupName extends string = string> {
       });
     });
 
-    await this._update(
-      nextSnapshot,
-      undefined,
-      groupToMatchToMatchEntryMapMap.get(undefined),
-    );
+    let generalGroups = [undefined, ...groups];
 
-    let groupSet = new Set([...pathMap.keys(), ...this._source.pathMap.keys()]);
-
-    groupSet.delete(undefined);
-
-    await Promise.all(
-      Array.from(groupSet).map(group =>
-        this._update(
+    let interUpdateDataArray = await Promise.all(
+      generalGroups.map(async group =>
+        this._beforeUpdate(
           nextSnapshot,
           group,
           groupToMatchToMatchEntryMapMap.get(group),
         ),
       ),
+    );
+
+    if (interUpdateDataArray.some(data => !data)) {
+      return;
+    }
+
+    this._update(generalGroups);
+
+    this._snapshot = nextSnapshot;
+
+    await Promise.all(
+      interUpdateDataArray.map(data => this._afterUpdate(data!)),
     );
 
     if (navigateCompleteListener) {
@@ -532,11 +543,11 @@ export class Router<TGroupName extends string = string> {
   };
 
   /** @internal */
-  private async _update(
+  private async _beforeUpdate(
     nextSnapshot: RouterHistorySnapshot,
     group: string | undefined,
     matchToMatchEntryMap: Map<RouteMatch, RouteMatchEntry> | undefined,
-  ): Promise<void> {
+  ): Promise<InterUpdateData | undefined> {
     if (!matchToMatchEntryMap) {
       matchToMatchEntryMap = new Map();
     }
@@ -596,12 +607,12 @@ export class Router<TGroupName extends string = string> {
       let result = await match._beforeLeave();
 
       if (this._isNextSnapshotOutDated(nextSnapshot)) {
-        return;
+        return undefined;
       }
 
       if (!result) {
         this._revert();
-        return;
+        return undefined;
       }
     }
 
@@ -613,25 +624,32 @@ export class Router<TGroupName extends string = string> {
         : await match._beforeEnter();
 
       if (this._isNextSnapshotOutDated(nextSnapshot)) {
-        return;
+        return undefined;
       }
 
       if (!result) {
         this._revert();
-        return;
+        return undefined;
       }
     }
 
-    // Update
+    return {
+      reversedLeavingMatches,
+      enteringAndUpdatingMatchSet,
+      previousMatchSet,
+      descendantUpdatingMatchSet,
+    };
+  }
 
-    this._snapshot = nextSnapshot;
+  /** @internal */
+  @action
+  private _update(generalGroups: (string | undefined)[]): void {
+    let source = this._source;
+    let matchingSource = this._matchingSource;
 
-    runInAction(() => {
-      let source = this._source;
-      let matchingSource = this._matchingSource;
+    source.queryDict = matchingSource.queryDict;
 
-      source.queryDict = matchingSource.queryDict;
-
+    for (let group of generalGroups) {
       let path = matchingSource.pathMap.get(group)!;
 
       if (path) {
@@ -645,10 +663,16 @@ export class Router<TGroupName extends string = string> {
       )!;
 
       source.groupToMatchToMatchEntryMapMap.set(group, matchToMatchEntryMap);
-    });
+    }
+  }
 
-    // Process after hooks
-
+  /** @internal */
+  private async _afterUpdate({
+    reversedLeavingMatches,
+    enteringAndUpdatingMatchSet,
+    previousMatchSet,
+    descendantUpdatingMatchSet,
+  }: InterUpdateData): Promise<void> {
     for (let match of reversedLeavingMatches) {
       await match._afterLeave();
     }
