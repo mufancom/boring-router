@@ -257,6 +257,9 @@ export class Router<TGroupName extends string = string> {
   /** @internal */
   private _changing = Promise.resolve();
 
+  @observable
+  routing = false;
+
   /** @internal */
   private _groupToRouteMatchMap = new Map<string | undefined, RouteMatch>();
 
@@ -515,6 +518,10 @@ export class Router<TGroupName extends string = string> {
 
     let generalGroups = [undefined, ...groups];
 
+    runInAction(() => {
+      this.routing = true;
+    });
+
     let interUpdateDataArray = await Promise.all(
       generalGroups.map(async group =>
         this._beforeUpdate(
@@ -524,6 +531,10 @@ export class Router<TGroupName extends string = string> {
         ),
       ),
     );
+
+    runInAction(() => {
+      this.routing = false;
+    });
 
     if (interUpdateDataArray.some(data => !data)) {
       return;
