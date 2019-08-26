@@ -20,6 +20,7 @@ let primaryRoute = router.$route({
   redirect: true,
   revert: true,
   persist: true,
+  routing: true,
   parent: {
     $exact: true,
     $children: {
@@ -61,6 +62,10 @@ primaryRoute.about.$beforeEnter(aboutBeforeEnter);
 primaryRoute.about.$afterEnter(aboutAfterEnter);
 primaryRoute.about.$beforeLeave(aboutBeforeLeave);
 primaryRoute.about.$afterLeave(aboutAfterLeave);
+
+let routingBeforeEnter = jest.fn();
+
+primaryRoute.routing.$beforeEnter(routingBeforeEnter);
 
 let canceledAboutAfterEnter = jest.fn();
 
@@ -126,6 +131,20 @@ test('should not call hooks that have been canceled.', async () => {
   expect(primaryRoute.about.$matched).toBe(true);
 
   expect(canceledAboutAfterEnter).not.toHaveBeenCalled();
+});
+
+test('property routing should be true before beforeEnter ended', async () => {
+  expect(router.$routing).toBe(false);
+
+  await history.push('/routing');
+
+  expect(router.$routing).toBe(true);
+
+  await nap();
+
+  expect(router.$ref()).toBe('/routing');
+  expect(routingBeforeEnter).toHaveBeenCalled();
+  expect(router.$routing).toBe(false);
 });
 
 test('should revert navigation from `persist` to `about` by `persist.$beforeLeave`', async () => {

@@ -258,6 +258,10 @@ export class Router<TGroupName extends string = string> {
   private _changing = Promise.resolve();
 
   /** @internal */
+  @observable
+  private _routing = false;
+
+  /** @internal */
   private _groupToRouteMatchMap = new Map<string | undefined, RouteMatch>();
 
   constructor(history: RouterHistory, {segmentMatcher}: RouterOptions = {}) {
@@ -272,6 +276,10 @@ export class Router<TGroupName extends string = string> {
     let {pathMap, queryDict} = this._source;
 
     return new RouteBuilder(pathMap, queryDict, this);
+  }
+
+  get $routing(): boolean {
+    return this._routing;
   }
 
   get $next(): RouteBuilder<TGroupName> {
@@ -515,6 +523,10 @@ export class Router<TGroupName extends string = string> {
 
     let generalGroups = [undefined, ...groups];
 
+    runInAction(() => {
+      this._routing = true;
+    });
+
     let interUpdateDataArray = await Promise.all(
       generalGroups.map(async group =>
         this._beforeUpdate(
@@ -524,6 +536,10 @@ export class Router<TGroupName extends string = string> {
         ),
       ),
     );
+
+    runInAction(() => {
+      this._routing = false;
+    });
 
     if (interUpdateDataArray.some(data => !data)) {
       return;
