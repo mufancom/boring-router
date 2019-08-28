@@ -6,9 +6,9 @@ import {
   isHistoryEntryEqual,
 } from 'boring-router';
 
-type BrowserHistoryEntry<TData> = HistoryEntry<string, TData>;
+type BrowserHistoryEntry<TData> = HistoryEntry<number, TData>;
 
-type BrowserHistorySnapshot<TData> = HistorySnapshot<string, TData>;
+type BrowserHistorySnapshot<TData> = HistorySnapshot<number, TData>;
 
 export interface BrowserHistoryOptions {
   /**
@@ -25,7 +25,7 @@ export interface BrowserHistoryOptions {
 }
 
 export class BrowserHistory<TData = any> extends AbstractHistory<
-  string,
+  number,
   TData
 > {
   protected snapshot: BrowserHistorySnapshot<TData>;
@@ -42,6 +42,12 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
   private prefix: string;
   private hash: boolean;
 
+  get activeIndex(): number {
+    let {active, entries} = this.snapshot;
+
+    return entries.findIndex(entry => entry.id === active);
+  }
+
   constructor({prefix = '', hash = false}: BrowserHistoryOptions = {}) {
     super();
 
@@ -50,29 +56,39 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     window.addEventListener('popstate', this.onPopState);
 
-    let id = this.getNextId();
-    let data: TData | undefined;
+    let activeId: number;
 
-    history.replaceState({id}, '');
+    if (history.state && history.state.id) {
+      activeId = history.state.id;
 
-    let url = `${location.pathname}${location.search}${location.hash}`;
+      if (activeId > this.idCount) {
+        this.idCount = activeId;
+      }
+    } else {
+      activeId = this.getNextId();
+      history.replaceState({id: activeId}, '');
+    }
 
-    let entries: HistoryEntry<string, TData>[] = [
+    let entries: HistoryEntry<number, TData>[] = [
       {
-        id,
-        ref: this.getRefByHRef(url),
-        data,
+        id: activeId,
+        ref: this.getRefByHRef(this.prefixedRef),
+        data: undefined,
       },
     ];
 
     this.snapshot = this.tracked = {
       entries,
-      active: id,
+      active: activeId,
     };
   }
 
   private get hashPrefix(): string {
     return `${location.pathname}${location.search}`;
+  }
+
+  private get prefixedRef(): string {
+    return `${location.pathname}${location.search}${location.hash}`;
   }
 
   getHRefByRef(ref: string): string {
@@ -178,17 +194,25 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     await this.push(ref);
   }
 
-  private onPopState = (event: PopStateEvent): void => {
-    let {entries} = this.tracked;
+  private onPopState = async (event: PopStateEvent): Promise<void> => {
+    let {entries: trackedEntries} = this.tracked;
 
-    let activeId = event.state.id as string;
+    let activeId = event.state.id as number;
 
-    let index = entries.findIndex(entry => entry.id === activeId);
+    if (activeId > this.idCount) {
+      this.idCount = activeId;
+    }
+
+    let index = trackedEntries.findIndex(entry => entry.id === activeId);
+
+    let entries = [...trackedEntries];
 
     if (index < 0) {
-      console.info('Unknown pop state ID, will reload the current page');
-      location.reload();
-      return;
+      entries.push({
+        id: activeId,
+        ref: this.getRefByHRef(this.prefixedRef),
+        data: undefined,
+      });
     }
 
     let snapshot: BrowserHistorySnapshot<TData> = {
@@ -319,7 +343,11 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
   private completeRestoration(): void {
     this.restoring = false;
-    this.restoringPromiseResolver!();
+
+    if (this.restoringPromiseResolver) {
+      this.restoringPromiseResolver();
+    }
+
     this.restoringPromiseResolver = undefined;
 
     console.debug('restore end');
@@ -380,7 +408,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     return snapshot;
   }
 
-  private getNextId(): string {
-    return `${Date.now().toString(16)}-${this.idCount++}`;
+  private getNextId(): number {
+    return ++this.idCount;
   }
 }
