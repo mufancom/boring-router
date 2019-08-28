@@ -42,12 +42,6 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
   private prefix: string;
   private hash: boolean;
 
-  get activeIndex(): number {
-    let {active, entries} = this.snapshot;
-
-    return entries.findIndex(entry => entry.id === active);
-  }
-
   constructor({prefix = '', hash = false}: BrowserHistoryOptions = {}) {
     super();
 
@@ -89,6 +83,12 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
   private get prefixedRef(): string {
     return `${location.pathname}${location.search}${location.hash}`;
+  }
+
+  get activeIndex(): number {
+    let {active, entries} = this.snapshot;
+
+    return entries.findIndex(entry => entry.id === active);
   }
 
   getHRefByRef(ref: string): string {
