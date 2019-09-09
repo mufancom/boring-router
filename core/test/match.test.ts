@@ -518,3 +518,14 @@ test('should build route with multiple matches', async () => {
 
   expect(router.$ref()).toBe('/account/123?_popup=/invite&callback=foo');
 });
+
+test('should build route with string building part', async () => {
+  expect(
+    router
+      .$scratch()
+      .$('/account/456?callback=foo')
+      .$('?_popup=/invite')
+      .$('?_sidebar=/friends')
+      .$ref(),
+  ).toBe('/account/456?_popup=/invite&_sidebar=/friends&callback=foo');
+});

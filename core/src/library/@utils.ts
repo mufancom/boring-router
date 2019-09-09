@@ -101,13 +101,6 @@ export function parseRef(ref: string): ParseRefResult {
   let search = '';
   let hash = '';
 
-  let hashIndex = pathname.indexOf('#');
-
-  if (hashIndex !== -1) {
-    hash = pathname.substr(hashIndex);
-    pathname = pathname.substr(0, hashIndex);
-  }
-
   let searchIndex = pathname.indexOf('?');
 
   if (searchIndex !== -1) {

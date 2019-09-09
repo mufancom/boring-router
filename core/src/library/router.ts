@@ -204,8 +204,6 @@ export interface RouterOptions {
   segmentMatcher?: SegmentMatcherCallback;
 }
 
-export type RouterBuildTuple = [RouteMatchShared, GeneralParamDict];
-
 interface BuildRouteMatchOptions {
   match: string | symbol | RegExp;
   exact: boolean;
@@ -294,8 +292,7 @@ export class Router<TGroupName extends string = string> {
     return new RouteBuilder(pathMap, queryDict, this);
   }
 
-  /** @internal */
-  private get _groups(): TGroupName[] {
+  get $groups(): TGroupName[] {
     return Array.from(this._groupToRouteMatchMap.keys()).filter(
       (group): group is TGroupName => !!group,
     );
@@ -352,32 +349,23 @@ export class Router<TGroupName extends string = string> {
     params?: Partial<RouteMatchSharedToParamDict<TRouteMatchShared>> &
       EmptyObjectPatch,
   ): RouteBuilder<TGroupName>;
-  $(
-    match: RouteMatchShared,
-    params: GeneralParamDict = {},
-  ): RouteBuilder<TGroupName> {
+  $(part: string): RouteBuilder<TGroupName>;
+  $(match: RouteMatchShared | string, params?: GeneralParamDict): RouteBuilder {
     let {pathMap, queryDict} = this._source;
 
-    return new RouteBuilder(pathMap, queryDict, this, [
-      {
-        match,
-        params,
-      },
-    ]);
+    let buildingPart =
+      typeof match === 'string'
+        ? match
+        : {
+            match,
+            params,
+          };
+
+    return new RouteBuilder(pathMap, queryDict, this, [buildingPart]);
   }
 
-  $scratch(tuples: RouterBuildTuple[] = []): RouteBuilder<TGroupName> {
-    return new RouteBuilder(
-      new Map(),
-      {},
-      this,
-      tuples.map(([match, params]) => {
-        return {
-          match,
-          params,
-        };
-      }),
-    );
+  $scratch(): RouteBuilder<TGroupName> {
+    return new RouteBuilder(new Map(), {}, this);
   }
 
   /** @internal */
@@ -437,7 +425,7 @@ export class Router<TGroupName extends string = string> {
 
     pathMap.set(undefined, pathname || '/');
 
-    let groups = this._groups;
+    let groups = this.$groups;
 
     // Extract group route paths in query
     for (let group of groups) {
