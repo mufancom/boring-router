@@ -1,9 +1,29 @@
 import {Dict} from 'tslang';
 
+import {GeneralParamDict, GeneralSegmentDict} from './route-match';
+
 const _hasOwnProperty = Object.prototype.hasOwnProperty;
 
 export function hasOwnProperty(object: object, name: string): boolean {
   return _hasOwnProperty.call(object, name);
+}
+
+export function buildPath(
+  segmentDict: GeneralSegmentDict,
+  paramDict: GeneralParamDict = {},
+): string {
+  return Object.entries(segmentDict)
+    .map(([key, defaultSegment]) => {
+      let param = paramDict[key];
+      let segment = typeof param === 'string' ? param : defaultSegment;
+
+      if (typeof segment !== 'string') {
+        throw new Error(`Parameter "${key}" is required`);
+      }
+
+      return `/${segment}`;
+    })
+    .join('');
 }
 
 export function buildRef(

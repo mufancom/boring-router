@@ -84,16 +84,19 @@ type __RouteMatchType<
   TQueryKey extends string,
   TSpecificGroupName extends string | undefined,
   TGroupName extends string,
-  TParamDict extends Dict<string | undefined>
+  TParamDict extends Dict<string | undefined>,
+  TPathParamDict extends Dict<string | undefined>
 > = RouteMatch<
   TParamDict,
+  TPathParamDict,
   __NextRouteMatchType<
     TRouteSchema,
     TSegmentKey,
     TQueryKey,
     TSpecificGroupName,
     TGroupName,
-    TParamDict
+    TParamDict,
+    TPathParamDict
   >,
   TSpecificGroupName,
   TGroupName
@@ -119,7 +122,8 @@ export type RouteMatchType<
   TQueryKey,
   TSpecificGroupName,
   TGroupName,
-  Record<TQueryKey, string | undefined> & Record<TSegmentKey, string>
+  Record<TQueryKey, string | undefined> & Record<TSegmentKey, string>,
+  Record<TSegmentKey, string>
 >;
 
 type NextRouteMatchSegmentType<
@@ -145,8 +149,9 @@ type __NextRouteMatchType<
   TQueryKey extends string,
   TSpecificGroupName extends string | undefined,
   TGroupName extends string,
-  TParamDict extends Dict<string | undefined>
-> = NextRouteMatch<TParamDict, TSpecificGroupName, TGroupName> &
+  TParamDict extends Dict<string | undefined>,
+  TPathParamDict extends Dict<string | undefined>
+> = NextRouteMatch<TParamDict, TPathParamDict, TSpecificGroupName, TGroupName> &
   NextRouteMatchSegmentType<
     NestedRouteSchemaDictType<TRouteSchema>,
     TSegmentKey,
@@ -167,7 +172,8 @@ type NextRouteMatchType<
   TQueryKey,
   TSpecificGroupName,
   TGroupName,
-  Record<TQueryKey, string | undefined> & Record<TSegmentKey, string>
+  Record<TQueryKey, string | undefined> & Record<TSegmentKey, string>,
+  Record<TSegmentKey, string>
 >;
 
 export type RootRouteMatchType<

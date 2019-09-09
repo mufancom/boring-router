@@ -1,6 +1,6 @@
 import {EmptyObjectPatch} from 'tslang';
 
-import {buildRef} from './@utils';
+import {buildPath, buildRef} from './@utils';
 import {
   GeneralParamDict,
   GeneralQueryDict,
@@ -66,28 +66,19 @@ export class RouteBuilder<TGroupName extends string = string> {
     let pathMap = new Map(this.sourcePathMap);
     let queryDict = this.sourceQueryDict;
 
-    for (let {match, params} of this.buildingParts) {
+    for (let {match, params: paramDict} of this.buildingParts) {
       let group = match.$group;
       let primary = group === undefined;
 
-      let restParamKeySet = new Set(Object.keys(params));
+      let restParamKeySet = new Set(Object.keys(paramDict));
 
       let segmentDict = match._pathSegments;
 
-      let path = Object.entries(segmentDict)
-        .map(([key, defaultSegment]) => {
-          restParamKeySet.delete(key);
+      let path = buildPath(segmentDict, paramDict);
 
-          let param = params[key];
-          let segment = typeof param === 'string' ? param : defaultSegment;
-
-          if (typeof segment !== 'string') {
-            throw new Error(`Parameter "${key}" is required`);
-          }
-
-          return `/${segment}`;
-        })
-        .join('');
+      for (let key of Object.keys(segmentDict)) {
+        restParamKeySet.delete(key);
+      }
 
       pathMap.set(group, path);
 
@@ -111,7 +102,7 @@ export class RouteBuilder<TGroupName extends string = string> {
             );
           }
 
-          queryDict[key] = params[key];
+          queryDict[key] = paramDict[key];
         }
       }
     }

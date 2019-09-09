@@ -179,12 +179,18 @@ export interface RouteMatchOptions extends RouteMatchSharedOptions {
 
 export class RouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict,
+  TPathParamDict extends GeneralParamDict = GeneralParamDict,
   TNextRouteMatch extends NextRouteMatch<TParamDict> = NextRouteMatch<
     TParamDict
   >,
   TSpecificGroupName extends string | undefined = string | undefined,
   TGroupName extends string = string
-> extends RouteMatchShared<TParamDict, TSpecificGroupName, TGroupName> {
+> extends RouteMatchShared<
+  TParamDict,
+  TPathParamDict,
+  TSpecificGroupName,
+  TGroupName
+> {
   readonly $parent: RouteMatch | undefined;
 
   readonly $next!: TNextRouteMatch;
@@ -642,7 +648,7 @@ export class RouteMatch<
 
   /** @internal */
   protected _getBuilder(): RouteBuilder {
-    return this._router.$current;
+    return this.$router.$current;
   }
 
   /** @internal */

@@ -1,6 +1,7 @@
 import {computed} from 'mobx';
 import {Dict, EmptyObjectPatch} from 'tslang';
 
+import {buildPath} from '../@utils';
 import {IHistory} from '../history';
 import {RouteBuilder} from '../route-builder';
 import {Router, RouterNavigateOptions} from '../router';
@@ -19,7 +20,7 @@ export type RouteMatchSharedToParamDict<
   ? TParamDict
   : never;
 
-export interface RouteMatchRefOptions<TGroupName extends string> {
+export interface RouteMatchBuildOptions<TGroupName extends string> {
   /**
    * Whether to leave this match's group.
    */
@@ -31,7 +32,7 @@ export interface RouteMatchRefOptions<TGroupName extends string> {
 }
 
 export interface RouteMatchNavigateOptions<TGroupName extends string>
-  extends RouteMatchRefOptions<TGroupName>,
+  extends RouteMatchBuildOptions<TGroupName>,
     RouterNavigateOptions {}
 
 export interface RouteMatchSharedOptions {
@@ -42,6 +43,7 @@ export interface RouteMatchSharedOptions {
 
 export abstract class RouteMatchShared<
   TParamDict extends GeneralParamDict = GeneralParamDict,
+  TPathParamDict extends GeneralParamDict = GeneralParamDict,
   TSpecificGroupName extends string | undefined = string | undefined,
   TGroupName extends string = string
 > {
@@ -61,6 +63,8 @@ export abstract class RouteMatchShared<
    */
   readonly $parent: RouteMatchShared | undefined;
 
+  readonly $router: Router;
+
   /** @internal */
   readonly _source: RouteSource;
 
@@ -76,9 +80,6 @@ export abstract class RouteMatchShared<
   /** @internal */
   protected _matchPattern: string | symbol | RegExp;
 
-  /** @internal */
-  protected _router: Router;
-
   constructor(
     name: string,
     router: Router,
@@ -90,7 +91,7 @@ export abstract class RouteMatchShared<
     this.$name = name;
     this.$group = group as TSpecificGroupName;
     this.$parent = parent;
-    this._router = router;
+    this.$router = router;
     this._source = source;
     this._history = history;
 
@@ -229,31 +230,8 @@ export abstract class RouteMatchShared<
     );
   }
 
-  /**
-   * Generates a string reference that can be used for history navigation.
-   *
-   * @param params A dictionary of the combination of query string and
-   * segments.
-   */
-  $ref(
-    params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouteMatchRefOptions<TGroupName>,
-  ): string {
-    return this._build(params, options).$ref();
-  }
-
-  /**
-   * Generates a string reference that can be used for displaying and
-   * navigating by the browser.
-   *
-   * @param params A dictionary of the combination of query string and
-   * segments.
-   */
-  $href(
-    params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouteMatchRefOptions<TGroupName>,
-  ): string {
-    return this._build(params, options).$href();
+  $path(params?: Partial<TPathParamDict> & EmptyObjectPatch): string {
+    return buildPath(this._pathSegments, params);
   }
 
   /**
@@ -263,9 +241,9 @@ export abstract class RouteMatchShared<
     params?: Partial<TParamDict> & EmptyObjectPatch,
     {onComplete, ...options}: RouteMatchNavigateOptions<TGroupName> = {},
   ): void {
-    let ref = this.$ref(params, options);
+    let ref = this._build(params, options).$ref();
 
-    this._router._push(ref, {
+    this.$router._push(ref, {
       onComplete,
     });
   }
@@ -277,9 +255,9 @@ export abstract class RouteMatchShared<
     params?: Partial<TParamDict> & EmptyObjectPatch,
     {onComplete, ...options}: RouteMatchNavigateOptions<TGroupName> = {},
   ): void {
-    let ref = this.$ref(params, options);
+    let ref = this._build(params, options).$ref();
 
-    this._router._replace(ref, {
+    this.$router._replace(ref, {
       onComplete,
     });
   }
@@ -293,7 +271,7 @@ export abstract class RouteMatchShared<
   /** @internal */
   private _build(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
-    {leave = false, leaves = []}: RouteMatchRefOptions<TGroupName> = {},
+    {leave = false, leaves = []}: RouteMatchBuildOptions<TGroupName> = {},
   ): RouteBuilder {
     if (typeof leaves === 'string') {
       leaves = [leaves];
