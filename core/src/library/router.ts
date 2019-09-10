@@ -3,12 +3,11 @@ import _ from 'lodash';
 import {action, observable, runInAction} from 'mobx';
 import {Dict, EmptyObjectPatch} from 'tslang';
 
-import {hasOwnProperty, parseRef} from './@utils';
+import {hasOwnProperty, parseRef, parseSearch} from './@utils';
 import {HistorySnapshot, IHistory, getActiveHistoryEntry} from './history';
 import {RouteBuilder} from './route-builder';
 import {
   GeneralParamDict,
-  GeneralQueryDict,
   NextRouteMatch,
   ROUTE_MATCH_START_ANCHOR_PATTERN,
   RouteMatch,
@@ -413,15 +412,7 @@ export class Router<TGroupName extends string = string> {
       return;
     }
 
-    let searchParams = new URLSearchParams(search);
-
-    let queryDict = Array.from(searchParams).reduce(
-      (dict, [key, value]) => {
-        dict[key] = value;
-        return dict;
-      },
-      {} as GeneralQueryDict,
-    );
+    let queryDict = parseSearch(search);
 
     let pathMap = new Map<string | undefined, string>();
 

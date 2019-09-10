@@ -1,6 +1,10 @@
 import {Dict} from 'tslang';
 
-import {GeneralParamDict, GeneralSegmentDict} from './route-match';
+import {
+  GeneralParamDict,
+  GeneralQueryDict,
+  GeneralSegmentDict,
+} from './route-match';
 
 const _hasOwnProperty = Object.prototype.hasOwnProperty;
 
@@ -54,6 +58,43 @@ export function buildRef(
   return `${primaryPath}${query ? `?${query}` : ''}`;
 }
 
+export interface ParseRefResult {
+  pathname: string;
+  search: string;
+  hash: string;
+}
+
+export function parseRef(ref: string): ParseRefResult {
+  let pathname = ref || '/';
+  let search = '';
+  let hash = '';
+
+  let searchIndex = pathname.indexOf('?');
+
+  if (searchIndex !== -1) {
+    search = pathname.substr(searchIndex);
+    pathname = pathname.substr(0, searchIndex);
+  }
+
+  return {
+    pathname,
+    search: search === '?' ? '' : search,
+    hash: hash === '#' ? '' : hash,
+  };
+}
+
+export function parseSearch(search: string): GeneralQueryDict {
+  let searchParams = new URLSearchParams(search);
+
+  return Array.from(searchParams).reduce(
+    (dict, [key, value]) => {
+      dict[key] = value;
+      return dict;
+    },
+    {} as GeneralQueryDict,
+  );
+}
+
 export function testPathPrefix(path: string, prefix: string): boolean {
   return (
     path.startsWith(prefix) &&
@@ -88,29 +129,4 @@ export function tolerate(fn: Function, ...args: unknown[]): unknown {
   return ret.catch(error => {
     console.error(error);
   });
-}
-
-export interface ParseRefResult {
-  pathname: string;
-  search: string;
-  hash: string;
-}
-
-export function parseRef(ref: string): ParseRefResult {
-  let pathname = ref || '/';
-  let search = '';
-  let hash = '';
-
-  let searchIndex = pathname.indexOf('?');
-
-  if (searchIndex !== -1) {
-    search = pathname.substr(searchIndex);
-    pathname = pathname.substr(0, searchIndex);
-  }
-
-  return {
-    pathname,
-    search: search === '?' ? '' : search,
-    hash: hash === '#' ? '' : hash,
-  };
 }

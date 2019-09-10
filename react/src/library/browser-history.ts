@@ -2,6 +2,7 @@ import {
   AbstractHistory,
   HistoryEntry,
   HistorySnapshot,
+  getActiveHistoryEntry,
   getActiveHistoryEntryIndex,
   isHistoryEntryEqual,
 } from 'boring-router';
@@ -71,6 +72,10 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     };
   }
 
+  get ref(): string {
+    return getActiveHistoryEntry(this.snapshot).ref;
+  }
+
   private get hashPrefix(): string {
     return `${location.pathname}${location.search}`;
   }
@@ -108,6 +113,10 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
   }
 
   async push(ref: string, data?: TData): Promise<void> {
+    if (ref === this.ref) {
+      return this.replace(ref, data);
+    }
+
     await this.restoringPromise;
 
     let snapshot = this.pushEntry({

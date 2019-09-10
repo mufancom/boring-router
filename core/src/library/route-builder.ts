@@ -1,6 +1,6 @@
 import {EmptyObjectPatch} from 'tslang';
 
-import {buildPath, buildRef, hasOwnProperty} from './@utils';
+import {buildPath, buildRef, hasOwnProperty, parseSearch} from './@utils';
 import {
   GeneralParamDict,
   GeneralQueryDict,
@@ -177,32 +177,7 @@ function parseStringBuildingPart(
 
   if (searchIndex >= 0) {
     primaryPath = part.slice(0, searchIndex);
-
-    let query = part.slice(searchIndex + 1);
-
-    queryDict = query
-      ? query.split('&').reduce(
-          (dict, entry) => {
-            let equalIndex = entry.indexOf('=');
-
-            let key: string;
-            let value: string;
-
-            if (equalIndex < 0) {
-              key = decodeURIComponent(entry);
-              value = '';
-            } else {
-              key = decodeURIComponent(entry.slice(0, equalIndex));
-              value = decodeURIComponent(entry.slice(equalIndex + 1));
-            }
-
-            dict[key] = value;
-
-            return dict;
-          },
-          {} as GeneralQueryDict,
-        )
-      : {};
+    queryDict = parseSearch(part.slice(searchIndex));
   } else {
     primaryPath = part;
     queryDict = undefined;
