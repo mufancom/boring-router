@@ -84,19 +84,16 @@ type __RouteMatchType<
   TQueryKey extends string,
   TSpecificGroupName extends string | undefined,
   TGroupName extends string,
-  TParamDict extends Dict<string | undefined>,
-  TPathParamDict extends Dict<string | undefined>
+  TParamDict extends Dict<string | undefined>
 > = RouteMatch<
   TParamDict,
-  TPathParamDict,
   __NextRouteMatchType<
     TRouteSchema,
     TSegmentKey,
     TQueryKey,
     TSpecificGroupName,
     TGroupName,
-    TParamDict,
-    TPathParamDict
+    TParamDict
   >,
   TSpecificGroupName,
   TGroupName
@@ -122,8 +119,7 @@ export type RouteMatchType<
   TQueryKey,
   TSpecificGroupName,
   TGroupName,
-  Record<TQueryKey, string | undefined> & Record<TSegmentKey, string>,
-  Record<TSegmentKey, string>
+  Record<TQueryKey, string | undefined> & Record<TSegmentKey, string>
 >;
 
 type NextRouteMatchSegmentType<
@@ -149,9 +145,8 @@ type __NextRouteMatchType<
   TQueryKey extends string,
   TSpecificGroupName extends string | undefined,
   TGroupName extends string,
-  TParamDict extends Dict<string | undefined>,
-  TPathParamDict extends Dict<string | undefined>
-> = NextRouteMatch<TParamDict, TPathParamDict, TSpecificGroupName, TGroupName> &
+  TParamDict extends Dict<string | undefined>
+> = NextRouteMatch<TParamDict, TSpecificGroupName, TGroupName> &
   NextRouteMatchSegmentType<
     NestedRouteSchemaDictType<TRouteSchema>,
     TSegmentKey,
@@ -172,8 +167,7 @@ type NextRouteMatchType<
   TQueryKey,
   TSpecificGroupName,
   TGroupName,
-  Record<TQueryKey, string | undefined> & Record<TSegmentKey, string>,
-  Record<TSegmentKey, string>
+  Record<TQueryKey, string | undefined> & Record<TSegmentKey, string>
 >;
 
 export type RootRouteMatchType<
@@ -366,6 +360,14 @@ export class Router<TGroupName extends string = string> {
 
   $scratch(): RouteBuilder<TGroupName> {
     return new RouteBuilder(new Map(), {}, this);
+  }
+
+  $push(ref: string, options?: RouterNavigateOptions): void {
+    this.$current.$(ref).$push(options);
+  }
+
+  $replace(ref: string, options?: RouterNavigateOptions): void {
+    this.$current.$(ref).$replace(options);
   }
 
   /** @internal */

@@ -1,7 +1,6 @@
 import {computed} from 'mobx';
 import {Dict, EmptyObjectPatch} from 'tslang';
 
-import {buildPath} from '../@utils';
 import {IHistory} from '../history';
 import {RouteBuilder} from '../route-builder';
 import {Router, RouterNavigateOptions} from '../router';
@@ -43,7 +42,6 @@ export interface RouteMatchSharedOptions {
 
 export abstract class RouteMatchShared<
   TParamDict extends GeneralParamDict = GeneralParamDict,
-  TPathParamDict extends GeneralParamDict = GeneralParamDict,
   TSpecificGroupName extends string | undefined = string | undefined,
   TGroupName extends string = string
 > {
@@ -230,36 +228,24 @@ export abstract class RouteMatchShared<
     );
   }
 
-  $path(params?: Partial<TPathParamDict> & EmptyObjectPatch): string {
-    return buildPath(this._pathSegments, params);
+  $ref(params?: Partial<TParamDict> & EmptyObjectPatch): string {
+    return new RouteBuilder(new Map(), this._source.queryDict, this.$router, [
+      {match: this, params},
+    ]).$ref();
   }
 
-  /**
-   * Perform a `history.push()` with `this.$ref(params, options)`.
-   */
   $push(
     params?: Partial<TParamDict> & EmptyObjectPatch,
     {onComplete, ...options}: RouteMatchNavigateOptions<TGroupName> = {},
   ): void {
-    let ref = this._build(params, options).$ref();
-
-    this.$router._push(ref, {
-      onComplete,
-    });
+    this._build(params, options).$push({onComplete});
   }
 
-  /**
-   * Perform a `history.replace()` with `this.$ref(params, options)`.
-   */
   $replace(
     params?: Partial<TParamDict> & EmptyObjectPatch,
     {onComplete, ...options}: RouteMatchNavigateOptions<TGroupName> = {},
   ): void {
-    let ref = this._build(params, options).$ref();
-
-    this.$router._replace(ref, {
-      onComplete,
-    });
+    this._build(params, options).$replace({onComplete});
   }
 
   /** @internal */

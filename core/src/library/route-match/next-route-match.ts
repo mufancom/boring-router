@@ -11,15 +11,9 @@ import {
 
 export class NextRouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict,
-  TPathParamDict extends GeneralParamDict = GeneralParamDict,
   TSpecificGroupName extends string | undefined = string | undefined,
   TGroupName extends string = string
-> extends RouteMatchShared<
-  TParamDict,
-  TPathParamDict,
-  TSpecificGroupName,
-  TGroupName
-> {
+> extends RouteMatchShared<TParamDict, TSpecificGroupName, TGroupName> {
   readonly $parent: NextRouteMatch | undefined;
 
   /** @internal */

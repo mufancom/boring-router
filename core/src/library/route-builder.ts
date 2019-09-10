@@ -131,7 +131,7 @@ export class RouteBuilder<TGroupName extends string = string> {
       pathMap.delete(group);
     }
 
-    return buildRef(pathMap, queryDict);
+    return buildRef(pathMap, pathMap.get(undefined) ? queryDict : {});
   }
 
   $href(): string {
