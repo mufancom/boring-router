@@ -529,3 +529,13 @@ test('should build route with string building part', async () => {
       .$ref(),
   ).toBe('/account/456?_popup=/invite&_sidebar=/friends&callback=foo');
 });
+
+test('should build route with string building part without primary route', async () => {
+  expect(
+    router
+      .$scratch()
+      .$('?_popup=/invite')
+      .$('?_sidebar=/friends')
+      .$ref(),
+  ).toBe('?_popup=/invite&_sidebar=/friends');
+});

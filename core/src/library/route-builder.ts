@@ -131,10 +131,6 @@ export class RouteBuilder<TGroupName extends string = string> {
       pathMap.delete(group);
     }
 
-    if (!pathMap.has(undefined)) {
-      throw new Error('Primary route match is required for building ref');
-    }
-
     return buildRef(pathMap, queryDict);
   }
 
