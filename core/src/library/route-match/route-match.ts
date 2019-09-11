@@ -642,7 +642,7 @@ export class RouteMatch<
 
   /** @internal */
   protected _getBuilder(): RouteBuilder {
-    return this._router.$current;
+    return this.$router.$current;
   }
 
   /** @internal */

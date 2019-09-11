@@ -137,11 +137,11 @@ test('should match `account`', async () => {
   expect(primaryRoute.account.$exact).toBe(true);
   expect({...primaryRoute.account.$params}).toEqual({});
 
-  expect(primaryRoute.account.$ref()).toBe('/account');
-  expect(() => primaryRoute.account.id.$ref()).toThrow(
+  expect(router.$(primaryRoute.account).$ref()).toBe('/account');
+  expect(() => router.$(primaryRoute.account.id).$ref()).toThrow(
     'Parameter "id" is required',
   );
-  expect(() => primaryRoute.account.id.settings.$ref()).toThrow(
+  expect(() => router.$(primaryRoute.account.id.settings).$ref()).toThrow(
     'Parameter "id" is required',
   );
 });
@@ -170,8 +170,10 @@ test('should match `account.id`', async () => {
   expect({...primaryRoute.account.$params}).toEqual({});
   expect({...primaryRoute.account.id.$params}).toEqual({id: '123'});
 
-  expect(primaryRoute.account.id.$ref()).toBe('/account/123');
-  expect(primaryRoute.account.id.$ref({id: '456'})).toBe('/account/456');
+  expect(router.$(primaryRoute.account.id).$ref()).toBe('/account/123');
+  expect(router.$(primaryRoute.account.id, {id: '456'}).$ref()).toBe(
+    '/account/456',
+  );
 });
 
 test('should match `account.id.settings`', async () => {
@@ -188,8 +190,10 @@ test('should match `account.id.settings`', async () => {
   expect({...primaryRoute.account.id.$params}).toEqual({id: '123'});
   expect({...primaryRoute.account.id.settings.$params}).toEqual({id: '123'});
 
-  expect(primaryRoute.account.id.settings.$ref()).toBe('/account/123/settings');
-  expect(primaryRoute.account.id.settings.$ref({id: '456'})).toBe(
+  expect(router.$(primaryRoute.account.id.settings).$ref()).toBe(
+    '/account/123/settings',
+  );
+  expect(router.$(primaryRoute.account.id.settings, {id: '456'}).$ref()).toBe(
     '/account/456/settings',
   );
 });
@@ -214,15 +218,14 @@ test('should match `account.id.billings`', async () => {
     callback: '/redirect',
   });
 
-  expect(primaryRoute.account.$ref({})).toBe('/account?callback=%2Fredirect');
-  expect(primaryRoute.account.id.billings.$ref({callback: undefined})).toBe(
-    '/account/123/billings',
+  expect(router.$(primaryRoute.account).$ref()).toBe(
+    '/account?callback=%2Fredirect',
   );
-  expect(primaryRoute.account.id.billings.$ref({})).toBe(
+  expect(
+    router.$(primaryRoute.account.id.billings, {callback: undefined}).$ref(),
+  ).toBe('/account/123/billings');
+  expect(router.$(primaryRoute.account.id.billings).$ref()).toBe(
     '/account/123/billings?callback=%2Fredirect',
-  );
-  expect(primaryRoute.account.id.billings.$ref({callback: undefined})).toBe(
-    '/account/123/billings',
   );
 });
 
@@ -278,7 +281,9 @@ test('should match parallel `account`, `friends` and `invite`', async () => {
 
   expect(primaryRoute.account.$matched).toBe(true);
   expect(sidebarRoute.friends.$matched).toBe(true);
-  expect(primaryRoute.account.$ref()).toBe('/account?_sidebar=/friends');
+  expect(router.$(primaryRoute.account).$ref()).toBe(
+    '/account?_sidebar=/friends',
+  );
 
   popupRoute.invite.$push();
 
@@ -287,7 +292,7 @@ test('should match parallel `account`, `friends` and `invite`', async () => {
   expect(primaryRoute.account.$matched).toBe(true);
   expect(sidebarRoute.friends.$matched).toBe(true);
   expect(popupRoute.invite.$matched).toBe(true);
-  expect(primaryRoute.account.$ref()).toBe(
+  expect(router.$(primaryRoute.account).$ref()).toBe(
     '/account?_sidebar=/friends&_popup=/invite',
   );
 });
@@ -307,7 +312,7 @@ test('should match `friends.chat` then `friends.transfer`', async () => {
 
   expect(primaryRoute.account.id.$matched).toBe(true);
   expect(sidebarRoute.friends.chat.$matched).toBe(true);
-  expect(primaryRoute.account.id.$ref()).toBe(
+  expect(router.$(primaryRoute.account.id).$ref()).toBe(
     '/account/123?_sidebar=/friends/chat',
   );
 
@@ -318,7 +323,7 @@ test('should match `friends.chat` then `friends.transfer`', async () => {
   expect(primaryRoute.account.id.$matched).toBe(true);
   expect(sidebarRoute.friends.chat.$matched).toBe(false);
   expect(sidebarRoute.friends.transfer.$matched).toBe(true);
-  expect(primaryRoute.account.id.$ref()).toBe(
+  expect(router.$(primaryRoute.account.id).$ref()).toBe(
     '/account/123?_sidebar=/friends/transfer',
   );
 });
@@ -512,4 +517,39 @@ test('should build route with multiple matches', async () => {
   await nap();
 
   expect(router.$ref()).toBe('/account/123?_popup=/invite&callback=foo');
+});
+
+test('should router push with building part', async () => {
+  router.$push('/account?_sidebar=/friends');
+
+  await nap();
+
+  expect(router.$ref()).toBe(
+    '/account?_popup=/invite&_sidebar=/friends&callback=foo',
+  );
+});
+
+test('should build route with string building part', async () => {
+  expect(
+    router
+      .$scratch()
+      .$('/account/456?callback=foo')
+      .$('?_popup=/invite')
+      .$('?_sidebar=/friends')
+      .$ref(),
+  ).toBe('/account/456?_popup=/invite&_sidebar=/friends&callback=foo');
+
+  expect(popupRoute.$rest.$ref()).toBe('?_popup=/invite');
+
+  expect(sidebarRoute.groups.$ref()).toBe('?_sidebar=/groups');
+});
+
+test('should build route with string building part without primary route', async () => {
+  expect(
+    router
+      .$scratch()
+      .$('?_popup=/invite')
+      .$('?_sidebar=/friends')
+      .$ref(),
+  ).toBe('?_popup=/invite&_sidebar=/friends');
 });

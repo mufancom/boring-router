@@ -1,8 +1,7 @@
-import {RouteMatch} from 'boring-router';
+import {RouteMatch, RouteMatchSharedToParamDict} from 'boring-router';
 import {action, observable} from 'mobx';
 import {observer} from 'mobx-react';
 import React, {Component, HTMLAttributes, MouseEvent, ReactNode} from 'react';
-import {EmptyObjectPatch} from 'tslang';
 
 import {composeEventHandler} from './@utils';
 
@@ -10,9 +9,7 @@ export interface LinkProps<TRouteMatch extends RouteMatch>
   extends HTMLAttributes<HTMLAnchorElement> {
   className?: string;
   to: TRouteMatch;
-  params?: TRouteMatch extends RouteMatch<infer TParamDict>
-    ? Partial<TParamDict> & EmptyObjectPatch
-    : never;
+  params?: RouteMatchSharedToParamDict<TRouteMatch>;
   replace?: boolean;
   toggle?: boolean;
   leave?: boolean;
@@ -88,7 +85,7 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     let {to, params} = this.props;
 
     try {
-      this.href = to.$href(params);
+      this.href = to.$router.$(to, params).$href();
     } catch (error) {
       this.href = 'javascript:;';
     }

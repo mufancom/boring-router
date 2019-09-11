@@ -3,12 +3,11 @@ import _ from 'lodash';
 import {action, observable, runInAction} from 'mobx';
 import {Dict, EmptyObjectPatch} from 'tslang';
 
-import {hasOwnProperty, parseRef} from './@utils';
+import {hasOwnProperty, parseRef, parseSearch} from './@utils';
 import {HistorySnapshot, IHistory, getActiveHistoryEntry} from './history';
 import {RouteBuilder} from './route-builder';
 import {
   GeneralParamDict,
-  GeneralQueryDict,
   NextRouteMatch,
   ROUTE_MATCH_START_ANCHOR_PATTERN,
   RouteMatch,
@@ -198,8 +197,6 @@ export interface RouterOptions {
   segmentMatcher?: SegmentMatcherCallback;
 }
 
-export type RouterBuildTuple = [RouteMatchShared, GeneralParamDict];
-
 interface BuildRouteMatchOptions {
   match: string | symbol | RegExp;
   exact: boolean;
@@ -288,8 +285,7 @@ export class Router<TGroupName extends string = string> {
     return new RouteBuilder(pathMap, queryDict, this);
   }
 
-  /** @internal */
-  private get _groups(): TGroupName[] {
+  get $groups(): TGroupName[] {
     return Array.from(this._groupToRouteMatchMap.keys()).filter(
       (group): group is TGroupName => !!group,
     );
@@ -346,32 +342,31 @@ export class Router<TGroupName extends string = string> {
     params?: Partial<RouteMatchSharedToParamDict<TRouteMatchShared>> &
       EmptyObjectPatch,
   ): RouteBuilder<TGroupName>;
-  $(
-    match: RouteMatchShared,
-    params: GeneralParamDict = {},
-  ): RouteBuilder<TGroupName> {
+  $(part: string): RouteBuilder<TGroupName>;
+  $(match: RouteMatchShared | string, params?: GeneralParamDict): RouteBuilder {
     let {pathMap, queryDict} = this._source;
 
-    return new RouteBuilder(pathMap, queryDict, this, [
-      {
-        match,
-        params,
-      },
-    ]);
+    let buildingPart =
+      typeof match === 'string'
+        ? match
+        : {
+            match,
+            params,
+          };
+
+    return new RouteBuilder(pathMap, queryDict, this, [buildingPart]);
   }
 
-  $scratch(tuples: RouterBuildTuple[] = []): RouteBuilder<TGroupName> {
-    return new RouteBuilder(
-      new Map(),
-      {},
-      this,
-      tuples.map(([match, params]) => {
-        return {
-          match,
-          params,
-        };
-      }),
-    );
+  $scratch(): RouteBuilder<TGroupName> {
+    return new RouteBuilder(new Map(), {}, this);
+  }
+
+  $push(ref: string, options?: RouterNavigateOptions): void {
+    this.$current.$(ref).$push(options);
+  }
+
+  $replace(ref: string, options?: RouterNavigateOptions): void {
+    this.$current.$(ref).$replace(options);
   }
 
   /** @internal */
@@ -417,21 +412,13 @@ export class Router<TGroupName extends string = string> {
       return;
     }
 
-    let searchParams = new URLSearchParams(search);
-
-    let queryDict = Array.from(searchParams).reduce(
-      (dict, [key, value]) => {
-        dict[key] = value;
-        return dict;
-      },
-      {} as GeneralQueryDict,
-    );
+    let queryDict = parseSearch(search);
 
     let pathMap = new Map<string | undefined, string>();
 
     pathMap.set(undefined, pathname || '/');
 
-    let groups = this._groups;
+    let groups = this.$groups;
 
     // Extract group route paths in query
     for (let group of groups) {

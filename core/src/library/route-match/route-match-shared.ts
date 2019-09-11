@@ -19,7 +19,7 @@ export type RouteMatchSharedToParamDict<
   ? TParamDict
   : never;
 
-export interface RouteMatchRefOptions<TGroupName extends string> {
+export interface RouteMatchBuildOptions<TGroupName extends string> {
   /**
    * Whether to leave this match's group.
    */
@@ -31,7 +31,7 @@ export interface RouteMatchRefOptions<TGroupName extends string> {
 }
 
 export interface RouteMatchNavigateOptions<TGroupName extends string>
-  extends RouteMatchRefOptions<TGroupName>,
+  extends RouteMatchBuildOptions<TGroupName>,
     RouterNavigateOptions {}
 
 export interface RouteMatchSharedOptions {
@@ -61,6 +61,8 @@ export abstract class RouteMatchShared<
    */
   readonly $parent: RouteMatchShared | undefined;
 
+  readonly $router: Router;
+
   /** @internal */
   readonly _source: RouteSource;
 
@@ -76,9 +78,6 @@ export abstract class RouteMatchShared<
   /** @internal */
   protected _matchPattern: string | symbol | RegExp;
 
-  /** @internal */
-  protected _router: Router;
-
   constructor(
     name: string,
     router: Router,
@@ -90,7 +89,7 @@ export abstract class RouteMatchShared<
     this.$name = name;
     this.$group = group as TSpecificGroupName;
     this.$parent = parent;
-    this._router = router;
+    this.$router = router;
     this._source = source;
     this._history = history;
 
@@ -229,59 +228,24 @@ export abstract class RouteMatchShared<
     );
   }
 
-  /**
-   * Generates a string reference that can be used for history navigation.
-   *
-   * @param params A dictionary of the combination of query string and
-   * segments.
-   */
-  $ref(
-    params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouteMatchRefOptions<TGroupName>,
-  ): string {
-    return this._build(params, options).$ref();
+  $ref(params?: Partial<TParamDict> & EmptyObjectPatch): string {
+    return new RouteBuilder(new Map(), this._source.queryDict, this.$router, [
+      {match: this, params},
+    ]).$ref();
   }
 
-  /**
-   * Generates a string reference that can be used for displaying and
-   * navigating by the browser.
-   *
-   * @param params A dictionary of the combination of query string and
-   * segments.
-   */
-  $href(
-    params?: Partial<TParamDict> & EmptyObjectPatch,
-    options?: RouteMatchRefOptions<TGroupName>,
-  ): string {
-    return this._build(params, options).$href();
-  }
-
-  /**
-   * Perform a `history.push()` with `this.$ref(params, options)`.
-   */
   $push(
     params?: Partial<TParamDict> & EmptyObjectPatch,
     {onComplete, ...options}: RouteMatchNavigateOptions<TGroupName> = {},
   ): void {
-    let ref = this.$ref(params, options);
-
-    this._router._push(ref, {
-      onComplete,
-    });
+    this._build(params, options).$push({onComplete});
   }
 
-  /**
-   * Perform a `history.replace()` with `this.$ref(params, options)`.
-   */
   $replace(
     params?: Partial<TParamDict> & EmptyObjectPatch,
     {onComplete, ...options}: RouteMatchNavigateOptions<TGroupName> = {},
   ): void {
-    let ref = this.$ref(params, options);
-
-    this._router._replace(ref, {
-      onComplete,
-    });
+    this._build(params, options).$replace({onComplete});
   }
 
   /** @internal */
@@ -293,7 +257,7 @@ export abstract class RouteMatchShared<
   /** @internal */
   private _build(
     params: Partial<TParamDict> & EmptyObjectPatch = {},
-    {leave = false, leaves = []}: RouteMatchRefOptions<TGroupName> = {},
+    {leave = false, leaves = []}: RouteMatchBuildOptions<TGroupName> = {},
   ): RouteBuilder {
     if (typeof leaves === 'string') {
       leaves = [leaves];

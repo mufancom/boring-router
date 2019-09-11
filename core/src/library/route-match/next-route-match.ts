@@ -40,6 +40,6 @@ export class NextRouteMatch<
 
   /** @internal */
   protected _getBuilder(): RouteBuilder {
-    return this._router.$next;
+    return this.$router.$next;
   }
 }

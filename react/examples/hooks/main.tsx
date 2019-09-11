@@ -36,7 +36,6 @@ route.account.$beforeEnter(() => {
 
 route.profile.$beforeEnter(match => {
   console.info('before enter profile');
-  console.info('before enter ref', match.$ref());
 
   if (match.$exact) {
     match.details.$push();
