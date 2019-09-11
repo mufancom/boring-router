@@ -2,7 +2,6 @@ import {
   AbstractHistory,
   HistoryEntry,
   HistorySnapshot,
-  getActiveHistoryEntry,
   getActiveHistoryEntryIndex,
   isHistoryEntryEqual,
 } from 'boring-router';
@@ -10,6 +9,11 @@ import {
 type BrowserHistoryEntry<TData> = HistoryEntry<number, TData>;
 
 type BrowserHistorySnapshot<TData> = HistorySnapshot<number, TData>;
+
+interface BrowserHistoryState<TData> {
+  id: number;
+  data: TData;
+}
 
 export interface BrowserHistoryOptions {
   /**
@@ -38,7 +42,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
   private restoringPromise = Promise.resolve();
   private restoringPromiseResolver: (() => void) | undefined;
 
-  private idCount = 0;
+  private lastUsedId = 0;
 
   private prefix: string;
   private hash: boolean;
@@ -51,49 +55,42 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     window.addEventListener('popstate', this.onPopState);
 
-    let activeId: number;
+    let state = history.state as BrowserHistoryState<TData> | undefined;
 
-    if (history.state && history.state.id) {
-      activeId = history.state.id;
+    let id: number;
+    let data: TData | undefined;
 
-      if (activeId > this.idCount) {
-        this.idCount = activeId;
-      }
+    if (state) {
+      id = state.id;
+      data = state.data;
+
+      this.lastUsedId = id;
     } else {
-      activeId = this.getNextId();
-      history.replaceState({id: activeId}, '');
+      id = this.getNextId();
+
+      history.replaceState({id}, '');
     }
 
     let entries: HistoryEntry<number, TData>[] = [
       {
-        id: activeId,
-        ref: this.getRefByHRef(this.prefixedRef),
-        data: undefined,
+        id,
+        ref: this.getRefByHRef(this.url),
+        data,
       },
     ];
 
     this.snapshot = this.tracked = {
       entries,
-      active: activeId,
+      active: id,
     };
   }
 
-  get ref(): string {
-    return getActiveHistoryEntry(this.snapshot).ref;
+  get url(): string {
+    return `${location.pathname}${location.search}${location.hash}`;
   }
 
   private get hashPrefix(): string {
     return `${location.pathname}${location.search}`;
-  }
-
-  private get prefixedRef(): string {
-    return `${location.pathname}${location.search}${location.hash}`;
-  }
-
-  get activeIndex(): number {
-    let {active, entries} = this.snapshot;
-
-    return entries.findIndex(entry => entry.id === active);
   }
 
   getHRefByRef(ref: string): string {
@@ -206,27 +203,27 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
   private onPopState = async (event: PopStateEvent): Promise<void> => {
     let {entries: trackedEntries} = this.tracked;
 
-    let activeId = event.state.id as number;
+    let {id, data} = event.state as BrowserHistoryState<TData>;
 
-    if (activeId > this.idCount) {
-      this.idCount = activeId;
+    if (id > this.lastUsedId) {
+      this.lastUsedId = id;
     }
-
-    let index = trackedEntries.findIndex(entry => entry.id === activeId);
 
     let entries = [...trackedEntries];
 
-    if (index < 0) {
-      entries.push({
-        id: activeId,
-        ref: this.getRefByHRef(this.prefixedRef),
-        data: undefined,
+    let index = entries.findIndex(entry => entry.id >= id);
+
+    if (index < 0 || entries[index].id > id) {
+      entries.splice(index < 0 ? entries.length : index, 0, {
+        id,
+        ref: this.getRefByHRef(this.url),
+        data,
       });
     }
 
     let snapshot: BrowserHistorySnapshot<TData> = {
       entries,
-      active: activeId,
+      active: id,
     };
 
     this.tracked = snapshot;
@@ -382,7 +379,13 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     this.tracked = snapshot;
 
-    history.pushState({id}, '', this.getHRefByRef(ref));
+    let href = this.getHRefByRef(ref);
+
+    try {
+      history.pushState({id, data}, '', href);
+    } catch (error) {
+      history.pushState({id}, '', href);
+    }
 
     return snapshot;
   }
@@ -412,12 +415,18 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     this.tracked = snapshot;
 
-    history.replaceState({id}, '', this.getHRefByRef(ref));
+    let href = this.getHRefByRef(ref);
+
+    try {
+      history.replaceState({id, data}, '', href);
+    } catch (error) {
+      history.replaceState({id}, '', href);
+    }
 
     return snapshot;
   }
 
   private getNextId(): number {
-    return ++this.idCount;
+    return ++this.lastUsedId;
   }
 }

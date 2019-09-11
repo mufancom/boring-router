@@ -32,6 +32,18 @@ abstract class History<TEntryId, TData> {
     };
   }
 
+  get ref(): string {
+    return getActiveHistoryEntry(this.snapshot).ref;
+  }
+
+  get index(): number {
+    return getActiveHistoryEntryIndex(this.snapshot);
+  }
+
+  get length(): number {
+    return this.snapshot.entries.length;
+  }
+
   abstract getHRefByRef(ref: string): string;
 
   abstract getRefByHRef(href: string): string;
