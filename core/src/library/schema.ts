@@ -6,8 +6,11 @@ export interface RouteSchema {
   /**
    * Whether to allow exact match while if this route has children. Only
    * applies if this route has children.
+   *
+   * If a string is applied, it will try to match the children when the current
+   * route is exactly matched.
    */
-  $exact?: boolean;
+  $exact?: boolean | string;
   $children?: RouteSchemaDict;
   $extension?: object;
 }
