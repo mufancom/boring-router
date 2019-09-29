@@ -55,6 +55,12 @@ let primaryRoute = router.$route({
       },
     },
   },
+  exactExtension: {
+    $exact: 'extension',
+    $children: {
+      extension: true,
+    },
+  },
   notFound: {
     $match: RouteMatch.rest,
   },
@@ -422,6 +428,17 @@ test('parallel whitelist should take effect', async () => {
   expect(router.$ref()).toBe(
     '/only-popup?_sidebar=/friends/transfer&_popup=/invite',
   );
+});
+
+test('should match exact extension', async () => {
+  await history.push('/exact-extension');
+
+  await nap();
+
+  expect(primaryRoute.exactExtension.$matched).toBe(true);
+  expect(primaryRoute.exactExtension.$exact).toBe(true);
+  expect(primaryRoute.exactExtension.extension.$matched).toBe(true);
+  expect(primaryRoute.exactExtension.extension.$exact).toBe(true);
 });
 
 test("should leave and visit group 'sidebar' and 'popup' again", async () => {

@@ -199,7 +199,7 @@ export interface RouterOptions {
 
 interface BuildRouteMatchOptions {
   match: string | symbol | RegExp;
-  exact: boolean;
+  exact: boolean | string;
   query: Dict<boolean> | undefined;
   children: RouteSchemaDict | undefined;
   extension: object | undefined;
@@ -449,7 +449,7 @@ export class Router<TGroupName extends string = string> {
       let routeMatch = groupToRouteMatchMap.get(group);
 
       let routeMatchEntries =
-        this._routerMatch(routeMatch ? [routeMatch] : [], path) || [];
+        this._match(routeMatch ? [routeMatch] : [], path) || [];
 
       if (!routeMatchEntries.length) {
         continue;
@@ -708,7 +708,7 @@ export class Router<TGroupName extends string = string> {
   }
 
   /** @internal */
-  private _routerMatch(
+  private _match(
     routeMatches: RouteMatch[],
     upperRest: string,
   ): RouteMatchEntry[] | undefined {
@@ -721,18 +721,18 @@ export class Router<TGroupName extends string = string> {
         continue;
       }
 
-      if (exactlyMatched) {
+      if (rest === '') {
         return [
           {
             match: routeMatch,
             segment: segment!,
-            exact: true,
+            exact: exactlyMatched,
             rest,
           },
         ];
       }
 
-      let result = this._routerMatch(routeMatch._children || [], rest);
+      let result = this._match(routeMatch._children || [], rest);
 
       if (!result) {
         continue;
@@ -742,7 +742,7 @@ export class Router<TGroupName extends string = string> {
         {
           match: routeMatch,
           segment: segment!,
-          exact: false,
+          exact: exactlyMatched,
           rest,
         },
         ...result,

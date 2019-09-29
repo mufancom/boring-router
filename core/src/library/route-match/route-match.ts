@@ -174,7 +174,7 @@ export interface RouteSource {
 }
 
 export interface RouteMatchOptions extends RouteMatchSharedOptions {
-  exact: boolean;
+  exact: boolean | string;
 }
 
 export class RouteMatch<
@@ -218,7 +218,7 @@ export class RouteMatch<
   private _serviceFactory: RouteServiceFactory<any> | undefined;
 
   /** @internal */
-  private _allowExact: boolean;
+  private _allowExact: boolean | string;
 
   /** @internal */
   _parallel: RouteMatchParallelOptions<TGroupName> | undefined;
@@ -501,9 +501,15 @@ export class RouteMatch<
     let matched = segment !== undefined;
     let exactlyMatched = matched && rest === '';
 
-    if (exactlyMatched && (this._children && !this._allowExact)) {
-      matched = false;
-      exactlyMatched = false;
+    if (exactlyMatched) {
+      let allowExact = this._allowExact;
+
+      if (typeof allowExact === 'string') {
+        rest = `/${allowExact}`;
+      } else if (this._children && !allowExact) {
+        matched = false;
+        exactlyMatched = false;
+      }
     }
 
     return {
