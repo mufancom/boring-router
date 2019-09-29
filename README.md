@@ -67,7 +67,7 @@ class App extends Component {
 
 ### Example list
 
-- [Basic](react/examples/basic/main.tsx)
+- [Basic](packages/boring-router-react/examples/basic/main.tsx)
 
   Basic usage.
 
@@ -77,7 +77,7 @@ class App extends Component {
   </Route>
   ```
 
-- [Exact](react/examples/exact/main.tsx)
+- [Exact](packages/boring-router-react/examples/exact/main.tsx)
 
   Match exact path.
 
@@ -87,7 +87,7 @@ class App extends Component {
   </Route>
   ```
 
-- [Segment](react/examples/segment/main.tsx)
+- [Segment](packages/boring-router-react/examples/segment/main.tsx)
 
   Boring Router's version of `/account/:id` alike parameter.
 
@@ -103,7 +103,7 @@ class App extends Component {
   </Route>
   ```
 
-- [Query](react/examples/query/main.tsx)
+- [Query](packages/boring-router-react/examples/query/main.tsx)
 
   Handle query string parameter.
 
@@ -119,7 +119,7 @@ class App extends Component {
   </Route>
   ```
 
-- [Redirect](react/examples/redirect/main.tsx)
+- [Redirect](packages/boring-router-react/examples/redirect/main.tsx)
 
   Redirect on match.
 
@@ -127,7 +127,7 @@ class App extends Component {
   <Redirect match={route.notFound} to={route.account} params={{id: '123'}} />
   ```
 
-- [NavLink](react/examples/nav-link/main.tsx)
+- [NavLink](packages/boring-router-react/examples/nav-link/main.tsx)
 
   Like `<Link>` but will add a class name if `to` matches.
 
@@ -135,7 +135,7 @@ class App extends Component {
   <NavLink to={route.account}>Account</NavLink>
   ```
 
-- [Function as Child](react/examples/function-as-child/main.tsx)
+- [Function as Child](packages/boring-router-react/examples/function-as-child/main.tsx)
 
   Use `<Route />` with a function child.
 
@@ -145,7 +145,7 @@ class App extends Component {
   </Route>
   ```
 
-- [Route Component](react/examples/route-component/main.tsx)
+- [Route Component](packages/boring-router-react/examples/route-component/main.tsx)
 
   Use `<Route />` with a route component.
 
@@ -159,7 +159,7 @@ class App extends Component {
   </Route>
   ```
 
-- [Multiple Route Match](react/examples/multi-route-match/main.tsx)
+- [Multiple Route Match](packages/boring-router-react/examples/multi-route-match/main.tsx)
 
   Match with multiple route match for shared content.
 
@@ -170,7 +170,7 @@ class App extends Component {
   />
   ```
 
-- [Parallel Routes](react/examples/parallel-routes/main.tsx)
+- [Parallel Routes](packages/boring-router-react/examples/parallel-routes/main.tsx)
 
   Match parallel routes for separate views.
 
@@ -179,7 +179,7 @@ class App extends Component {
   <Route match={popupRoute.popup} component={PopupView} />
   ```
 
-- [Hooks](react/examples/hooks/main.tsx)
+- [Hooks](packages/boring-router-react/examples/hooks/main.tsx)
 
   Add hooks to route match.
 
@@ -189,7 +189,7 @@ class App extends Component {
   });
   ```
 
-- [Service](react/examples/service/main.tsx)
+- [Service](packages/boring-router-react/examples/service/main.tsx)
 
   Add service to route match.
 
@@ -362,7 +362,7 @@ route.accountId.name;
 
 Sometimes when a page is separated into different views, we might want separate routes. For example, a dashboard may have "main content view", "side bar view" and an "overlay" at the same time. If we want to cooperate them all with routes, the parallel-routes feature could be useful.
 
-A parallel route behaves like a primary route most of the time. For more information, check out [this example](react/examples/parallel-routes/main.tsx).
+A parallel route behaves like a primary route most of the time. For more information, check out [this example](packages/boring-router-react/examples/parallel-routes/main.tsx).
 
 ## License
 
