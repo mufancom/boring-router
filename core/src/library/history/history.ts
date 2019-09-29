@@ -88,7 +88,8 @@ export function getActiveHistoryEntryIndex<TEntryId, TData>({
   let index = entries.findIndex(entry => entry.id === activeId);
 
   if (index < 0) {
-    throw new Error('Invalid history snapshot');
+    console.error('Invalid history snapshot');
+    return entries.length - 1;
   }
 
   return index;
@@ -101,8 +102,8 @@ export function getActiveHistoryEntry<TEntryId, TData>({
   let entry = entries.find(entry => entry.id === activeId);
 
   if (!entry) {
-    throw new Error('Invalid history snapshot');
+    console.error('Invalid history snapshot');
   }
 
-  return entry;
+  return entries[entries.length - 1];
 }
