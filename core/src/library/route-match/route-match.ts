@@ -118,10 +118,6 @@ export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
 ) => IRouteService<TRouteMatch> | Promise<IRouteService<TRouteMatch>>;
 
-export interface RouteServiceOptions {
-  traceDescendants?: boolean;
-}
-
 export type IRouteService<TRouteMatch extends RouteMatch = RouteMatch> = {
   beforeEnter?: RouteBeforeEnterCallback<TRouteMatch>;
   afterEnter?: RouteAfterEnterCallback;
@@ -563,16 +559,18 @@ export class RouteMatch<
   }
 
   /** @internal */
-  async _beforeUpdate(byDescendants: boolean): Promise<boolean | RouteMatch> {
+  async _beforeUpdate(
+    triggeredByDescendants: boolean,
+  ): Promise<boolean | RouteMatch> {
     let next = this.$next;
 
     let results = await Promise.all([
       ...Array.from(this._beforeUpdateEntrySet)
         .filter(({options}) =>
-          byDescendants ? options && options.traceDescendants : true,
+          triggeredByDescendants ? options && options.traceDescendants : true,
         )
         .map(({callback}) =>
-          tolerate(callback, next, {descendants: byDescendants}),
+          tolerate(callback, next, {descendants: triggeredByDescendants}),
         ),
       (async () => {
         let service = await this._getService();
@@ -582,7 +580,7 @@ export class RouteMatch<
         }
 
         return tolerate(() =>
-          service!.beforeUpdate!(next, {descendants: byDescendants}),
+          service!.beforeUpdate!(next, {descendants: triggeredByDescendants}),
         );
       })(),
     ]);
@@ -621,10 +619,10 @@ export class RouteMatch<
   }
 
   /** @internal */
-  async _afterUpdate(triggerByDescendants: boolean): Promise<void> {
+  async _afterUpdate(triggeredByDescendants: boolean): Promise<void> {
     for (let {callback, options} of this._afterUpdateEntrySet) {
-      if (!triggerByDescendants || (options && options.traceDescendants)) {
-        tolerate(callback, {descendants: triggerByDescendants});
+      if (triggeredByDescendants ? options && options.traceDescendants : true) {
+        tolerate(callback, {descendants: triggeredByDescendants});
       }
     }
 
@@ -634,7 +632,9 @@ export class RouteMatch<
       return;
     }
 
-    tolerate(() => service!.afterUpdate!({descendants: triggerByDescendants}));
+    tolerate(() =>
+      service!.afterUpdate!({descendants: triggeredByDescendants}),
+    );
   }
 
   /** @internal */
