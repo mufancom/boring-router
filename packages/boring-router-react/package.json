@@ -25,18 +25,18 @@
   "peerDependencies": {
     "boring-router": "^0.3.0-alpha.0",
     "mobx": "5",
-    "mobx-react": "5",
+    "mobx-react": "6",
     "react": "16"
   },
   "devDependencies": {
-    "@types/classnames": "^2.2.8",
-    "@types/history": "^4.7.2",
-    "@types/react-dom": "^16.8.4",
-    "react-dom": "^16.8.6"
+    "@types/classnames": "^2.2.9",
+    "@types/history": "^4.7.3",
+    "@types/react-dom": "^16.9.1",
+    "react-dom": "^16.10.1"
   },
   "dependencies": {
     "classnames": "^2.2.6",
-    "tslang": "^0.1.15"
+    "tslang": "^0.1.17"
   },
   "gitHead": "967f6cb251a3bc95ab26ac19cc975b452ce411a4"
 }

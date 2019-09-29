@@ -26,16 +26,16 @@
     "mobx": "5"
   },
   "devDependencies": {
-    "@types/history": "^4.7.2",
-    "@types/jest": "^24.0.13",
-    "@types/lodash": "^4.14.136",
-    "jest": "^24.8.0",
-    "ts-jest": "^24.0.2"
+    "@types/history": "^4.7.3",
+    "@types/jest": "^24.0.18",
+    "@types/lodash": "^4.14.141",
+    "jest": "^24.9.0",
+    "ts-jest": "^24.1.0"
   },
   "dependencies": {
     "hyphenate": "^0.2.4",
     "lodash": "^4.17.15",
-    "tslang": "^0.1.15"
+    "tslang": "^0.1.17"
   },
   "gitHead": "967f6cb251a3bc95ab26ac19cc975b452ce411a4"
 }
