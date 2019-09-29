@@ -18,7 +18,7 @@ There are multiple reasons pushing me to write Boring Router instead of sticking
 
 ```sh
 # peer dependencies
-yarn add history react mobx mobx-react
+yarn add react mobx mobx-react
 
 # boring router packages
 yarn add boring-router
