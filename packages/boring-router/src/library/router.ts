@@ -700,11 +700,11 @@ export class Router<TGroupName extends string = string> {
   private _revert(): void {
     let snapshot = this._snapshot;
 
-    if (!snapshot) {
-      throw new Error('Cannot revert the very first snapshot');
+    if (snapshot) {
+      this._history.restore(snapshot).catch(console.error);
+    } else {
+      this._history.replace('/').catch(console.error);
     }
-
-    this._history.restore(snapshot).catch(console.error);
   }
 
   /** @internal */
