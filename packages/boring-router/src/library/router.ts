@@ -28,7 +28,7 @@ type RouteQuerySchemaType<TRouteSchema> = TRouteSchema extends {
   $query: infer TQuerySchema;
 }
   ? TQuerySchema
-  : never;
+  : {};
 
 type FilterRouteMatchNonStringSegment<TRouteSchema, T> = TRouteSchema extends {
   $match: infer TMatch;
