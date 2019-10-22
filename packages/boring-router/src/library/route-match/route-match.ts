@@ -229,6 +229,9 @@ export class RouteMatch<
   private _autorunDisposers: RouteAutorunDisposer[] = [];
 
   /** @internal */
+  private _hasEntered: boolean = false;
+
+  /** @internal */
   @observable
   private _service: IRouteService | undefined;
 
@@ -341,13 +344,23 @@ export class RouteMatch<
     view: RouteAutorunView,
     options?: RouteAutorunOptions,
   ): RouteHookRemovalCallback {
-    let autorunEntry: RouteAutorunEntry = {view, options};
+    if (this._hasEntered) {
+      let disposer = autorun(view, options);
 
-    this._autorunEntrySet.add(autorunEntry);
+      this._autorunDisposers.push(disposer);
 
-    return () => {
-      this._autorunEntrySet.delete(autorunEntry);
-    };
+      return () => {
+        disposer();
+      };
+    } else {
+      let autorunEntry: RouteAutorunEntry = {view, options};
+
+      this._autorunEntrySet.add(autorunEntry);
+
+      return () => {
+        this._autorunEntrySet.delete(autorunEntry);
+      };
+    }
   }
 
   $intercept(
@@ -656,6 +669,8 @@ export class RouteMatch<
         autorun(autorunEntry.view, autorunEntry.options),
       );
     }
+
+    this._hasEntered = true;
 
     let service = await this._getService();
 
