@@ -55,11 +55,13 @@ primaryRoute.parent.$beforeUpdate(parentBeforeUpdate);
 
 let aboutBeforeEnter = jest.fn();
 let aboutAfterEnter = jest.fn();
+let aboutAutorun = jest.fn();
 let aboutBeforeLeave = jest.fn();
 let aboutAfterLeave = jest.fn();
 
 primaryRoute.about.$beforeEnter(aboutBeforeEnter);
 primaryRoute.about.$afterEnter(aboutAfterEnter);
+primaryRoute.about.$autorun(aboutAutorun);
 primaryRoute.about.$beforeLeave(aboutBeforeLeave);
 primaryRoute.about.$afterLeave(aboutAfterLeave);
 
@@ -87,6 +89,7 @@ test('should navigate from `redirect` to `about`', async () => {
 
   expect(aboutBeforeEnter).toHaveBeenCalled();
   expect(aboutAfterEnter).toHaveBeenCalled();
+  expect(aboutAutorun).toHaveBeenCalled();
 });
 
 test('should revert navigation from `about` to `revert` by `revert.$beforeEnter`', async () => {

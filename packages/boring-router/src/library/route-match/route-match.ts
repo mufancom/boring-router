@@ -1,4 +1,10 @@
-import {observable} from 'mobx';
+import {
+  IAutorunOptions,
+  IReactionDisposer,
+  IReactionPublic,
+  autorun,
+  observable,
+} from 'mobx';
 import {OmitValueOfKey, OmitValueWithType} from 'tslang';
 
 import {testPathPrefix, tolerate} from '../@utils';
@@ -102,6 +108,19 @@ export interface RouteAfterUpdateEntry {
 
 export type RouteAfterLeaveCallback = () => void;
 
+// autorun //
+
+export type RouteAutorunView = (r: IReactionPublic) => any;
+
+export type RouteAutorunOptions = IAutorunOptions;
+
+export type RouteAutorunDisposer = IReactionDisposer;
+
+export interface RouteAutorunEntry {
+  view: RouteAutorunView;
+  options?: RouteAutorunOptions;
+}
+
 export type RouteHookRemovalCallback = () => void;
 
 export type RouteInterceptCallback<
@@ -202,6 +221,12 @@ export class RouteMatch<
 
   /** @internal */
   private _afterLeaveCallbackSet = new Set<RouteAfterLeaveCallback>();
+
+  /** @internal */
+  private _autorunEntrySet = new Set<RouteAutorunEntry>();
+
+  /** @internal */
+  private _autorunDisposers: RouteAutorunDisposer[] = [];
 
   /** @internal */
   @observable
@@ -309,6 +334,19 @@ export class RouteMatch<
 
     return () => {
       this._afterLeaveCallbackSet.delete(callback);
+    };
+  }
+
+  $autorun(
+    view: RouteAutorunView,
+    options?: RouteAutorunOptions,
+  ): RouteHookRemovalCallback {
+    let autorunEntry: RouteAutorunEntry = {view, options};
+
+    this._autorunEntrySet.add(autorunEntry);
+
+    return () => {
+      this._autorunEntrySet.delete(autorunEntry);
     };
   }
 
@@ -594,6 +632,10 @@ export class RouteMatch<
       tolerate(callback);
     }
 
+    for (let autorunDisposer of this._autorunDisposers) {
+      autorunDisposer();
+    }
+
     let service = await this._getService();
 
     if (!service || !service.afterLeave) {
@@ -607,6 +649,12 @@ export class RouteMatch<
   async _afterEnter(): Promise<void> {
     for (let callback of this._afterEnterCallbackSet) {
       tolerate(callback);
+    }
+
+    for (let autorunEntry of this._autorunEntrySet) {
+      this._autorunDisposers.push(
+        autorun(autorunEntry.view, autorunEntry.options),
+      );
     }
 
     let service = await this._getService();

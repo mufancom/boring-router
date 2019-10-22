@@ -258,6 +258,8 @@ interface RouteMatch<TParamDict> {
   $beforeLeave(callback: RouteMatchBeforeLeave): this;
   $afterLeave(callback: RouteMatchAfterLeave): this;
 
+  $autorun(view: RouteAutorunView, options?: RouteAutorunOptions): this;
+
   $intercept(callback: RouteInterceptCallback): this;
   $react(callback: RouteReactCallback): this;
 
