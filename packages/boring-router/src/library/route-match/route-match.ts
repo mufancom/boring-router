@@ -569,11 +569,9 @@ export class RouteMatch<
       (async () => {
         let service = await this._getService();
 
-        if (!service || !service.beforeLeave) {
-          return undefined;
+        if (service && service.beforeLeave) {
+          return tolerate(() => service!.beforeLeave!());
         }
-
-        return tolerate(() => service!.beforeLeave!());
       })(),
     ]);
 
@@ -591,11 +589,9 @@ export class RouteMatch<
       (async () => {
         let service = await this._getService();
 
-        if (!service || !service.beforeEnter) {
-          return undefined;
+        if (service && service.beforeEnter) {
+          return tolerate(() => service!.beforeEnter!(next));
         }
-
-        return tolerate(() => service!.beforeEnter!(next));
       })(),
     ]);
 
@@ -619,13 +615,11 @@ export class RouteMatch<
       (async () => {
         let service = await this._getService();
 
-        if (!service || !service.beforeUpdate) {
-          return undefined;
+        if (service && service.beforeUpdate) {
+          return tolerate(() =>
+            service!.beforeUpdate!(next, {descendants: triggeredByDescendants}),
+          );
         }
-
-        return tolerate(() =>
-          service!.beforeUpdate!(next, {descendants: triggeredByDescendants}),
-        );
       })(),
     ]);
 
@@ -644,11 +638,9 @@ export class RouteMatch<
 
     let service = await this._getService();
 
-    if (!service || !service.afterLeave) {
-      return;
+    if (service && service.afterLeave) {
+      tolerate(() => service!.afterLeave!());
     }
-
-    tolerate(() => service!.afterLeave!());
   }
 
   /** @internal */
@@ -659,11 +651,9 @@ export class RouteMatch<
 
     let service = await this._getService();
 
-    if (!service || !service.afterEnter) {
-      return;
+    if (service && service.afterEnter) {
+      tolerate(() => service!.afterEnter!());
     }
-
-    tolerate(() => service!.afterEnter!());
 
     for (let autorunEntry of this._autorunEntrySet) {
       tolerate(() => {
@@ -684,13 +674,11 @@ export class RouteMatch<
 
     let service = await this._getService();
 
-    if (!service || !service.afterUpdate) {
-      return;
+    if (service && service.afterUpdate) {
+      tolerate(() =>
+        service!.afterUpdate!({descendants: triggeredByDescendants}),
+      );
     }
-
-    tolerate(() =>
-      service!.afterUpdate!({descendants: triggeredByDescendants}),
-    );
   }
 
   /** @internal */

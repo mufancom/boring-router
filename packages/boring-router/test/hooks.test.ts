@@ -73,9 +73,10 @@ let aboutAutorun = jest.fn(() => {
   aboutAutorunChangeTestValues.push(aboutAutorunChangeTestNumber.get());
 });
 
+primaryRoute.about.$autorun(aboutAutorun);
+
 primaryRoute.about.$beforeEnter(aboutBeforeEnter);
 primaryRoute.about.$afterEnter(aboutAfterEnter);
-primaryRoute.about.$autorun(aboutAutorun);
 primaryRoute.about.$beforeLeave(aboutBeforeLeave);
 primaryRoute.about.$afterLeave(aboutAfterLeave);
 
