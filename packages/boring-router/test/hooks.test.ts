@@ -1,4 +1,4 @@
-import {configure} from 'mobx';
+import {action, configure, observable} from 'mobx';
 
 import {MemoryHistory, Router} from '../bld/library';
 
@@ -33,9 +33,11 @@ let redirectBeforeEnter = jest.fn(() => {
   primaryRoute.about.$push();
 });
 let redirectAfterEnter = jest.fn();
+let redirectAutorun = jest.fn();
 
 primaryRoute.redirect.$beforeEnter(redirectBeforeEnter);
 primaryRoute.redirect.$afterEnter(redirectAfterEnter);
+primaryRoute.redirect.$autorun(redirectAutorun);
 
 let revertBeforeEnter = jest.fn(() => false);
 let revertAfterEnter = jest.fn();
@@ -57,6 +59,21 @@ let aboutBeforeEnter = jest.fn();
 let aboutAfterEnter = jest.fn();
 let aboutBeforeLeave = jest.fn();
 let aboutAfterLeave = jest.fn();
+let aboutAfterEnterAutorun = jest.fn();
+
+let aboutAutorunChangeTestNumber = observable.box(0);
+
+let aboutAutorunChangeTestValues: number[] = [];
+
+let aboutAutorunChangeAction = action(() => {
+  aboutAutorunChangeTestNumber.set(1);
+});
+
+let aboutAutorun = jest.fn(() => {
+  aboutAutorunChangeTestValues.push(aboutAutorunChangeTestNumber.get());
+});
+
+primaryRoute.about.$autorun(aboutAutorun);
 
 primaryRoute.about.$beforeEnter(aboutBeforeEnter);
 primaryRoute.about.$afterEnter(aboutAfterEnter);
@@ -84,9 +101,19 @@ test('should navigate from `redirect` to `about`', async () => {
 
   expect(redirectBeforeEnter).toHaveBeenCalled();
   expect(redirectAfterEnter).not.toHaveBeenCalled();
+  expect(redirectAutorun).not.toHaveBeenCalled();
 
   expect(aboutBeforeEnter).toHaveBeenCalled();
   expect(aboutAfterEnter).toHaveBeenCalled();
+  expect(aboutAutorun).toHaveBeenCalled();
+
+  primaryRoute.about.$autorun(aboutAfterEnterAutorun);
+
+  aboutAutorunChangeAction();
+
+  expect(aboutAfterEnterAutorun).toHaveBeenCalled();
+  expect(aboutAutorun).toHaveBeenCalledTimes(2);
+  expect(aboutAutorunChangeTestValues).toEqual([0, 1]);
 });
 
 test('should revert navigation from `about` to `revert` by `revert.$beforeEnter`', async () => {

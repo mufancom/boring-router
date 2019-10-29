@@ -1,4 +1,10 @@
-import {observable} from 'mobx';
+import {
+  IAutorunOptions,
+  IReactionDisposer,
+  IReactionPublic,
+  autorun,
+  observable,
+} from 'mobx';
 import {OmitValueOfKey, OmitValueWithType} from 'tslang';
 
 import {testPathPrefix, tolerate} from '../@utils';
@@ -102,6 +108,19 @@ export interface RouteAfterUpdateEntry {
 
 export type RouteAfterLeaveCallback = () => void;
 
+// autorun //
+
+export type RouteAutorunView = (reaction: IReactionPublic) => void;
+
+export type RouteAutorunOptions = IAutorunOptions;
+
+export type RouteAutorunDisposer = IReactionDisposer;
+
+export interface RouteAutorunEntry {
+  view: RouteAutorunView;
+  options: RouteAutorunOptions | undefined;
+}
+
 export type RouteHookRemovalCallback = () => void;
 
 export type RouteInterceptCallback<
@@ -202,6 +221,12 @@ export class RouteMatch<
 
   /** @internal */
   private _afterLeaveCallbackSet = new Set<RouteAfterLeaveCallback>();
+
+  /** @internal */
+  private _autorunEntrySet = new Set<RouteAutorunEntry>();
+
+  /** @internal */
+  private _autorunDisposers: RouteAutorunDisposer[] = [];
 
   /** @internal */
   @observable
@@ -309,6 +334,25 @@ export class RouteMatch<
 
     return () => {
       this._afterLeaveCallbackSet.delete(callback);
+    };
+  }
+
+  $autorun(
+    view: RouteAutorunView,
+    options?: RouteAutorunOptions,
+  ): RouteHookRemovalCallback {
+    let autorunEntry: RouteAutorunEntry = {view, options};
+
+    this._autorunEntrySet.add(autorunEntry);
+
+    if (this.$matched) {
+      tolerate(() => {
+        this._autorunDisposers.push(autorun(view, options));
+      });
+    }
+
+    return () => {
+      this._autorunEntrySet.delete(autorunEntry);
     };
   }
 
@@ -525,11 +569,9 @@ export class RouteMatch<
       (async () => {
         let service = await this._getService();
 
-        if (!service || !service.beforeLeave) {
-          return undefined;
+        if (service && service.beforeLeave) {
+          return tolerate(() => service!.beforeLeave!());
         }
-
-        return tolerate(() => service!.beforeLeave!());
       })(),
     ]);
 
@@ -547,11 +589,9 @@ export class RouteMatch<
       (async () => {
         let service = await this._getService();
 
-        if (!service || !service.beforeEnter) {
-          return undefined;
+        if (service && service.beforeEnter) {
+          return tolerate(() => service!.beforeEnter!(next));
         }
-
-        return tolerate(() => service!.beforeEnter!(next));
       })(),
     ]);
 
@@ -575,13 +615,11 @@ export class RouteMatch<
       (async () => {
         let service = await this._getService();
 
-        if (!service || !service.beforeUpdate) {
-          return undefined;
+        if (service && service.beforeUpdate) {
+          return tolerate(() =>
+            service!.beforeUpdate!(next, {descendants: triggeredByDescendants}),
+          );
         }
-
-        return tolerate(() =>
-          service!.beforeUpdate!(next, {descendants: triggeredByDescendants}),
-        );
       })(),
     ]);
 
@@ -590,17 +628,19 @@ export class RouteMatch<
 
   /** @internal */
   async _afterLeave(): Promise<void> {
+    for (let autorunDisposer of this._autorunDisposers) {
+      autorunDisposer();
+    }
+
     for (let callback of this._afterLeaveCallbackSet) {
       tolerate(callback);
     }
 
     let service = await this._getService();
 
-    if (!service || !service.afterLeave) {
-      return;
+    if (service && service.afterLeave) {
+      tolerate(() => service!.afterLeave!());
     }
-
-    tolerate(() => service!.afterLeave!());
   }
 
   /** @internal */
@@ -611,11 +651,17 @@ export class RouteMatch<
 
     let service = await this._getService();
 
-    if (!service || !service.afterEnter) {
-      return;
+    if (service && service.afterEnter) {
+      tolerate(() => service!.afterEnter!());
     }
 
-    tolerate(() => service!.afterEnter!());
+    for (let autorunEntry of this._autorunEntrySet) {
+      tolerate(() => {
+        this._autorunDisposers.push(
+          autorun(autorunEntry.view, autorunEntry.options),
+        );
+      });
+    }
   }
 
   /** @internal */
@@ -628,13 +674,11 @@ export class RouteMatch<
 
     let service = await this._getService();
 
-    if (!service || !service.afterUpdate) {
-      return;
+    if (service && service.afterUpdate) {
+      tolerate(() =>
+        service!.afterUpdate!({descendants: triggeredByDescendants}),
+      );
     }
-
-    tolerate(() =>
-      service!.afterUpdate!({descendants: triggeredByDescendants}),
-    );
   }
 
   /** @internal */

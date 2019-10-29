@@ -136,6 +136,7 @@ export abstract class RouteMatchShared<
   /**
    * Get the deepest matching descendant.
    */
+  @computed
   get $rest(): this {
     if (!this.$matched || this.$exact) {
       return this;
