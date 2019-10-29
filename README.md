@@ -239,29 +239,38 @@ interface RouteMatch<TParamDict> {
   $name: string;
   $group: string | undefined;
   $parent: RouteMatch;
+  $rest: RouteMatch;
 
   $matched: boolean;
   $exact: boolean;
 
   $params: TParamDict;
 
-  $ref(params?: Partial<TParamDict>, options: RouteMatchRefOptions): string;
-  $push(params?: Partial<TParamDict>, options: RouteMatchRefOptions): void;
-  $replace(params?: Partial<TParamDict>, options: RouteMatchRefOptions): void;
+  $ref(params?: Partial<TParamDict>): string;
+  $push(params?: Partial<TParamDict>, options: RouteMatchNavigateOptions): void;
+  $replace(
+    params?: Partial<TParamDict>,
+    options: RouteMatchNavigateOptions,
+  ): void;
 
-  $beforeEnter(callback: RouteMatchBeforeEnter<this>): this;
-  $afterEnter(callback: RouteMatchAfterEnter): this;
+  $beforeEnter(callback: RouteMatchBeforeEnter<this>): RouteHookRemovalCallback;
+  $afterEnter(callback: RouteMatchAfterEnter): RouteHookRemovalCallback;
 
-  $beforeUpdate(callback: RouteMatchBeforeUpdate<this>): this;
-  $afterUpdate(callback: RouteMatchAfterUpdate): this;
+  $beforeUpdate(
+    callback: RouteMatchBeforeUpdate<this>,
+  ): RouteHookRemovalCallback;
+  $afterUpdate(callback: RouteMatchAfterUpdate): RouteHookRemovalCallback;
 
-  $beforeLeave(callback: RouteMatchBeforeLeave): this;
-  $afterLeave(callback: RouteMatchAfterLeave): this;
+  $beforeLeave(callback: RouteMatchBeforeLeave): RouteHookRemovalCallback;
+  $afterLeave(callback: RouteMatchAfterLeave): RouteHookRemovalCallback;
 
-  $autorun(view: RouteAutorunView, options?: RouteAutorunOptions): this;
+  $autorun(
+    view: RouteAutorunView,
+    options?: RouteAutorunOptions,
+  ): RouteHookRemovalCallback;
 
-  $intercept(callback: RouteInterceptCallback): this;
-  $react(callback: RouteReactCallback): this;
+  $intercept(callback: RouteInterceptCallback): RouteHookRemovalCallback;
+  $react(callback: RouteReactCallback): RouteHookRemovalCallback;
 
   $service(factory: RouteMatchServiceFactory<this>): this;
 
@@ -277,14 +286,19 @@ interface NextRouteMatch<TParamDict> {
   $name: string;
   $group: string | undefined;
   $parent: NextRouteMatch;
+  $rest: RouteMatch;
 
+  $matched: boolean;
   $exact: boolean;
 
   $params: TParamDict;
 
-  $ref(params?: Partial<TParamDict>, options: RouteMatchRefOptions): string;
-  $push(params?: Partial<TParamDict>, options: RouteMatchRefOptions): void;
-  $replace(params?: Partial<TParamDict>, options: RouteMatchRefOptions): void;
+  $ref(params?: Partial<TParamDict>): string;
+  $push(params?: Partial<TParamDict>, options: RouteMatchNavigateOptions): void;
+  $replace(
+    params?: Partial<TParamDict>,
+    options: RouteMatchNavigateOptions,
+  ): void;
 }
 ```
 
