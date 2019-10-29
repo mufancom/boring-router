@@ -57,17 +57,21 @@ primaryRoute.parent.$beforeUpdate(parentBeforeUpdate);
 
 let aboutBeforeEnter = jest.fn();
 let aboutAfterEnter = jest.fn();
-let aboutAutorunChangeTestNum = observable.box(0);
-const aboutAutorunChangeTestvalues: number[] = [];
-let aboutAutorunChangeFunc = action(() => {
-  aboutAutorunChangeTestNum.set(1);
-});
-let aboutAutorun = jest.fn(() => {
-  aboutAutorunChangeTestvalues.push(aboutAutorunChangeTestNum.get());
-});
-let aboutAfterEnterAutorun = jest.fn();
 let aboutBeforeLeave = jest.fn();
 let aboutAfterLeave = jest.fn();
+let aboutAfterEnterAutorun = jest.fn();
+
+let aboutAutorunChangeTestNumber = observable.box(0);
+
+let aboutAutorunChangeTestValues: number[] = [];
+
+let aboutAutorunChangeAction = action(() => {
+  aboutAutorunChangeTestNumber.set(1);
+});
+
+let aboutAutorun = jest.fn(() => {
+  aboutAutorunChangeTestValues.push(aboutAutorunChangeTestNumber.get());
+});
 
 primaryRoute.about.$beforeEnter(aboutBeforeEnter);
 primaryRoute.about.$afterEnter(aboutAfterEnter);
@@ -103,11 +107,12 @@ test('should navigate from `redirect` to `about`', async () => {
   expect(aboutAutorun).toHaveBeenCalled();
 
   primaryRoute.about.$autorun(aboutAfterEnterAutorun);
-  aboutAutorunChangeFunc();
+
+  aboutAutorunChangeAction();
 
   expect(aboutAfterEnterAutorun).toHaveBeenCalled();
   expect(aboutAutorun).toHaveBeenCalledTimes(2);
-  expect(aboutAutorunChangeTestvalues).toEqual([0, 1]);
+  expect(aboutAutorunChangeTestValues).toEqual([0, 1]);
 });
 
 test('should revert navigation from `about` to `revert` by `revert.$beforeEnter`', async () => {

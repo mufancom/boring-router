@@ -110,7 +110,7 @@ export type RouteAfterLeaveCallback = () => void;
 
 // autorun //
 
-export type RouteAutorunView = (r: IReactionPublic) => any;
+export type RouteAutorunView = (reaction: IReactionPublic) => void;
 
 export type RouteAutorunOptions = IAutorunOptions;
 
@@ -118,7 +118,7 @@ export type RouteAutorunDisposer = IReactionDisposer;
 
 export interface RouteAutorunEntry {
   view: RouteAutorunView;
-  options?: RouteAutorunOptions;
+  options: RouteAutorunOptions | undefined;
 }
 
 export type RouteHookRemovalCallback = () => void;
@@ -227,9 +227,6 @@ export class RouteMatch<
 
   /** @internal */
   private _autorunDisposers: RouteAutorunDisposer[] = [];
-
-  /** @internal */
-  private _hasEntered: boolean = false;
 
   /** @internal */
   @observable
@@ -344,23 +341,19 @@ export class RouteMatch<
     view: RouteAutorunView,
     options?: RouteAutorunOptions,
   ): RouteHookRemovalCallback {
-    if (this._hasEntered) {
-      let disposer = autorun(view, options);
+    let autorunEntry: RouteAutorunEntry = {view, options};
 
-      this._autorunDisposers.push(disposer);
+    this._autorunEntrySet.add(autorunEntry);
 
-      return () => {
-        disposer();
-      };
-    } else {
-      let autorunEntry: RouteAutorunEntry = {view, options};
-
-      this._autorunEntrySet.add(autorunEntry);
-
-      return () => {
-        this._autorunEntrySet.delete(autorunEntry);
-      };
+    if (this.$matched) {
+      tolerate(() => {
+        this._autorunDisposers.push(autorun(view, options));
+      });
     }
+
+    return () => {
+      this._autorunEntrySet.delete(autorunEntry);
+    };
   }
 
   $intercept(
@@ -641,12 +634,12 @@ export class RouteMatch<
 
   /** @internal */
   async _afterLeave(): Promise<void> {
-    for (let callback of this._afterLeaveCallbackSet) {
-      tolerate(callback);
-    }
-
     for (let autorunDisposer of this._autorunDisposers) {
       autorunDisposer();
+    }
+
+    for (let callback of this._afterLeaveCallbackSet) {
+      tolerate(callback);
     }
 
     let service = await this._getService();
@@ -664,14 +657,6 @@ export class RouteMatch<
       tolerate(callback);
     }
 
-    for (let autorunEntry of this._autorunEntrySet) {
-      this._autorunDisposers.push(
-        autorun(autorunEntry.view, autorunEntry.options),
-      );
-    }
-
-    this._hasEntered = true;
-
     let service = await this._getService();
 
     if (!service || !service.afterEnter) {
@@ -679,6 +664,14 @@ export class RouteMatch<
     }
 
     tolerate(() => service!.afterEnter!());
+
+    for (let autorunEntry of this._autorunEntrySet) {
+      tolerate(() => {
+        this._autorunDisposers.push(
+          autorun(autorunEntry.view, autorunEntry.options),
+        );
+      });
+    }
   }
 
   /** @internal */
