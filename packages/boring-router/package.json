@@ -9,6 +9,7 @@
   "license": "MIT",
   "scripts": {
     "build:library": "rimraf bld/library && tsc -p src/library",
+    "watch:library": "tsc -p src/library --watch",
     "typecheck:test": "tsc -p test",
     "lint:library": "tslint -p src/library",
     "lint:test": "tslint -p test",

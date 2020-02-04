@@ -1,5 +1,5 @@
 import {RouteMatch, RouteMatchSharedToParamDict} from 'boring-router';
-import {action, observable} from 'mobx';
+import {computed} from 'mobx';
 import {observer} from 'mobx-react';
 import React, {Component, HTMLAttributes, MouseEvent, ReactNode} from 'react';
 
@@ -20,8 +20,16 @@ export interface LinkProps<TRouteMatch extends RouteMatch>
 export class Link<TRouteMatch extends RouteMatch> extends Component<
   LinkProps<TRouteMatch>
 > {
-  @observable
-  private href = 'javascript:;';
+  @computed
+  private get href(): string {
+    let {to, params} = this.props;
+
+    try {
+      return to.$router.$(to, params).$href();
+    } catch (error) {
+      return '#';
+    }
+  }
 
   render(): ReactNode {
     let {
@@ -30,8 +38,6 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
       params,
       replace,
       toggle,
-      onMouseEnter,
-      onFocus,
       onClick,
       ...props
     } = this.props;
@@ -40,21 +46,11 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
       <a
         className={className}
         href={this.href}
-        onMouseEnter={composeEventHandler([onMouseEnter, this.onMouseEnter])}
-        onFocus={composeEventHandler([onFocus, this.onFocus])}
         onClick={composeEventHandler([onClick, this.onClick], true)}
         {...props}
       />
     );
   }
-
-  private onMouseEnter = (): void => {
-    this.updateHref();
-  };
-
-  private onFocus = (): void => {
-    this.updateHref();
-  };
 
   private onClick = (event: MouseEvent): void => {
     if (
@@ -79,15 +75,4 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
       to.$push(params, {leave});
     }
   };
-
-  @action
-  private updateHref(): void {
-    let {to, params} = this.props;
-
-    try {
-      this.href = to.$router.$(to, params).$href();
-    } catch (error) {
-      this.href = 'javascript:;';
-    }
-  }
 }
