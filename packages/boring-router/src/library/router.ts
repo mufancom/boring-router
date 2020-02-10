@@ -820,7 +820,7 @@ export class Router<TGroupName extends string = string> {
 
     let routeMatch = new RouteMatch(
       routeName,
-      this,
+      this as Router,
       source,
       parent,
       extension,
@@ -830,7 +830,7 @@ export class Router<TGroupName extends string = string> {
 
     let nextRouteMatch = new NextRouteMatch(
       routeName,
-      this,
+      this as Router,
       matchingSource,
       matchingParent,
       routeMatch,

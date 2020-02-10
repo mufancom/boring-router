@@ -25,7 +25,7 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
     let {to, params} = this.props;
 
     try {
-      return to.$router.$(to, params).$href();
+      return to.$href(params);
     } catch (error) {
       return '#';
     }

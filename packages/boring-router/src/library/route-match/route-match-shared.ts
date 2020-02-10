@@ -61,7 +61,7 @@ export abstract class RouteMatchShared<
    */
   readonly $parent: RouteMatchShared | undefined;
 
-  readonly $router: Router;
+  readonly $router: Router<TGroupName>;
 
   /** @internal */
   readonly _source: RouteSource;
@@ -80,7 +80,7 @@ export abstract class RouteMatchShared<
 
   constructor(
     name: string,
-    router: Router,
+    router: Router<TGroupName>,
     source: RouteSource,
     parent: RouteMatchShared | undefined,
     history: IHistory,
@@ -233,10 +233,21 @@ export abstract class RouteMatchShared<
     );
   }
 
+  $(params?: Partial<TParamDict> & EmptyObjectPatch): RouteBuilder<TGroupName> {
+    return new RouteBuilder<TGroupName>(
+      new Map(),
+      this._source.queryDict,
+      this.$router,
+      [{match: this, params}],
+    );
+  }
+
   $ref(params?: Partial<TParamDict> & EmptyObjectPatch): string {
-    return new RouteBuilder(new Map(), this._source.queryDict, this.$router, [
-      {match: this, params},
-    ]).$ref();
+    return this.$(params).$ref();
+  }
+
+  $href(params?: Partial<TParamDict> & EmptyObjectPatch): string {
+    return this.$(params).$href();
   }
 
   $push(

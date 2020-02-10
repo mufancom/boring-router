@@ -246,7 +246,7 @@ export class RouteMatch<
 
   constructor(
     name: string,
-    router: Router,
+    router: Router<TGroupName>,
     source: RouteSource,
     parent: RouteMatch | undefined,
     extension: object | undefined,

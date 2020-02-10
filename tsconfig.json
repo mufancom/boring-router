@@ -1,0 +1,7 @@
+{
+  "files": [],
+  "references": [
+    {"path": "packages/boring-router/src/library"},
+    {"path": "packages/boring-router-react/src/library"}
+  ]
+}
