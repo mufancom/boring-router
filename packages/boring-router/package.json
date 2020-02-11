@@ -1,6 +1,6 @@
 {
   "name": "boring-router",
-  "version": "0.3.0-alpha.41",
+  "version": "0.3.0-alpha.44",
   "description": "A light-weight, type-safe, yet reactive router service using MobX.",
   "repository": {
     "type": "git",
@@ -20,7 +20,8 @@
   "types": "bld/library/index.d.ts",
   "files": [
     "src/library/**/*.ts",
-    "bld/library"
+    "bld/library",
+    "!*.tsbuildinfo"
   ],
   "peerDependencies": {
     "mobx": "5"

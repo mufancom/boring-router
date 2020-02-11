@@ -21,7 +21,7 @@ export class NextRouteMatch<
 
   constructor(
     name: string,
-    router: Router,
+    router: Router<TGroupName>,
     source: RouteSource,
     parent: NextRouteMatch<TParamDict> | undefined,
     origin: RouteMatch<TParamDict>,

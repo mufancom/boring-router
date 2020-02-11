@@ -2,6 +2,7 @@
   "name": "boring-router-packages",
   "private": true,
   "scripts": {
+    "build": "yarn workspace boring-router build:library && yarn workspace boring-router-react build:library",
     "link-global": "yarn workspace boring-router link && yarn workspace boring-router-react link",
     "lerna:publish": "lerna publish prerelease --registry=https://registry.npmjs.org",
     "test:boring-router": "yarn workspace boring-router test",

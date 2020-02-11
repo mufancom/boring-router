@@ -1,7 +1,9 @@
 {
   "extends": "@magicspace/configs/tsconfig.json",
   "compilerOptions": {
-    "target": "es6",
+    "composite": true,
+
+    "target": "es2018",
     "lib": ["esnext"],
     "experimentalDecorators": true,
     "declaration": true,
