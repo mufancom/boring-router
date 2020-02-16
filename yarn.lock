@@ -2914,9 +2914,9 @@ growly@^1.3.0:
   integrity sha1-8QdIy+dq+WS3yWyTxrzCivEgwIE=
 
 handlebars@^4.1.2:
-  version "4.1.2"
-  resolved "https://registry.yarnpkg.com/handlebars/-/handlebars-4.1.2.tgz#b6b37c1ced0306b221e094fc7aca3ec23b131b67"
-  integrity sha512-nvfrjqvt9xQ8Z/w0ijewdD/vvWDTOweBUm96NTr66Wfvo1mJenBLwcYmPs3TIBP5ruzYGD7Hx/DaM9RmhroGPw==
+  version "4.7.3"
+  resolved "https://registry.yarnpkg.com/handlebars/-/handlebars-4.7.3.tgz#8ece2797826886cf8082d1726ff21d2a022550ee"
+  integrity sha512-SRGwSYuNfx8DwHD/6InAPzD6RgeruWLT+B8e8a7gGs8FWgHzlExpTFMEq2IA6QpAfOClpKHy6+8IqTjeBCu6Kg==
   dependencies:
     neo-async "^2.6.0"
     optimist "^0.6.1"
@@ -6193,10 +6193,15 @@ ts-jest@^24.1.0:
     semver "^5.5"
     yargs-parser "10.x"
 
-tslang@^0.1.15, tslang@^0.1.17:
+tslang@^0.1.15:
   version "0.1.17"
   resolved "https://registry.yarnpkg.com/tslang/-/tslang-0.1.17.tgz#160ce527b93f7b99015bd4112edade35b3f52dfb"
   integrity sha512-6sXOq5DCDQDR5hhS6YIwLwqxA1NtEa6gdsla/YKdGGgL/3oO++UJTElh2WIW3iSHyOBSB1M/jhmj9jnmd01rBQ==
+
+tslang@^0.1.21:
+  version "0.1.21"
+  resolved "https://registry.yarnpkg.com/tslang/-/tslang-0.1.21.tgz#c9835a9c8e3c3804ae9fadbee28c9b4631870f18"
+  integrity sha512-zWH29+lkBU9uaCg9jMLRn3ToxkjeSig0e/nXTZ9tVY6M4uR20Bct8GkAtsgxs2jfB4mRh0P02j+PuDYGlMIHTg==
 
 tslib@^1.10.0, tslib@^1.8.0, tslib@^1.8.1, tslib@^1.9.0:
   version "1.10.0"

@@ -1,6 +1,6 @@
 {
   "name": "boring-router-react",
-  "version": "0.3.0-alpha.44",
+  "version": "0.3.0-alpha.45",
   "description": "A light-weight, type-safe, yet reactive router service using MobX.",
   "repository": {
     "type": "git",
@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "classnames": "^2.2.6",
-    "tslang": "^0.1.17"
+    "tslang": "^0.1.21"
   },
   "gitHead": "967f6cb251a3bc95ab26ac19cc975b452ce411a4"
 }

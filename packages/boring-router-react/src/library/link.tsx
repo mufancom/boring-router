@@ -1,31 +1,39 @@
-import {RouteMatch, RouteMatchSharedToParamDict} from 'boring-router';
+import {
+  RouteBuilder,
+  RouteMatch,
+  RouteMatchSharedToParamDict,
+} from 'boring-router';
 import {computed} from 'mobx';
 import {observer} from 'mobx-react';
 import React, {Component, HTMLAttributes, MouseEvent, ReactNode} from 'react';
 
 import {composeEventHandler} from './@utils';
 
-export interface LinkProps<TRouteMatch extends RouteMatch>
+export interface LinkProps<T extends RouteMatch | RouteBuilder>
   extends HTMLAttributes<HTMLAnchorElement> {
   className?: string;
-  to: TRouteMatch;
-  params?: RouteMatchSharedToParamDict<TRouteMatch>;
+  to: T;
+  params?: T extends RouteMatch ? RouteMatchSharedToParamDict<T> : undefined;
   replace?: boolean;
-  toggle?: boolean;
-  leave?: boolean;
   children: ReactNode;
+  toggle?: T extends RouteMatch ? boolean : undefined;
+  leave?: T extends RouteMatch ? boolean : undefined;
 }
 
 @observer
-export class Link<TRouteMatch extends RouteMatch> extends Component<
-  LinkProps<TRouteMatch>
+export class Link<T extends RouteMatch | RouteBuilder> extends Component<
+  LinkProps<T>
 > {
   @computed
   private get href(): string {
     let {to, params} = this.props;
 
     try {
-      return to.$href(params);
+      if (to instanceof RouteMatch) {
+        return to.$href(params);
+      } else {
+        return to.$href();
+      }
     } catch (error) {
       return '#';
     }
@@ -65,14 +73,21 @@ export class Link<TRouteMatch extends RouteMatch> extends Component<
 
     let {to, params, replace, toggle = false, leave} = this.props;
 
-    if (leave === undefined) {
-      leave = toggle && to.$matched;
-    }
+    if (to instanceof RouteMatch) {
+      let leaveOption =
+        leave === undefined ? toggle && to.$matched : (leave as boolean);
 
-    if (replace) {
-      to.$replace(params, {leave});
+      if (replace) {
+        to.$replace(params, {leave: leaveOption});
+      } else {
+        to.$push(params, {leave: leaveOption});
+      }
     } else {
-      to.$push(params, {leave});
+      if (replace) {
+        to.$replace();
+      } else {
+        to.$push();
+      }
     }
   };
 }
