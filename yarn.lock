@@ -6193,10 +6193,15 @@ ts-jest@^24.1.0:
     semver "^5.5"
     yargs-parser "10.x"
 
-tslang@^0.1.15, tslang@^0.1.17:
+tslang@^0.1.15:
   version "0.1.17"
   resolved "https://registry.yarnpkg.com/tslang/-/tslang-0.1.17.tgz#160ce527b93f7b99015bd4112edade35b3f52dfb"
   integrity sha512-6sXOq5DCDQDR5hhS6YIwLwqxA1NtEa6gdsla/YKdGGgL/3oO++UJTElh2WIW3iSHyOBSB1M/jhmj9jnmd01rBQ==
+
+tslang@^0.1.21:
+  version "0.1.21"
+  resolved "https://registry.yarnpkg.com/tslang/-/tslang-0.1.21.tgz#c9835a9c8e3c3804ae9fadbee28c9b4631870f18"
+  integrity sha512-zWH29+lkBU9uaCg9jMLRn3ToxkjeSig0e/nXTZ9tVY6M4uR20Bct8GkAtsgxs2jfB4mRh0P02j+PuDYGlMIHTg==
 
 tslib@^1.10.0, tslib@^1.8.0, tslib@^1.8.1, tslib@^1.9.0:
   version "1.10.0"

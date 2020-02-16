@@ -45,6 +45,11 @@ export class App extends Component {
               Boring
             </Link>
           </div>
+          <div>
+            <Link to={route.notFound.$({notFound: 'boring'})}>
+              Boring (builder)
+            </Link>
+          </div>
         </Route>
         <Route match={route.account}>
           <p>Account page</p>

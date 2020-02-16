@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "classnames": "^2.2.6",
-    "tslang": "^0.1.17"
+    "tslang": "^0.1.21"
   },
   "gitHead": "967f6cb251a3bc95ab26ac19cc975b452ce411a4"
 }
