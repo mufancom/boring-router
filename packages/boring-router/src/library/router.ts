@@ -54,6 +54,17 @@ interface RouteSchemaExtensionSection<TRouteMatchExtension> {
   $extension: TRouteMatchExtension;
 }
 
+interface RouteSchemaMetadataSection<TMetadata> {
+  $metadata: TMetadata;
+}
+
+type RouteMatchMetadataType<
+  TRouteSchema,
+  TUpperMetadata
+> = TRouteSchema extends RouteSchemaMetadataSection<infer TMetadata>
+  ? TMetadata & TUpperMetadata
+  : TUpperMetadata;
+
 type RouteMatchExtensionType<
   TRouteSchema
 > = TRouteSchema extends RouteSchemaExtensionSection<infer TRouteMatchExtension>
@@ -65,7 +76,8 @@ type RouteMatchSegmentType<
   TSegmentKey extends string,
   TQueryKey extends string,
   TSpecificGroupName extends string | undefined,
-  TGroupName extends string
+  TGroupName extends string,
+  TMetadata extends object
 > = {
   [K in Extract<keyof TRouteSchemaDict, string>]: RouteMatchType<
     TRouteSchemaDict[K],
@@ -73,7 +85,8 @@ type RouteMatchSegmentType<
     | TQueryKey
     | Extract<keyof RouteQuerySchemaType<TRouteSchemaDict[K]>, string>,
     TSpecificGroupName,
-    TGroupName
+    TGroupName,
+    TMetadata
   >;
 };
 
@@ -83,7 +96,8 @@ type __RouteMatchType<
   TQueryKey extends string,
   TSpecificGroupName extends string | undefined,
   TGroupName extends string,
-  TParamDict extends Dict<string | undefined>
+  TParamDict extends Dict<string | undefined>,
+  TMetadata extends object
 > = RouteMatch<
   TParamDict,
   __NextRouteMatchType<
@@ -95,14 +109,16 @@ type __RouteMatchType<
     TParamDict
   >,
   TSpecificGroupName,
-  TGroupName
+  TGroupName,
+  RouteMatchMetadataType<TRouteSchema, TMetadata>
 > &
   RouteMatchSegmentType<
     NestedRouteSchemaDictType<TRouteSchema>,
     TSegmentKey,
     TQueryKey,
     TSpecificGroupName,
-    TGroupName
+    TGroupName,
+    RouteMatchMetadataType<TRouteSchema, TMetadata>
   > &
   RouteMatchExtensionType<TRouteSchema>;
 
@@ -111,14 +127,16 @@ export type RouteMatchType<
   TSegmentKey extends string,
   TQueryKey extends string,
   TSpecificGroupName extends string | undefined,
-  TGroupName extends string
+  TGroupName extends string,
+  TMetadata extends object
 > = __RouteMatchType<
   TRouteSchema,
   TSegmentKey,
   TQueryKey,
   TSpecificGroupName,
   TGroupName,
-  Record<TQueryKey, string | undefined> & Record<TSegmentKey, string>
+  Record<TQueryKey, string | undefined> & Record<TSegmentKey, string>,
+  TMetadata
 >;
 
 type NextRouteMatchSegmentType<
@@ -172,13 +190,15 @@ type NextRouteMatchType<
 export type RootRouteMatchType<
   TRouteSchemaDict,
   TSpecificGroupName extends string | undefined,
-  TGroupName extends string
+  TGroupName extends string,
+  TMetadata extends object = {}
 > = RouteMatchType<
   {$children: TRouteSchemaDict},
   never,
   never,
   TSpecificGroupName,
-  TGroupName
+  TGroupName,
+  TMetadata
 >;
 
 export type RouterOnLeave = (path: string) => void;
@@ -203,6 +223,7 @@ interface BuildRouteMatchOptions {
   query: Dict<boolean> | undefined;
   children: RouteSchemaDict | undefined;
   extension: object | undefined;
+  metadata: object | undefined;
 }
 
 export interface RouterNavigateOptions {
@@ -322,6 +343,7 @@ export class Router<TGroupName extends string = string> {
       query: undefined,
       children: schema,
       extension: undefined,
+      metadata: undefined,
     });
 
     this._groupToRouteMatchMap.set(group, routeMatch);
@@ -771,6 +793,7 @@ export class Router<TGroupName extends string = string> {
           $query: query,
           $children: children,
           $extension: extension,
+          $metadata: metadata,
         } = schema;
 
         let [routeMatch, nextRouteMatch] = this._buildRouteMatch(
@@ -784,6 +807,7 @@ export class Router<TGroupName extends string = string> {
             query,
             children,
             extension,
+            metadata,
           },
         );
 
@@ -805,7 +829,14 @@ export class Router<TGroupName extends string = string> {
     routeName: string,
     parent: RouteMatch | undefined,
     matchingParent: NextRouteMatch | undefined,
-    {match, exact, query, children, extension}: BuildRouteMatchOptions,
+    {
+      match,
+      exact,
+      query,
+      children,
+      extension,
+      metadata,
+    }: BuildRouteMatchOptions,
   ): [RouteMatch, NextRouteMatch] {
     let source = this._source;
     let matchingSource = this._matchingSource;
@@ -816,6 +847,7 @@ export class Router<TGroupName extends string = string> {
       query,
       exact,
       group,
+      metadata,
     };
 
     let routeMatch = new RouteMatch(

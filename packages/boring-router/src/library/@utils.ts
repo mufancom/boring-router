@@ -86,13 +86,10 @@ export function parseRef(ref: string): ParseRefResult {
 export function parseSearch(search: string): GeneralQueryDict {
   let searchParams = new URLSearchParams(search);
 
-  return Array.from(searchParams).reduce(
-    (dict, [key, value]) => {
-      dict[key] = value;
-      return dict;
-    },
-    {} as GeneralQueryDict,
-  );
+  return Array.from(searchParams).reduce((dict, [key, value]) => {
+    dict[key] = value;
+    return dict;
+  }, {} as GeneralQueryDict);
 }
 
 export function testPathPrefix(path: string, prefix: string): boolean {

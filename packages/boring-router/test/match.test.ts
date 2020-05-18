@@ -1,4 +1,5 @@
 import {configure} from 'mobx';
+import {AssertTrue, IsEqual} from 'tslang';
 
 import {MemoryHistory, RouteMatch, Router} from '../bld/library';
 
@@ -29,7 +30,13 @@ let primaryRoute = router.$route({
           settings: true,
           billings: true,
         },
+        $metadata: {
+          'sub-title': 123,
+        },
       },
+    },
+    $metadata: {
+      title: 'account',
     },
   },
   onlySidebar: {
@@ -180,6 +187,26 @@ test('should match `account.id`', async () => {
   expect(router.$(primaryRoute.account.id, {id: '456'}).$ref()).toBe(
     '/account/456',
   );
+});
+
+test('metadata should be merged', async () => {
+  let accountMetadata = primaryRoute.account.$metadata;
+  let accountIdMetadata = primaryRoute.account.id.$metadata;
+
+  // @ts-ignore
+  type __Assertion =
+    // line-break
+    AssertTrue<IsEqual<typeof accountMetadata, {title: string}>>;
+
+  // @ts-ignore
+  type __Assertion =
+    // line-break
+    AssertTrue<
+      IsEqual<typeof accountIdMetadata, {title: string; 'sub-title': number}>
+    >;
+
+  expect(accountMetadata).toEqual({title: 'account'});
+  expect(accountIdMetadata).toEqual({title: 'account', 'sub-title': 123});
 });
 
 test('should match `account.id.settings`', async () => {

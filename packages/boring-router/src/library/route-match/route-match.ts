@@ -190,6 +190,7 @@ export interface RouteSource {
 
 export interface RouteMatchOptions extends RouteMatchSharedOptions {
   exact: boolean | string;
+  metadata: object | undefined;
 }
 
 export class RouteMatch<
@@ -198,11 +199,14 @@ export class RouteMatch<
     TParamDict
   >,
   TSpecificGroupName extends string | undefined = string | undefined,
-  TGroupName extends string = string
+  TGroupName extends string = string,
+  TMetadata extends object = object
 > extends RouteMatchShared<TParamDict, TSpecificGroupName, TGroupName> {
   readonly $parent: RouteMatch | undefined;
 
   readonly $next!: TNextRouteMatch;
+
+  readonly $metadata: TMetadata;
 
   /** @internal */
   private _beforeEnterCallbackSet = new Set<RouteBeforeEnterCallback>();
@@ -251,7 +255,7 @@ export class RouteMatch<
     parent: RouteMatch | undefined,
     extension: object | undefined,
     history: IHistory,
-    {exact, ...sharedOptions}: RouteMatchOptions,
+    {exact, metadata, ...sharedOptions}: RouteMatchOptions,
   ) {
     super(name, router, source, parent, history, sharedOptions);
 
@@ -267,6 +271,11 @@ export class RouteMatch<
         });
       }
     }
+
+    this.$metadata = {
+      ...parent?.$metadata,
+      ...metadata,
+    } as TMetadata;
 
     this._allowExact = exact;
   }
