@@ -219,18 +219,15 @@ export abstract class RouteMatchShared<
   protected get _query(): GeneralQueryDict | undefined {
     let sourceQueryDict = this._source.queryDict;
 
-    return Array.from(this._queryKeySet).reduce(
-      (dict, key) => {
-        let value = sourceQueryDict[key];
+    return Array.from(this._queryKeySet).reduce((dict, key) => {
+      let value = sourceQueryDict[key];
 
-        if (value !== undefined) {
-          dict[key] = sourceQueryDict[key];
-        }
+      if (value !== undefined) {
+        dict[key] = sourceQueryDict[key];
+      }
 
-        return dict;
-      },
-      {} as GeneralQueryDict,
-    );
+      return dict;
+    }, {} as GeneralQueryDict);
   }
 
   $(params?: Partial<TParamDict> & EmptyObjectPatch): RouteBuilder<TGroupName> {

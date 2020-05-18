@@ -13,6 +13,7 @@ export interface RouteSchema {
   $exact?: boolean | string;
   $children?: RouteSchemaDict;
   $extension?: object;
+  $metadata?: object;
 }
 
 export type RouteSchemaDict = Dict<RouteSchema | boolean>;

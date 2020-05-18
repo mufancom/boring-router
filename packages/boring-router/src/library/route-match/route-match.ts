@@ -190,6 +190,7 @@ export interface RouteSource {
 
 export interface RouteMatchOptions extends RouteMatchSharedOptions {
   exact: boolean | string;
+  metadata: object | undefined;
 }
 
 export class RouteMatch<
@@ -198,7 +199,8 @@ export class RouteMatch<
     TParamDict
   >,
   TSpecificGroupName extends string | undefined = string | undefined,
-  TGroupName extends string = string
+  TGroupName extends string = string,
+  TMetadata extends object = object
 > extends RouteMatchShared<TParamDict, TSpecificGroupName, TGroupName> {
   readonly $parent: RouteMatch | undefined;
 
@@ -242,7 +244,17 @@ export class RouteMatch<
   private _allowExact: boolean | string;
 
   /** @internal */
+  private readonly _metadata: object | undefined;
+
+  /** @internal */
   _parallel: RouteMatchParallelOptions<TGroupName> | undefined;
+
+  get $metadata(): TMetadata {
+    return Object.assign(
+      this.$parent?.$metadata ?? {},
+      this._metadata,
+    ) as TMetadata;
+  }
 
   constructor(
     name: string,
@@ -251,7 +263,7 @@ export class RouteMatch<
     parent: RouteMatch | undefined,
     extension: object | undefined,
     history: IHistory,
-    {exact, ...sharedOptions}: RouteMatchOptions,
+    {exact, metadata, ...sharedOptions}: RouteMatchOptions,
   ) {
     super(name, router, source, parent, history, sharedOptions);
 
@@ -267,6 +279,8 @@ export class RouteMatch<
         });
       }
     }
+
+    this._metadata = metadata;
 
     this._allowExact = exact;
   }
