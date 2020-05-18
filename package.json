@@ -8,8 +8,7 @@
     "test:boring-router": "yarn workspace boring-router test",
     "test:boring-router-react": "yarn workspace boring-router-react test",
     "test": "yarn lint-prettier && yarn test:boring-router && yarn test:boring-router-react",
-    "lint-prettier": "prettier --list-different \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "fix-prettier": "prettier --list-different \"**/*.{ts,tsx,js,jsx,json,md}\" --write"
+    "lint-prettier": "prettier --list-different \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "devDependencies": {
     "@magicspace/configs": "0.1.49",

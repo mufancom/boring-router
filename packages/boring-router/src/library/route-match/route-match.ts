@@ -206,6 +206,8 @@ export class RouteMatch<
 
   readonly $next!: TNextRouteMatch;
 
+  readonly $metadata: TMetadata;
+
   /** @internal */
   private _beforeEnterCallbackSet = new Set<RouteBeforeEnterCallback>();
 
@@ -244,17 +246,7 @@ export class RouteMatch<
   private _allowExact: boolean | string;
 
   /** @internal */
-  private readonly _metadata: object | undefined;
-
-  /** @internal */
   _parallel: RouteMatchParallelOptions<TGroupName> | undefined;
-
-  get $metadata(): TMetadata {
-    return Object.assign(
-      this.$parent?.$metadata ?? {},
-      this._metadata,
-    ) as TMetadata;
-  }
 
   constructor(
     name: string,
@@ -280,7 +272,10 @@ export class RouteMatch<
       }
     }
 
-    this._metadata = metadata;
+    this.$metadata = {
+      ...parent?.$metadata,
+      ...metadata,
+    } as TMetadata;
 
     this._allowExact = exact;
   }
