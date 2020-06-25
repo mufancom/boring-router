@@ -3,16 +3,17 @@
 
 # Boring Router
 
-A ~~light-weight~~, type-safe, yet reactive router service using MobX.
+A type-safe, yet reactive router using MobX.
 
-## Why
+## Introduction
 
-There are multiple reasons pushing me to write Boring Router instead of sticking with React Router.
+Boring Router is a state-first router with light-weight route components. It manages observable (MobX) route states like `route.$matched` and `route.$params`, so the route components as well as your code can react to those states. Boring Router is written in TypeScript and it puts type safety in mind designing the API.
 
-- Making React Router work with a global store/service is not straightforward. Having to parse location twice with the same schema defined with two different approaches looks redundant to me.
-- React Router (and many other alternatives) provides basically no type safety between path schema and match result. And you have to write `to` as strings in links.
-- People can easily write ambiguous path schema without it bringing them attention.
-- I think I've got a nice idea. 😉
+## Features
+
+- **Schema-based, type-safe route representation**: You don't need, and it is not recommended to write routes as strings with Boring Router. Route schema can be shared with Node.js backend and this makes route representations type-safe everywhere.
+- **Parallel routes support**: Views like sidebar, overlay can be easily routed with Boring Router parallel routes. Parallel routes can be manipulated separately for different views.
+- **Full life-cycle hooks support**: Boring Router implements its own `BrowserHistory` with the ability to restore browser history stack according to a given snapshot. This makes it possible to support full life-cycle hooks while keeping history navigation behavior right.
 
 ## Installation
 
@@ -199,6 +200,8 @@ class App extends Component {
 
 ### Run an example
 
+Clone this project and run the following commands:
+
 ```sh
 yarn install
 yarn build
@@ -207,178 +210,6 @@ yarn global add parcel-bundler
 
 parcel examples/[name]/index.html
 ```
-
-## Schema
-
-Boring Router defines routes via a tree-structure schema:
-
-```ts
-type RouteSchemaDict = Dict<RouteSchema | boolean>;
-
-interface RouteSchema {
-  $match?: string | RegExp;
-  $query?: Dict<boolean>;
-  $children?: RouteSchemaDict;
-}
-```
-
-Two pre-defined `$match` regular expressions are available as `RouteMatch.segment` (`/[^/]+/`) and `RouteMatch.rest` (`/.+/`).
-
-A `schema` wrapper function is available to make TypeScript intellisense happier for separated schema definition:
-
-```ts
-function schema<T extends RouteSchemaDict>(schema: T): T;
-```
-
-## Route match
-
-The value of expression like `route.account` in the usage example above is a `RouteMatch`, and it has the following reactive properties and methods:
-
-```ts
-interface RouteMatch<TParamDict> {
-  $name: string;
-  $group: string | undefined;
-  $parent: RouteMatch;
-  $rest: RouteMatch;
-
-  $matched: boolean;
-  $exact: boolean;
-
-  $params: TParamDict;
-
-  $ref(params?: Partial<TParamDict>): string;
-  $push(params?: Partial<TParamDict>, options: RouteMatchNavigateOptions): void;
-  $replace(
-    params?: Partial<TParamDict>,
-    options: RouteMatchNavigateOptions,
-  ): void;
-
-  $beforeEnter(callback: RouteMatchBeforeEnter<this>): RouteHookRemovalCallback;
-  $afterEnter(callback: RouteMatchAfterEnter): RouteHookRemovalCallback;
-
-  $beforeUpdate(
-    callback: RouteMatchBeforeUpdate<this>,
-  ): RouteHookRemovalCallback;
-  $afterUpdate(callback: RouteMatchAfterUpdate): RouteHookRemovalCallback;
-
-  $beforeLeave(callback: RouteMatchBeforeLeave): RouteHookRemovalCallback;
-  $afterLeave(callback: RouteMatchAfterLeave): RouteHookRemovalCallback;
-
-  $autorun(
-    view: RouteAutorunView,
-    options?: RouteAutorunOptions,
-  ): RouteHookRemovalCallback;
-
-  $intercept(callback: RouteInterceptCallback): RouteHookRemovalCallback;
-  $react(callback: RouteReactCallback): RouteHookRemovalCallback;
-
-  $service(factory: RouteMatchServiceFactory<this>): this;
-
-  static segment: RegExp;
-  static rest: RegExp;
-}
-```
-
-Within `$beforeEnter`, `$beforeUpdate` hooks and correspondent service hooks, a special version of `RouteMatch` is available as `NextRouteMatch`, providing restricted functionality:
-
-```ts
-interface NextRouteMatch<TParamDict> {
-  $name: string;
-  $group: string | undefined;
-  $parent: NextRouteMatch;
-  $rest: RouteMatch;
-
-  $matched: boolean;
-  $exact: boolean;
-
-  $params: TParamDict;
-
-  $ref(params?: Partial<TParamDict>): string;
-  $push(params?: Partial<TParamDict>, options: RouteMatchNavigateOptions): void;
-  $replace(
-    params?: Partial<TParamDict>,
-    options: RouteMatchNavigateOptions,
-  ): void;
-}
-```
-
-## Hooks
-
-Boring Router provides 6 hooks: `$beforeEnter`, `$afterEnter`; `$beforeUpdate`, `$afterUpdate`; `$beforeLeave`, `$afterLeave`. When a route changing is happening, those hooks are called with the following order:
-
-- `$beforeLeave`
-- `$beforeEnter` / `$beforeUpdate`
-- Update route matching.
-- `$afterLeave`
-- `$afterEnter` / `$afterUpdate`
-
-The 3 "before" hooks accept `false` as return value to cancel the route change. You can also `$push` or `$replace` directly within those hooks (which will cancel current route change as well).
-
-The hook callbacks of `$beforeEnter` and `$beforeUpdate` provides a `NextRouteMatch` object which looks like a lite `RouteMatch`, with which you can retrieve parameters and change the location via `$push` and `$replace`.
-
-Another two methods `$intercept` and `$react` are added as shortcut to `$beforeEnter`/`$beforeUpdate` and `$afterEnter`/`$afterUpdate` respectively.
-
-## Service
-
-Service is a combination of hooks and route match extension provider.
-
-Check out the following example:
-
-```ts
-type AccountIdRouteMatch = typeof route.account.accountId;
-
-class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
-  // Match the property `account` with `$extension.account`.
-  @observable
-  account!: Account;
-
-  constructor(private match: AccountIdRouteMatch) {}
-
-  // Match the property `name` with `$extension.name`.
-  @computed
-  get name(): string {
-    return `[${this.match.$params.accountId}]`;
-  }
-
-  beforeEnter({$params: {accountId}}: AccountIdRouteMatch['$next']): void {
-    this.account = new Account(accountId);
-  }
-
-  beforeUpdate(match: AccountIdRouteMatch['$next']): void {
-    this.beforeEnter(match);
-  }
-
-  afterLeave(): void {
-    this.account = undefined!;
-  }
-}
-
-let router = new Router(history);
-
-let route = router.$route({
-  accountId: {
-    $match: RouteMatch.segment,
-    // Define extension defaults with types
-    $extension: {
-      account: undefined! as Account,
-      name: undefined! as string,
-    },
-  },
-});
-
-// Method `$service` accepts an asynchronous function as well.
-route.accountId.$service(match => new AccountRouteService(match));
-
-// Access the extension:
-route.accountId.account;
-route.accountId.name;
-```
-
-## Parallel routes
-
-Sometimes when a page is separated into different views, we might want separate routes. For example, a dashboard may have "main content view", "side bar view" and an "overlay" at the same time. If we want to cooperate them all with routes, the parallel-routes feature could be useful.
-
-A parallel route behaves like a primary route most of the time. For more information, check out [this example](packages/boring-router-react/examples/parallel-routes/main.tsx).
 
 ## License
 

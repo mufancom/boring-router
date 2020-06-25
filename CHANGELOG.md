@@ -4,9 +4,11 @@
 
 ### Changes
 
-- Added hooks `$beforeEnter`, `$afterEnter`, `$beforeUpdate`, `$afterUpdate`, `$beforeLeave` and `$afterLeave`; added `$intercept` as shortcut for `$beforeEnter` and `$beforeUpdate`; added `$react` as shortcut for `$afterEnter` and `$afterUpdate`.
+- Added hooks `$before/will/afterEnter`, `$before/will/afterUpdate`, `$before/will/afterLeave`; added `$before/will/afterEnterOrUpdate` as shortcut for `$before/will/afterEnter` and `$before/will/afterUpdate`.
 - Added service `$service`.
 - Added parallel routes.
+- Added `RouteBuilder`.
+- Added `$metadata` support.
 
 ### Breaking changes
 
