@@ -235,7 +235,7 @@ export abstract class RouteMatchShared<
       new Map(),
       this._source.queryDict,
       this.$router,
-      [{match: this, params}],
+      [{route: this, params}],
     );
   }
 

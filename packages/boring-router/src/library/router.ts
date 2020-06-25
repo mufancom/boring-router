@@ -360,19 +360,19 @@ export class Router<TGroupName extends string = string> {
   }
 
   $<TRouteMatchShared extends RouteMatchShared>(
-    match: TRouteMatchShared,
+    route: TRouteMatchShared,
     params?: Partial<RouteMatchSharedToParamDict<TRouteMatchShared>> &
       EmptyObjectPatch,
   ): RouteBuilder<TGroupName>;
   $(part: string): RouteBuilder<TGroupName>;
-  $(match: RouteMatchShared | string, params?: GeneralParamDict): RouteBuilder {
+  $(route: RouteMatchShared | string, params?: GeneralParamDict): RouteBuilder {
     let {pathMap, queryDict} = this._source;
 
     let buildingPart =
-      typeof match === 'string'
-        ? match
+      typeof route === 'string'
+        ? route
         : {
-            match,
+            route,
             params,
           };
 
