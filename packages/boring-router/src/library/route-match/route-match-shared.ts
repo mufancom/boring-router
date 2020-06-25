@@ -14,7 +14,7 @@ export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
 
 export type RouteMatchSharedToParamDict<
-  TRouteMatchShared extends RouteMatchShared
+  TRouteMatchShared
 > = TRouteMatchShared extends RouteMatchShared<infer TParamDict>
   ? TParamDict
   : never;

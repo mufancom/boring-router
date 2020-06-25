@@ -23,6 +23,15 @@ export class RouteBuilder<TGroupName extends string = string> {
     private leavingGroupSet = new Set<string>(),
   ) {}
 
+  /**
+   * Route of the first building part if available.
+   */
+  get $route(): RouteMatchShared | undefined {
+    let [firstPart] = this.buildingParts;
+
+    return typeof firstPart === 'object' ? firstPart.match : undefined;
+  }
+
   $<TRouteMatchShared extends RouteMatchShared>(
     match: TRouteMatchShared,
     params?: Partial<RouteMatchSharedToParamDict<TRouteMatchShared>> &
