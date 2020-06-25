@@ -3,12 +3,8 @@
   "compilerOptions": {
     "composite": true,
 
-    "target": "es2018",
-    "lib": ["esnext"],
     "experimentalDecorators": true,
-    "declaration": true,
 
-    "rootDir": ".",
     "outDir": "../../bld/library"
   }
 }

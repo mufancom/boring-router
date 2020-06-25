@@ -1,6 +1,5 @@
+import {IRouteService, MemoryHistory, RouteMatch, Router} from 'boring-router';
 import {computed, configure, observable} from 'mobx';
-
-import {IRouteService, MemoryHistory, RouteMatch, Router} from '../bld/library';
 
 import {nap} from './@utils';
 

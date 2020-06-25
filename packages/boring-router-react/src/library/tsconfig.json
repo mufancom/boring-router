@@ -3,13 +3,11 @@
   "compilerOptions": {
     "composite": true,
 
-    "target": "es2018",
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "experimentalDecorators": true,
     "jsx": "react",
-    "declaration": true,
 
-    "rootDir": ".",
     "outDir": "../../bld/library"
-  }
+  },
+  "references": [{"path": "../../../boring-router/src/library"}]
 }

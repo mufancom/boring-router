@@ -8,13 +8,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "build:library": "rimraf bld/library && tsc -p src/library",
-    "typecheck:test": "tsc -p test",
-    "lint:library": "tslint -p src/library",
-    "lint:test": "tslint -p test",
-    "test:library": "yarn build:library && yarn lint:library && jest",
-    "test:test": "yarn typecheck:test && yarn lint:test",
-    "test": "yarn test:library && yarn test:test"
+    "test": "jest"
   },
   "main": "bld/library/index.js",
   "types": "bld/library/index.d.ts",
@@ -27,16 +21,15 @@
     "mobx": "5"
   },
   "devDependencies": {
-    "@types/history": "^4.7.3",
-    "@types/jest": "^25.2.2",
-    "@types/lodash": "^4.14.141",
-    "jest": "^26.0.1",
-    "ts-jest": "^26.0.0"
+    "@types/history": "^4.7.6",
+    "@types/jest": "^26.0.2",
+    "@types/lodash": "^4.14.157",
+    "jest": "^26.1.0",
+    "ts-jest": "^26.1.1"
   },
   "dependencies": {
     "hyphenate": "^0.2.4",
     "lodash": "^4.17.15",
-    "tslang": "^0.1.21"
-  },
-  "gitHead": "967f6cb251a3bc95ab26ac19cc975b452ce411a4"
+    "tslang": "^0.1.22"
+  }
 }

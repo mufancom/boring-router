@@ -1,6 +1,5 @@
+import {MemoryHistory, Router} from 'boring-router';
 import {action, configure, observable} from 'mobx';
-
-import {MemoryHistory, Router} from '../bld/library';
 
 import {nap} from './@utils';
 

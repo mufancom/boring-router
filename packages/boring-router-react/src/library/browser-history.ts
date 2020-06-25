@@ -5,6 +5,9 @@ import {
   getActiveHistoryEntryIndex,
   isHistoryEntryEqual,
 } from 'boring-router';
+import Debug from 'debug';
+
+const debug = Debug('boring-router:react:browser-history');
 
 type BrowserHistoryEntry<TData> = HistoryEntry<number, TData>;
 
@@ -138,7 +141,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       data,
     });
 
-    console.debug('push', snapshot);
+    debug('push', snapshot);
 
     this.snapshot = snapshot;
 
@@ -156,7 +159,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       data,
     });
 
-    console.debug('replace', snapshot);
+    debug('replace', snapshot);
 
     this.snapshot = snapshot;
 
@@ -164,7 +167,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
   }
 
   async restore(snapshot: BrowserHistorySnapshot<TData>): Promise<void> {
-    console.debug('restore', snapshot);
+    debug('restore', snapshot);
 
     this.snapshot = snapshot;
 
@@ -172,7 +175,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       return;
     }
 
-    console.debug('restore start');
+    debug('restore start');
 
     this.restoring = true;
 
@@ -235,15 +238,15 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     this.snapshot = snapshot;
 
-    console.debug('pop', snapshot);
+    debug('pop', snapshot);
 
     this.emitChange(snapshot);
   };
 
   private stepRestoration(): void {
-    console.debug('step restoration');
-    console.debug('expected', this.snapshot);
-    console.debug('tracked', this.tracked);
+    debug('step restoration');
+    debug('expected', this.snapshot);
+    debug('tracked', this.tracked);
 
     this.restoreEntries();
   }
@@ -356,9 +359,9 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     this.restoringPromiseResolver = undefined;
 
-    console.debug('restore end');
-    console.debug('expected', this.snapshot);
-    console.debug('tracked', this.tracked);
+    debug('restore end');
+    debug('expected', this.snapshot);
+    debug('tracked', this.tracked);
   }
 
   private pushEntry({
