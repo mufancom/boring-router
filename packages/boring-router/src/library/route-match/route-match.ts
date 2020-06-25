@@ -26,6 +26,10 @@ import {
 // life-cycle hooks //
 //////////////////////
 
+export interface RouteUpdateCallbackData {
+  descendants: boolean;
+}
+
 // before enter //
 
 /**
@@ -39,10 +43,6 @@ export type RouteBeforeEnterCallback<
 
 // before update //
 
-export interface RouteBeforeUpdateCallbackData {
-  descendants: boolean;
-}
-
 /**
  * Route before update callback.
  * @return Return `true` or `undefined` to do nothing; return `false` to revert
@@ -52,7 +52,7 @@ export type RouteBeforeUpdateCallback<
   TRouteMatch extends RouteMatch = RouteMatch
 > = (
   next: TRouteMatch['$next'],
-  data: RouteBeforeUpdateCallbackData,
+  data: RouteUpdateCallbackData,
 ) => Promise<boolean | void> | boolean | void;
 
 export interface RouteBeforeUpdateOptions {
@@ -78,22 +78,42 @@ export type RouteBeforeLeaveCallback = () =>
   | boolean
   | void;
 
+// will enter //
+
+export type RouteWillEnterCallback<
+  TRouteMatch extends RouteMatch = RouteMatch
+> = (next: TRouteMatch['$next']) => void;
+
+// will update //
+
+export type RouteWillUpdateCallback<
+  TRouteMatch extends RouteMatch = RouteMatch
+> = (next: TRouteMatch['$next'], data: RouteUpdateCallbackData) => void;
+
+export interface RouteWillUpdateOptions {
+  traceDescendants: boolean;
+}
+
+export interface RouteWillUpdateEntry<
+  TRouteMatch extends RouteMatch = RouteMatch
+> {
+  callback: RouteWillUpdateCallback<TRouteMatch>;
+  options?: RouteWillUpdateOptions;
+}
+
+// will leave //
+
+export type RouteWillLeaveCallback = () => void;
+
 // after enter //
 
 export type RouteAfterEnterCallback = () => void;
 
 // after update //
-
-export interface RouteAfterUpdateCallbackData {
-  descendants: boolean;
-}
-
 /**
  * Route after update callback.
  */
-export type RouteAfterUpdateCallback = (
-  data: RouteAfterUpdateCallbackData,
-) => void;
+export type RouteAfterUpdateCallback = (data: RouteUpdateCallbackData) => void;
 
 export interface RouteAfterUpdateOptions {
   traceDescendants: boolean;
@@ -123,15 +143,15 @@ export interface RouteAutorunEntry {
 
 export type RouteHookRemovalCallback = () => void;
 
-export type RouteInterceptCallback<
+export type RouteBeforeEnterOrUpdateCallback<
   TRouteMatch extends RouteMatch = RouteMatch
 > = (next: TRouteMatch['$next']) => Promise<boolean | void> | boolean | void;
 
-export interface RouteInterceptOptions {
-  traceDescendants: boolean;
-}
+export type RouteWillEnterOrUpdateCallback<
+  TRouteMatch extends RouteMatch = RouteMatch
+> = (next: TRouteMatch['$next']) => Promise<boolean | void> | boolean | void;
 
-export type RouteReactCallback = () => void;
+export type RouteAfterEnterOrUpdateCallback = () => void;
 
 export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
@@ -139,10 +159,13 @@ export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
 
 export type IRouteService<TRouteMatch extends RouteMatch = RouteMatch> = {
   beforeEnter?: RouteBeforeEnterCallback<TRouteMatch>;
+  willEnter?: RouteWillEnterCallback;
   afterEnter?: RouteAfterEnterCallback;
   beforeUpdate?: RouteBeforeUpdateCallback<TRouteMatch>;
+  willUpdate?: RouteWillUpdateCallback<TRouteMatch>;
   afterUpdate?: RouteAfterUpdateCallback;
   beforeLeave?: RouteBeforeLeaveCallback;
+  willLeave?: RouteWillLeaveCallback;
   afterLeave?: RouteAfterLeaveCallback;
 } & RouteServiceExtension<TRouteMatch>;
 
@@ -216,6 +239,15 @@ export class RouteMatch<
 
   /** @internal */
   private _beforeLeaveCallbackSet = new Set<RouteBeforeLeaveCallback>();
+
+  /** @internal */
+  private _willEnterCallbackSet = new Set<RouteWillEnterCallback>();
+
+  /** @internal */
+  private _willUpdateEntrySet = new Set<RouteWillUpdateEntry>();
+
+  /** @internal */
+  private _willLeaveCallbackSet = new Set<RouteWillLeaveCallback>();
 
   /** @internal */
   private _afterEnterCallbackSet = new Set<RouteAfterEnterCallback>();
@@ -314,6 +346,38 @@ export class RouteMatch<
     };
   }
 
+  $willEnter(callback: RouteWillEnterCallback): RouteHookRemovalCallback {
+    this._willEnterCallbackSet.add(callback);
+
+    return () => {
+      this._willEnterCallbackSet.delete(callback);
+    };
+  }
+
+  $willUpdate(
+    callback: RouteWillUpdateCallback,
+    options?: RouteWillUpdateOptions,
+  ): RouteHookRemovalCallback {
+    let willUpdateEntry: RouteWillUpdateEntry = {
+      callback,
+      options,
+    };
+
+    this._willUpdateEntrySet.add(willUpdateEntry);
+
+    return () => {
+      this._willUpdateEntrySet.delete(willUpdateEntry);
+    };
+  }
+
+  $willLeave(callback: RouteWillLeaveCallback): RouteHookRemovalCallback {
+    this._willLeaveCallbackSet.add(callback);
+
+    return () => {
+      this._willLeaveCallbackSet.delete(callback);
+    };
+  }
+
   $afterEnter(callback: RouteAfterEnterCallback): RouteHookRemovalCallback {
     this._afterEnterCallbackSet.add(callback);
 
@@ -365,13 +429,13 @@ export class RouteMatch<
     };
   }
 
-  $intercept(
-    callback: RouteInterceptCallback<this>,
-    options?: RouteInterceptOptions,
+  $beforeEnterOrUpdate(
+    callback: RouteBeforeEnterOrUpdateCallback<this>,
+    beforeUpdateOptions?: RouteBeforeUpdateOptions,
   ): RouteHookRemovalCallback {
     let beforeUpdateEntry: RouteBeforeUpdateEntry<this> = {
       callback,
-      options,
+      options: beforeUpdateOptions,
     };
 
     this._beforeEnterCallbackSet.add(callback);
@@ -383,8 +447,26 @@ export class RouteMatch<
     };
   }
 
-  $react(
-    callback: RouteReactCallback,
+  $willEnterOrUpdate(
+    callback: RouteWillEnterOrUpdateCallback<this>,
+    willUpdateOptions?: RouteWillUpdateOptions,
+  ): RouteHookRemovalCallback {
+    let willUpdateEntry: RouteWillUpdateEntry<this> = {
+      callback,
+      options: willUpdateOptions,
+    };
+
+    this._willEnterCallbackSet.add(callback);
+    this._willUpdateEntrySet.add(willUpdateEntry);
+
+    return () => {
+      this._willEnterCallbackSet.delete(callback);
+      this._willUpdateEntrySet.delete(willUpdateEntry);
+    };
+  }
+
+  $afterEnterOrUpdate(
+    callback: RouteAfterEnterOrUpdateCallback,
     afterUpdateOptions?: RouteAfterUpdateOptions,
   ): RouteHookRemovalCallback {
     let afterUpdateEntry: RouteAfterUpdateEntry = {
@@ -636,11 +718,66 @@ export class RouteMatch<
   }
 
   /** @internal */
-  async _afterLeave(): Promise<void> {
+  async _willLeave(): Promise<void> {
     for (let autorunDisposer of this._autorunDisposers) {
       autorunDisposer();
     }
 
+    for (let callback of this._willLeaveCallbackSet) {
+      tolerate(callback);
+    }
+
+    let service = await this._getService();
+
+    if (service && service.willLeave) {
+      tolerate(() => service!.willLeave!());
+    }
+  }
+
+  /** @internal */
+  async _willEnter(): Promise<void> {
+    let next = this.$next;
+
+    for (let callback of this._willEnterCallbackSet) {
+      tolerate(callback, next);
+    }
+
+    let service = await this._getService();
+
+    if (service && service.willEnter) {
+      tolerate(() => service!.willEnter!(next));
+    }
+
+    for (let autorunEntry of this._autorunEntrySet) {
+      tolerate(() => {
+        this._autorunDisposers.push(
+          autorun(autorunEntry.view, autorunEntry.options),
+        );
+      });
+    }
+  }
+
+  /** @internal */
+  async _willUpdate(triggeredByDescendants: boolean): Promise<void> {
+    let next = this.$next;
+
+    for (let {callback, options} of this._willUpdateEntrySet) {
+      if (triggeredByDescendants ? options && options.traceDescendants : true) {
+        tolerate(callback, next, {descendants: triggeredByDescendants});
+      }
+    }
+
+    let service = await this._getService();
+
+    if (service && service.willUpdate) {
+      tolerate(() =>
+        service!.willUpdate!(next, {descendants: triggeredByDescendants}),
+      );
+    }
+  }
+
+  /** @internal */
+  async _afterLeave(): Promise<void> {
     for (let callback of this._afterLeaveCallbackSet) {
       tolerate(callback);
     }
@@ -662,14 +799,6 @@ export class RouteMatch<
 
     if (service && service.afterEnter) {
       tolerate(() => service!.afterEnter!());
-    }
-
-    for (let autorunEntry of this._autorunEntrySet) {
-      tolerate(() => {
-        this._autorunDisposers.push(
-          autorun(autorunEntry.view, autorunEntry.options),
-        );
-      });
     }
   }
 

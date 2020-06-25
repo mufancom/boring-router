@@ -1,4 +1,10 @@
-import {IRouteService, MemoryHistory, RouteMatch, Router} from 'boring-router';
+import {
+  IRouteService,
+  MemoryHistory,
+  RouteMatch,
+  RouteUpdateCallbackData,
+  Router,
+} from 'boring-router';
 import {computed, configure, observable} from 'mobx';
 
 import {nap} from './@utils';
@@ -33,11 +39,17 @@ let primaryRoute = router.$route({
 });
 
 let beforeUpdate = jest.fn();
+let beforeEnter = jest.fn();
+
+let willUpdate = jest.fn();
+let willEnter = jest.fn();
 
 let afterUpdate = jest.fn();
 let afterEnter = jest.fn();
 
 let beforeLeave = jest.fn();
+let willLeave = jest.fn();
+let afterLeave = jest.fn();
 
 type AccountIdRouteMatch = typeof primaryRoute.account.accountId;
 
@@ -52,29 +64,63 @@ class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
     return `[${this.match.$params.accountId}]`;
   }
 
-  beforeEnter({$params: {accountId}}: AccountIdRouteMatch['$next']): void {
-    this.account = new Account(accountId);
+  beforeEnter(next: AccountIdRouteMatch['$next']): void {
+    beforeEnter();
+
+    expect(next).toEqual(this.match.$next);
   }
 
-  beforeUpdate(match: AccountIdRouteMatch['$next']): void {
-    beforeUpdate();
+  willEnter(next: AccountIdRouteMatch['$next']): void {
+    willEnter();
 
-    this.beforeEnter(match);
-  }
+    expect(next).toEqual(this.match.$next);
 
-  afterUpdate(): void {
-    afterUpdate();
+    this.account = new Account(next.$params.accountId);
   }
 
   afterEnter(): void {
     afterEnter();
   }
 
+  beforeUpdate(
+    next: AccountIdRouteMatch['$next'],
+    data: RouteUpdateCallbackData,
+  ): void {
+    beforeUpdate();
+
+    expect(next).toEqual(this.match.$next);
+    expect(data).toHaveProperty('descendants');
+  }
+
+  willUpdate(
+    match: AccountIdRouteMatch['$next'],
+    data: RouteUpdateCallbackData,
+  ): void {
+    willUpdate();
+
+    expect(match).toEqual(this.match.$next);
+    expect(data).toHaveProperty('descendants');
+
+    this.willEnter(match);
+  }
+
+  afterUpdate(data: RouteUpdateCallbackData): void {
+    afterUpdate();
+
+    expect(data).toHaveProperty('descendants');
+  }
+
   beforeLeave(): void {
     beforeLeave();
   }
 
+  willLeave(): void {
+    willLeave();
+  }
+
   afterLeave(): void {
+    afterLeave();
+
     this.account = undefined!;
   }
 }
@@ -99,8 +145,10 @@ test('should navigate from `default` to `account` and triggers `$beforeEnter`', 
   expect(primaryRoute.account.accountId.account.id).toBe(id);
   expect(primaryRoute.account.accountId.name).toBe(`[${id}]`);
 
+  expect(willEnter).toHaveBeenCalled();
   expect(afterEnter).toHaveBeenCalled();
   expect(beforeUpdate).not.toHaveBeenCalled();
+  expect(willUpdate).not.toHaveBeenCalled();
   expect(afterUpdate).not.toHaveBeenCalled();
 });
 
@@ -120,6 +168,7 @@ test('should navigate from `default` to `account` and triggers `$beforeUpdate`',
 
   expect(afterEnter).not.toHaveBeenCalled();
   expect(beforeUpdate).toHaveBeenCalled();
+  expect(willUpdate).toHaveBeenCalled();
   expect(afterUpdate).toHaveBeenCalled();
 });
 
@@ -133,4 +182,6 @@ test('should navigate from `account` to `default`', async () => {
   expect(primaryRoute.account.accountId.name).toBeUndefined();
 
   expect(beforeLeave).toHaveBeenCalled();
+  expect(willLeave).toHaveBeenCalled();
+  expect(afterLeave).toHaveBeenCalled();
 });
