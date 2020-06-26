@@ -747,14 +747,6 @@ export class RouteMatch<
     if (service && service.willEnter) {
       tolerate(() => service!.willEnter!(next));
     }
-
-    for (let autorunEntry of this._autorunEntrySet) {
-      tolerate(() => {
-        this._autorunDisposers.push(
-          autorun(autorunEntry.view, autorunEntry.options),
-        );
-      });
-    }
   }
 
   /** @internal */
@@ -799,6 +791,14 @@ export class RouteMatch<
 
     if (service && service.afterEnter) {
       tolerate(() => service!.afterEnter!());
+    }
+
+    for (let autorunEntry of this._autorunEntrySet) {
+      tolerate(() => {
+        this._autorunDisposers.push(
+          autorun(autorunEntry.view, autorunEntry.options),
+        );
+      });
     }
   }
 
