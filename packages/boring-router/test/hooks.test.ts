@@ -1,6 +1,5 @@
+import {MemoryHistory, Router} from 'boring-router';
 import {action, configure, observable} from 'mobx';
-
-import {MemoryHistory, Router} from '../bld/library';
 
 import {nap} from './@utils';
 
@@ -32,10 +31,12 @@ let primaryRoute = router.$route({
 let redirectBeforeEnter = jest.fn(() => {
   primaryRoute.about.$push();
 });
+let redirectWillEnter = jest.fn();
 let redirectAfterEnter = jest.fn();
 let redirectAutorun = jest.fn();
 
 primaryRoute.redirect.$beforeEnter(redirectBeforeEnter);
+primaryRoute.redirect.$willEnter(redirectWillEnter);
 primaryRoute.redirect.$afterEnter(redirectAfterEnter);
 primaryRoute.redirect.$autorun(redirectAutorun);
 
@@ -51,42 +52,48 @@ primaryRoute.persist.$beforeLeave(persistBeforeLeave);
 
 let parentBeforeEnter = jest.fn();
 let parentBeforeUpdate = jest.fn();
+let parentWillUpdate = jest.fn();
 
 primaryRoute.parent.$beforeEnter(parentBeforeEnter);
 primaryRoute.parent.$beforeUpdate(parentBeforeUpdate);
+primaryRoute.parent.$willUpdate(parentWillUpdate);
 
 let aboutBeforeEnter = jest.fn();
+let aboutWillEnter = jest.fn();
 let aboutAfterEnter = jest.fn();
 let aboutBeforeLeave = jest.fn();
-let aboutAfterLeave = jest.fn();
+let aboutWillLeave = jest.fn();
+let aboutAfterLeave = jest.fn(() => {
+  increaseAboutAutorunChangeTestNumber();
+});
 let aboutAfterEnterAutorun = jest.fn();
 
 let aboutAutorunChangeTestNumber = observable.box(0);
 
-let aboutAutorunChangeTestValues: number[] = [];
-
-let aboutAutorunChangeAction = action(() => {
-  aboutAutorunChangeTestNumber.set(1);
+let increaseAboutAutorunChangeTestNumber = action(() => {
+  aboutAutorunChangeTestNumber.set(aboutAutorunChangeTestNumber.get() + 1);
 });
 
 let aboutAutorun = jest.fn(() => {
-  aboutAutorunChangeTestValues.push(aboutAutorunChangeTestNumber.get());
+  aboutAutorunChangeTestNumber.get();
 });
 
 primaryRoute.about.$autorun(aboutAutorun);
 
 primaryRoute.about.$beforeEnter(aboutBeforeEnter);
+primaryRoute.about.$willEnter(aboutWillEnter);
 primaryRoute.about.$afterEnter(aboutAfterEnter);
 primaryRoute.about.$beforeLeave(aboutBeforeLeave);
+primaryRoute.about.$willLeave(aboutWillLeave);
 primaryRoute.about.$afterLeave(aboutAfterLeave);
 
 let routingBeforeEnter = jest.fn();
 
 primaryRoute.routing.$beforeEnter(routingBeforeEnter);
 
-let canceledAboutAfterEnter = jest.fn();
+let removedAboutAfterEnter = jest.fn();
 
-let removalCallback = primaryRoute.about.$afterEnter(canceledAboutAfterEnter);
+let removalCallback = primaryRoute.about.$afterEnter(removedAboutAfterEnter);
 
 removalCallback();
 
@@ -100,20 +107,33 @@ test('should navigate from `redirect` to `about`', async () => {
   expect(primaryRoute.redirect.$matched).toBe(false);
 
   expect(redirectBeforeEnter).toHaveBeenCalled();
+  expect(redirectWillEnter).not.toHaveBeenCalled();
   expect(redirectAfterEnter).not.toHaveBeenCalled();
   expect(redirectAutorun).not.toHaveBeenCalled();
 
   expect(aboutBeforeEnter).toHaveBeenCalled();
+  expect(aboutWillEnter).toHaveBeenCalled();
   expect(aboutAfterEnter).toHaveBeenCalled();
   expect(aboutAutorun).toHaveBeenCalled();
 
   primaryRoute.about.$autorun(aboutAfterEnterAutorun);
 
-  aboutAutorunChangeAction();
+  increaseAboutAutorunChangeTestNumber();
 
   expect(aboutAfterEnterAutorun).toHaveBeenCalled();
   expect(aboutAutorun).toHaveBeenCalledTimes(2);
-  expect(aboutAutorunChangeTestValues).toEqual([0, 1]);
+  expect(aboutAutorunChangeTestNumber.get()).toEqual(1);
+
+  await history.push('/');
+
+  await nap();
+
+  expect(aboutAutorun).toHaveBeenCalledTimes(2);
+  expect(aboutAutorunChangeTestNumber.get()).toEqual(2);
+
+  await history.push('/about');
+
+  await nap();
 });
 
 test('should revert navigation from `about` to `revert` by `revert.$beforeEnter`', async () => {
@@ -141,15 +161,17 @@ test('should trigger `parent.$beforeUpdate` on `$exact` change', async () => {
 
   expect(parentBeforeEnter).toHaveBeenCalled();
   expect(parentBeforeUpdate).not.toHaveBeenCalled();
+  expect(parentWillUpdate).not.toHaveBeenCalled();
 
   await history.push('/parent');
 
   await nap();
 
   expect(parentBeforeUpdate).toHaveBeenCalled();
+  expect(parentWillUpdate).toHaveBeenCalled();
 });
 
-test('should not call hooks that have been canceled.', async () => {
+test('should not call hooks that have been removed.', async () => {
   await history.push('/about');
 
   await nap();
@@ -157,7 +179,7 @@ test('should not call hooks that have been canceled.', async () => {
   expect(router.$ref()).toBe('/about');
   expect(primaryRoute.about.$matched).toBe(true);
 
-  expect(canceledAboutAfterEnter).not.toHaveBeenCalled();
+  expect(removedAboutAfterEnter).not.toHaveBeenCalled();
 });
 
 test('property routing should be true before beforeEnter ended', async () => {

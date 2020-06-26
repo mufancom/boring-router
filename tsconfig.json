@@ -2,6 +2,22 @@
   "files": [],
   "references": [
     {"path": "packages/boring-router/src/library"},
-    {"path": "packages/boring-router-react/src/library"}
+    {"path": "packages/boring-router/test"},
+
+    {"path": "packages/boring-router-react/src/library"},
+
+    {"path": "packages/boring-router-react/examples/basic"},
+    {"path": "packages/boring-router-react/examples/exact"},
+    {"path": "packages/boring-router-react/examples/function-as-child"},
+    {"path": "packages/boring-router-react/examples/hooks"},
+    {"path": "packages/boring-router-react/examples/multi-route-match"},
+    {"path": "packages/boring-router-react/examples/nav-link"},
+    {"path": "packages/boring-router-react/examples/parallel-routes"},
+    {"path": "packages/boring-router-react/examples/query"},
+    {"path": "packages/boring-router-react/examples/redirect"},
+    {"path": "packages/boring-router-react/examples/route-component"},
+    {"path": "packages/boring-router-react/examples/segment"},
+    {"path": "packages/boring-router-react/examples/service"},
+    {"path": "packages/boring-router-react/examples/basic"}
   ]
 }

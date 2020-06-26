@@ -360,19 +360,19 @@ export class Router<TGroupName extends string = string> {
   }
 
   $<TRouteMatchShared extends RouteMatchShared>(
-    match: TRouteMatchShared,
+    route: TRouteMatchShared,
     params?: Partial<RouteMatchSharedToParamDict<TRouteMatchShared>> &
       EmptyObjectPatch,
   ): RouteBuilder<TGroupName>;
   $(part: string): RouteBuilder<TGroupName>;
-  $(match: RouteMatchShared | string, params?: GeneralParamDict): RouteBuilder {
+  $(route: RouteMatchShared | string, params?: GeneralParamDict): RouteBuilder {
     let {pathMap, queryDict} = this._source;
 
     let buildingPart =
-      typeof match === 'string'
-        ? match
+      typeof route === 'string'
+        ? route
         : {
-            match,
+            route,
             params,
           };
 
@@ -554,6 +554,10 @@ export class Router<TGroupName extends string = string> {
       return;
     }
 
+    await Promise.all(
+      interUpdateDataArray.map(data => this._willUpdate(data!)),
+    );
+
     this._update(generalGroups);
 
     this._snapshot = nextSnapshot;
@@ -664,6 +668,28 @@ export class Router<TGroupName extends string = string> {
       previousMatchSet,
       descendantUpdatingMatchSet,
     };
+  }
+
+  /** @internal */
+  private async _willUpdate({
+    reversedLeavingMatches,
+    enteringAndUpdatingMatchSet,
+    previousMatchSet,
+    descendantUpdatingMatchSet,
+  }: InterUpdateData): Promise<void> {
+    for (let match of reversedLeavingMatches) {
+      await match._willLeave();
+    }
+
+    for (let match of enteringAndUpdatingMatchSet) {
+      let update = previousMatchSet.has(match);
+
+      if (update) {
+        await match._willUpdate(descendantUpdatingMatchSet.has(match));
+      } else {
+        await match._willEnter();
+      }
+    }
   }
 
   /** @internal */

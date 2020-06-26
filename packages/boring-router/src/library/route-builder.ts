@@ -10,7 +10,7 @@ import {
 import {Router, RouterNavigateOptions} from './router';
 
 export interface RouteBuilderBuildingPart {
-  match: RouteMatchShared;
+  route: RouteMatchShared;
   params?: GeneralParamDict;
 }
 
@@ -23,18 +23,27 @@ export class RouteBuilder<TGroupName extends string = string> {
     private leavingGroupSet = new Set<string>(),
   ) {}
 
+  /**
+   * Route of the first building part if available.
+   */
+  get $route(): RouteMatchShared | undefined {
+    let [firstPart] = this.buildingParts;
+
+    return typeof firstPart === 'object' ? firstPart.route : undefined;
+  }
+
   $<TRouteMatchShared extends RouteMatchShared>(
-    match: TRouteMatchShared,
+    route: TRouteMatchShared,
     params?: Partial<RouteMatchSharedToParamDict<TRouteMatchShared>> &
       EmptyObjectPatch,
   ): RouteBuilder<TGroupName>;
   $(part: string): RouteBuilder<TGroupName>;
-  $(match: RouteMatchShared | string, params?: GeneralParamDict): RouteBuilder {
+  $(route: RouteMatchShared | string, params?: GeneralParamDict): RouteBuilder {
     let buildingPart =
-      typeof match === 'string'
-        ? match
+      typeof route === 'string'
+        ? route
         : {
-            match,
+            route,
             params,
           };
 
@@ -84,14 +93,14 @@ export class RouteBuilder<TGroupName extends string = string> {
           };
         }
       } else {
-        let {match, params: paramDict = {}} = buildingPart;
+        let {route, params: paramDict = {}} = buildingPart;
 
-        let group = match.$group;
+        let group = route.$group;
         let primary = group === undefined;
 
         let restParamKeySet = new Set(Object.keys(paramDict));
 
-        let segmentDict = match._pathSegments;
+        let segmentDict = route._pathSegments;
 
         let path = buildPath(segmentDict, paramDict);
 
@@ -102,9 +111,9 @@ export class RouteBuilder<TGroupName extends string = string> {
         pathMap.set(group, path);
 
         if (primary) {
-          let {queryDict: sourceQueryDict} = match._source;
+          let {queryDict: sourceQueryDict} = route._source;
 
-          let queryKeySet = match._queryKeySet;
+          let queryKeySet = route._queryKeySet;
 
           queryDict = {};
 

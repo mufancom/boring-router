@@ -14,7 +14,7 @@ export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
 
 export type RouteMatchSharedToParamDict<
-  TRouteMatchShared extends RouteMatchShared
+  TRouteMatchShared
 > = TRouteMatchShared extends RouteMatchShared<infer TParamDict>
   ? TParamDict
   : never;
@@ -235,7 +235,7 @@ export abstract class RouteMatchShared<
       new Map(),
       this._source.queryDict,
       this.$router,
-      [{match: this, params}],
+      [{route: this, params}],
     );
   }
 

@@ -35,6 +35,7 @@ export class Route<TRouteMatch extends RouteMatch> extends Component<
     );
 
     if (firstMatch) {
+      // eslint-disable-next-line no-null/no-null
       if (children !== undefined && children !== null) {
         if (RouteComponent) {
           throw new Error(

@@ -1,11 +1,13 @@
 {
   "extends": "@magicspace/configs/tsconfig.json",
   "compilerOptions": {
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "composite": true,
+
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["jest"],
     "experimentalDecorators": true,
 
-    "rootDir": ".",
-    "noEmit": true
-  }
+    "outDir": "../.bld-cache/test"
+  },
+  "references": [{"path": "../src/library"}]
 }

@@ -10,4 +10,4 @@ interface Console {
   error(message?: any, ...optionalParams: any[]): void;
 }
 
-declare var console: Console;
+declare const console: Console;

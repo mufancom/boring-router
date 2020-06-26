@@ -1,7 +1,6 @@
+import {MemoryHistory, RouteMatch, Router} from 'boring-router';
 import {configure} from 'mobx';
 import {AssertTrue, IsEqual} from 'tslang';
-
-import {MemoryHistory, RouteMatch, Router} from '../bld/library';
 
 import {nap} from './@utils';
 
@@ -537,10 +536,7 @@ test("should leave parallel routes by 'leaves' options when push a new route", a
 });
 
 test('should leave all parallel routes', async () => {
-  router
-    .$scratch()
-    .$(primaryRoute.$rest)
-    .$push(undefined);
+  router.$scratch().$(primaryRoute.$rest).$push(undefined);
 
   await nap();
 
@@ -590,10 +586,6 @@ test('should build route with string building part', async () => {
 
 test('should build route with string building part without primary route', async () => {
   expect(
-    router
-      .$scratch()
-      .$('?_popup=/invite')
-      .$('?_sidebar=/friends')
-      .$ref(),
+    router.$scratch().$('?_popup=/invite').$('?_sidebar=/friends').$ref(),
   ).toBe('?_popup=/invite&_sidebar=/friends');
 });
