@@ -277,7 +277,10 @@ export class Router<TGroupName extends string = string> {
 
   /** @internal */
   @observable
-  private _routing = false;
+  private _routing = 0;
+
+  /** @internal */
+  private _beforeLeaveHookCalledMatchSet = new Set<RouteMatch | undefined>();
 
   /** @internal */
   private _groupToRouteMatchMap = new Map<string | undefined, RouteMatch>();
@@ -297,7 +300,7 @@ export class Router<TGroupName extends string = string> {
   }
 
   get $routing(): boolean {
-    return this._routing;
+    return this._routing > 0;
   }
 
   get $next(): RouteBuilder<TGroupName> {
@@ -409,8 +412,21 @@ export class Router<TGroupName extends string = string> {
   private _onHistoryChange = (snapshot: RouterHistorySnapshot): void => {
     this._nextSnapshot = snapshot;
 
+    if (!this.$routing) {
+      this._beforeLeaveHookCalledMatchSet.clear();
+    }
+
+    runInAction(() => {
+      this._routing++;
+    });
+
     this._changing = this._changing
       .then(() => this._asyncOnHistoryChange(snapshot))
+      .finally(() => {
+        runInAction(() => {
+          this._routing--;
+        });
+      })
       .catch(console.error);
   };
 
@@ -532,10 +548,6 @@ export class Router<TGroupName extends string = string> {
 
     let generalGroups = [undefined, ...groups];
 
-    runInAction(() => {
-      this._routing = true;
-    });
-
     let interUpdateDataArray = await Promise.all(
       generalGroups.map(async group =>
         this._beforeUpdate(
@@ -545,10 +557,6 @@ export class Router<TGroupName extends string = string> {
         ),
       ),
     );
-
-    runInAction(() => {
-      this._routing = false;
-    });
 
     if (interUpdateDataArray.some(data => !data)) {
       return;
@@ -632,7 +640,13 @@ export class Router<TGroupName extends string = string> {
       }
     }
 
+    let beforeLeaveHookCalledMatchSet = this._beforeLeaveHookCalledMatchSet;
+
     for (let match of reversedLeavingMatches) {
+      if (beforeLeaveHookCalledMatchSet.has(match)) {
+        continue;
+      }
+
       let result = await match._beforeLeave();
 
       if (this._isNextSnapshotOutDated(nextSnapshot)) {
@@ -643,6 +657,8 @@ export class Router<TGroupName extends string = string> {
         this._revert();
         return undefined;
       }
+
+      beforeLeaveHookCalledMatchSet.add(match);
     }
 
     for (let match of enteringAndUpdatingMatchSet) {
