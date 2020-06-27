@@ -1,3 +1,5 @@
+import 'mobx-react-lite/batchingForReactDom';
+
 import {RouteMatch, Router} from 'boring-router';
 import {BrowserHistory, Link, Route} from 'boring-router-react';
 import {observer} from 'mobx-react-lite';
