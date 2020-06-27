@@ -8,6 +8,5 @@
   },
   "packages": [
     "packages/*"
-  ],
-  "useWorkspaces": true
+  ]
 }
