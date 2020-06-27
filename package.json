@@ -13,7 +13,7 @@
     "test": "yarn lint-prettier && yarn build && yarn lint && yarn test:boring-router && yarn typecheck-examples"
   },
   "devDependencies": {
-    "@magicspace/configs": "0.2.5",
+    "@magicspace/configs": "^0.2.5",
     "@magicspace/eslint-plugin": "^0.1.26",
     "docz": "^2.3.1",
     "eslint": "^7.3.1",

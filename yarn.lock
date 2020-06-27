@@ -2381,7 +2381,7 @@
     "@babel/runtime" "^7.7.7"
     hoist-non-react-statics "^3.3.1"
 
-"@magicspace/configs@0.2.5":
+"@magicspace/configs@^0.2.5":
   version "0.2.5"
   resolved "https://registry.yarnpkg.com/@magicspace/configs/-/configs-0.2.5.tgz#7ba77159c97d70eb3a67fb6799d7a6b3142392ba"
   integrity sha512-Eyf1VQAvSW6U+ahpqjVhFi4GO8YwdNYcrx7rtgKR3jYDe09UsfG1RBkJRAYrAIYgSgAVQsZOyWc90+yA99YdfA==
@@ -2799,11 +2799,6 @@
   dependencies:
     "@types/istanbul-lib-coverage" "*"
     "@types/istanbul-lib-report" "*"
-
-"@types/jest@^23.3.1":
-  version "23.3.14"
-  resolved "https://registry.yarnpkg.com/@types/jest/-/jest-23.3.14.tgz#37daaf78069e7948520474c87b80092ea912520a"
-  integrity sha512-Q5hTcfdudEL2yOmluA1zaSyPbzWPmJ3XfSWeP3RyoYvS9hnje1ZyagrZOuQ6+1nQC1Gw+7gap3pLNL3xL6UBug==
 
 "@types/jest@^26.0.2":
   version "26.0.2"
@@ -4256,21 +4251,6 @@ boolbase@^1.0.0, boolbase@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/boolbase/-/boolbase-1.0.0.tgz#68dff5fbe60c51eb37725ea9e3ed310dcc1e776e"
   integrity sha1-aN/1++YMUes3cl6p4+0xDcwed24=
-
-boring-router-react@*:
-  version "0.0.0"
-  resolved "https://registry.yarnpkg.com/boring-router-react/-/boring-router-react-0.0.0.tgz#e3cc5222d2a23e4fb7670a9ed3c44599016772e7"
-  integrity sha512-J3naMqh5VarA6vUXqBDoK/rxnq2ndR8/V1fPNGKEk8fh0T9XdWlHgc+FtwmI9UNOTLto+fcf9hVD1IBIUf0/LA==
-
-boring-router@*:
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/boring-router/-/boring-router-0.2.1.tgz#afbc9d5ef7f54dd25fecd53c489f97ea2e295dd8"
-  integrity sha512-9KVZNU37ijl3St8tgBoF0mxo/nXZ4XycI9UPuDzcaVtT8lVSSMggKwRSqzYyxrLIf2gkAUBsze84NN4ellAmHQ==
-  dependencies:
-    "@types/jest" "^23.3.1"
-    classnames "^2.2.6"
-    hyphenate "^0.2.4"
-    tslang "^0.1.7"
 
 boxen@^3.0.0:
   version "3.2.0"
@@ -17261,7 +17241,7 @@ tsconfig-paths@^3.9.0:
     minimist "^1.2.0"
     strip-bom "^3.0.0"
 
-tslang@^0.1.18, tslang@^0.1.22, tslang@^0.1.7:
+tslang@^0.1.18, tslang@^0.1.22:
   version "0.1.22"
   resolved "https://registry.yarnpkg.com/tslang/-/tslang-0.1.22.tgz#df8260690037043e6a8a7ad8e55d9bf0e0767565"
   integrity sha512-7wFN8784UBKxpmpN1Ve+dQMl+2N7CnxLIZMPlUnEk8TqjY7o2vY5llcuHNkfeVPd4LnbMM73myd5t2wtiEhjZg==
