@@ -2,6 +2,10 @@
   "name": "boring-router-packages",
   "description": "A type-safe MobX router with parallel routing support.",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/makeflow/boring-router.git"
+  },
   "scripts": {
     "publish-doc": "docz build && gh-pages -d .docz/dist",
     "link-global": "yarn workspace boring-router link && yarn workspace boring-router-react link",
