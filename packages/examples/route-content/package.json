@@ -1,0 +1,26 @@
+{
+  "name": "@boring-router-examples/route-content",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.html",
+  "devDependencies": {
+    "@magicspace/configs": "^0.2.5",
+    "@magicspace/eslint-plugin": "^0.1.26",
+    "@types/react": "^16.9.41",
+    "@types/react-dom": "^16.9.8",
+    "eslint": "^7.3.1",
+    "parcel-bundler": "^1.12.4",
+    "prettier": "^2.0.5",
+    "typescript": "^3.9.5"
+  },
+  "dependencies": {
+    "boring-router": "^0.3.2",
+    "boring-router-react": "^0.3.1",
+    "mobx": "^5.15.4",
+    "mobx-react-lite": "^2.0.7",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "tslang": "^0.1.22",
+    "tslib": "^2.0.0"
+  }
+}

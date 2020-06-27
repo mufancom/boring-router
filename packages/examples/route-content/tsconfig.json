@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2018",
+    "module": "CommonJS",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": [],
+    "importHelpers": true,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "stripInternal": true,
+    "experimentalDecorators": true,
+    "jsx": "react",
+    "strict": true,
+    "strictFunctionTypes": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "newLine": "LF",
+    "rootDir": ".",
+    "noEmit": true
+  }
+}

@@ -1,0 +1,55 @@
+import 'mobx-react-lite/batchingForReactDom';
+
+import {Router} from 'boring-router';
+import {
+  BrowserHistory,
+  Link,
+  Route,
+  RouteComponentProps,
+} from 'boring-router-react';
+import {observer} from 'mobx-react-lite';
+import React, {FunctionComponent} from 'react';
+import ReactDOM from 'react-dom';
+
+const history = new BrowserHistory();
+
+const router = new Router(history);
+
+const route = router.$route({
+  home: {
+    $match: '',
+  },
+  element: true,
+  routeComponent: true,
+  functionAsChild: true,
+});
+
+const RouteComponentView: FunctionComponent<RouteComponentProps<
+  typeof route.routeComponent
+>> = props => <div>Route Component (path {props.match.$ref()})</div>;
+
+const App = observer(() => (
+  <>
+    <h1>Boring Router</h1>
+    <nav>
+      <Link to={route.home}>Home</Link>
+      {' | '}
+      <Link to={route.element}>Element</Link>
+      {' | '}
+      <Link to={route.routeComponent}>Route Component</Link>
+      {' | '}
+      <Link to={route.functionAsChild}>Function as Child</Link>
+    </nav>
+    <hr />
+    <Route match={route.home}>Home page</Route>
+    <Route match={route.element}>
+      <div>Element (path {route.element.$ref()})</div>
+    </Route>
+    <Route match={route.routeComponent} component={RouteComponentView} />
+    <Route match={route.functionAsChild}>
+      {match => <div>Function as Child (path {match.$ref()})</div>}
+    </Route>
+  </>
+));
+
+ReactDOM.render(<App />, document.getElementById('app'));
