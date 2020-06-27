@@ -1,42 +1,42 @@
 import {RouteBuilder, RouteMatch} from 'boring-router';
 import classNames from 'classnames';
-import {observer} from 'mobx-react';
-import React, {Component, ReactNode} from 'react';
+import {observer} from 'mobx-react-lite';
+import React, {useMemo} from 'react';
 
 import {Link, LinkProps} from './link';
 
-export interface NavLinkProps<TRouteMatch extends RouteMatch | RouteBuilder>
-  extends LinkProps<TRouteMatch> {
+export interface NavLinkProps<T extends RouteMatch | RouteBuilder>
+  extends LinkProps<T> {
   exact?: boolean;
   activeClassName?: string;
 }
 
-@observer
-export class NavLink<
-  TRouteMatch extends RouteMatch | RouteBuilder
-> extends Component<NavLinkProps<TRouteMatch>> {
-  render(): ReactNode {
-    let {className, activeClassName = 'active', exact, ...props} = this.props;
+export const NavLink = observer(
+  <T extends RouteMatch | RouteBuilder>({
+    className,
+    activeClassName = 'active',
+    exact,
+    ...props
+  }: NavLinkProps<T>) => {
+    let {to} = props;
 
-    let {to: generalTo} = props;
+    let route = useMemo(() => {
+      if (to instanceof RouteBuilder) {
+        let builderRoute = to.$route;
 
-    let to: RouteMatch;
+        if (!(builderRoute instanceof RouteMatch)) {
+          throw new Error(
+            '`RouteBuilder` for `NavLink` component must have first building part as a `Route`',
+          );
+        }
 
-    if (generalTo instanceof RouteBuilder) {
-      let builderRoute = generalTo.$route;
-
-      if (!(builderRoute instanceof RouteMatch)) {
-        throw new Error(
-          '`RouteBuilder` for `NavLink` component must have first building part as a `Route`',
-        );
+        return builderRoute;
+      } else {
+        return to as RouteMatch;
       }
+    }, [to]);
 
-      to = builderRoute;
-    } else {
-      to = generalTo as RouteMatch;
-    }
-
-    let matched = exact ? to.$exact : to.$matched;
+    let matched = exact ? route.$exact : route.$matched;
 
     return (
       <Link
@@ -44,5 +44,5 @@ export class NavLink<
         {...props}
       />
     );
-  }
-}
+  },
+);

@@ -1,6 +1,6 @@
 import {RouteMatch} from 'boring-router';
-import {observer} from 'mobx-react';
-import React, {Component, ComponentType, ReactNode} from 'react';
+import {observer} from 'mobx-react-lite';
+import React, {ComponentType, ReactElement, ReactNode} from 'react';
 
 export interface RouteComponentProps<TRouteMatch extends RouteMatch> {
   match: TRouteMatch;
@@ -12,7 +12,7 @@ export type RouteComponent<TRouteMatch extends RouteMatch> = ComponentType<
 
 export type RouteFunctionChild<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
-) => ReactNode;
+) => ReactElement;
 
 export interface RouteProps<TRouteMatch extends RouteMatch> {
   match: TRouteMatch | TRouteMatch[];
@@ -21,13 +21,13 @@ export interface RouteProps<TRouteMatch extends RouteMatch> {
   children?: RouteFunctionChild<TRouteMatch> | ReactNode;
 }
 
-@observer
-export class Route<TRouteMatch extends RouteMatch> extends Component<
-  RouteProps<TRouteMatch>
-> {
-  render(): ReactNode {
-    let {match, exact, component: RouteComponent, children} = this.props;
-
+export const Route = observer(
+  <TRouteMatch extends RouteMatch>({
+    match,
+    exact,
+    component: RouteComponent,
+    children,
+  }: RouteProps<TRouteMatch>) => {
     let matches = Array.isArray(match) ? match : [match];
 
     let firstMatch = matches.find(match =>
@@ -44,7 +44,7 @@ export class Route<TRouteMatch extends RouteMatch> extends Component<
         }
 
         if (typeof children === 'function') {
-          return (children as RouteFunctionChild<TRouteMatch>)(firstMatch);
+          return children(firstMatch);
         } else {
           return children;
         }
@@ -56,5 +56,5 @@ export class Route<TRouteMatch extends RouteMatch> extends Component<
     }
 
     return <></>;
-  }
-}
+  },
+);

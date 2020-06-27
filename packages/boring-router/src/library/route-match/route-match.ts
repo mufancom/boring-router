@@ -298,7 +298,10 @@ export class RouteMatch<
             let service = (this as RouteMatch).$matched
               ? (this as RouteMatch)._service
               : undefined;
-            return service ? (service as any)[key] : defaultValue;
+
+            return service && key in (service as any)
+              ? (service as any)[key]
+              : defaultValue;
           },
         });
       }

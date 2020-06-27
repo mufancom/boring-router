@@ -31,7 +31,7 @@ yarn add boring-router-react
 ```tsx
 import {RouteMatch, Router} from 'boring-router';
 import {BrowserHistory, Link, Route} from 'boring-router-react';
-import {observer} from 'mobx-react';
+import {observer} from 'mobx-react-lite';
 import React, {Component} from 'react';
 
 const history = new BrowserHistory();
@@ -118,14 +118,6 @@ class App extends Component {
   <Route match={route.account}>
     <p>Account {route.account.$params.id} details page</p>
   </Route>
-  ```
-
-- [Redirect](packages/boring-router-react/examples/redirect/main.tsx)
-
-  Redirect on match.
-
-  ```tsx
-  <Redirect match={route.notFound} to={route.account} params={{id: '123'}} />
   ```
 
 - [NavLink](packages/boring-router-react/examples/nav-link/main.tsx)

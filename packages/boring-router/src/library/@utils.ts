@@ -16,25 +16,27 @@ export function buildPath(
   segmentDict: GeneralSegmentDict,
   paramDict: GeneralParamDict = {},
 ): string {
-  return Object.entries(segmentDict)
-    .map(([key, defaultSegment]) => {
-      let param = paramDict[key];
-      let segment = typeof param === 'string' ? param : defaultSegment;
+  return (
+    Object.entries(segmentDict)
+      .map(([key, defaultSegment]) => {
+        let param = paramDict[key];
+        let segment = typeof param === 'string' ? param : defaultSegment;
 
-      if (typeof segment !== 'string') {
-        throw new Error(`Parameter "${key}" is required`);
-      }
+        if (typeof segment !== 'string') {
+          throw new Error(`Parameter "${key}" is required`);
+        }
 
-      return `/${segment}`;
-    })
-    .join('');
+        return `/${segment}`;
+      })
+      .join('') || '/'
+  );
 }
 
 export function buildRef(
   pathMap: Map<string | undefined, string>,
   queryDict: Dict<string | undefined>,
 ): string {
-  let primaryPath = pathMap.get(undefined) || '';
+  let primaryPath = pathMap.get(undefined) ?? '';
 
   let pathQuery = encodeURI(
     Array.from(pathMap)

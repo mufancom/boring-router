@@ -11,6 +11,7 @@ node_modules/
 bld/
 .bld-cache/
 dist/
+.docz/
 .cache/
 *.tgz
 

@@ -1,7 +1,7 @@
 {
   "name": "boring-router",
   "version": "0.3.0-alpha.51",
-  "description": "A light-weight, type-safe, yet reactive router service using MobX.",
+  "description": "A type-safe MobX router with parallel routing support.",
   "repository": {
     "type": "git",
     "url": "https://github.com/makeflow/boring-router.git"
@@ -21,7 +21,6 @@
     "mobx": "5"
   },
   "devDependencies": {
-    "@types/history": "^4.7.6",
     "@types/jest": "^26.0.2",
     "@types/lodash": "^4.14.157",
     "jest": "^26.1.0",
@@ -30,6 +29,7 @@
   "dependencies": {
     "hyphenate": "^0.2.4",
     "lodash": "^4.17.15",
-    "tslang": "^0.1.22"
+    "tslang": "^0.1.22",
+    "tslib": "^2.0.0"
   }
 }

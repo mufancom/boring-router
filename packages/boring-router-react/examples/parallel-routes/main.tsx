@@ -1,9 +1,8 @@
 import {RouteMatch, Router} from 'boring-router';
-import {observer} from 'mobx-react';
-import React, {Component, ReactNode} from 'react';
+import {BrowserHistory, Link, Route} from 'boring-router-react';
+import {observer} from 'mobx-react-lite';
+import React from 'react';
 import ReactDOM from 'react-dom';
-
-import {BrowserHistory, Link, Route} from '../../bld/library';
 
 const history = new BrowserHistory();
 
@@ -44,19 +43,18 @@ const sidebarRoute = router.$route('sidebar', {
 primaryRoute.about.$parallel({matches: [sidebarRoute.cart]});
 primaryRoute.contact.$parallel({groups: ['popup']});
 
-primaryRoute.about.$beforeEnter(match => {
-  if (match.$exact) {
-    match.test.$push();
+primaryRoute.about.$beforeEnter(next => {
+  if (next.$exact) {
+    next.test.$push();
   }
 });
 
-@observer
-export class App extends Component {
-  render(): ReactNode {
-    return (
-      <>
-        <h1>Boring Router</h1>
-        <Route match={primaryRoute.default}>
+const App = observer(() => (
+  <>
+    <h1>Boring Router</h1>
+    <Route match={primaryRoute.default}>
+      {() => (
+        <>
           <p>Home page</p>
           <div>
             <Link to={popupRoute.account} toggle>
@@ -68,7 +66,9 @@ export class App extends Component {
             </Link>
           </div>
           <div>
-            <Link to={sidebarRoute.cart}>Cart</Link>
+            <Link to={sidebarRoute.cart} toggle>
+              Cart
+            </Link>
           </div>
           <div>
             <Link to={primaryRoute.news}>News</Link>
@@ -84,116 +84,107 @@ export class App extends Component {
               Boring
             </Link>
           </div>
-        </Route>
-        <Route match={popupRoute.account}>
-          <div
-            style={{
-              position: 'fixed',
-              right: 0,
-              top: 0,
-              width: 300,
-              height: 200,
-            }}
-          >
+        </>
+      )}
+    </Route>
+    <Route match={popupRoute.account}>
+      {match => (
+        <div
+          style={{
+            position: 'fixed',
+            right: 0,
+            top: 0,
+            width: 300,
+            height: 200,
+          }}
+        >
+          <p>
+            Account popup{' '}
+            <Link to={match} leave>
+              x
+            </Link>
+          </p>
+          <Route exact match={match}>
             <p>
-              Account popup{' '}
-              <a
-                href="javascript:void(0);"
-                onClick={() => {
-                  primaryRoute.$replace({}, {leaves: ['popup']});
-                }}
-              >
-                x
-              </a>
-            </p>
-            <Route match={popupRoute.account} exact={true}>
-              <p>
-                <Link to={popupRoute.account.login}>Login</Link>
-                <br />
-                <Link to={popupRoute.account.register}>Register</Link>
-              </p>
-              <p>
-                <Link to={popupRoute.profile}>Profile</Link>
-              </p>
-            </Route>
-            <Route match={popupRoute.account.login}>
-              <p>- Login</p>
-              <Link to={popupRoute.account}>Back</Link>
-            </Route>
-            <Route match={popupRoute.account.register}>
-              <p>- Register</p>
-              <Link to={popupRoute.account}>Back</Link>
-            </Route>
-          </div>
-        </Route>
-        <Route match={popupRoute.profile}>
-          <div
-            style={{
-              position: 'fixed',
-              right: 0,
-              top: 0,
-              width: 300,
-              height: 200,
-            }}
-          >
-            <p>
-              Profile popup{' '}
-              <a
-                href="javascript:void(0);"
-                onClick={() => {
-                  primaryRoute.$replace({}, {leaves: ['popup']});
-                }}
-              >
-                x
-              </a>
+              <Link to={match.login}>Login</Link>
+              <br />
+              <Link to={match.register}>Register</Link>
             </p>
             <p>
-              <Link to={popupRoute.account}>Account</Link>
+              <Link to={popupRoute.profile}>Profile</Link>
             </p>
-          </div>
-        </Route>
-        <Route match={sidebarRoute.cart}>
-          <div
-            style={{
-              position: 'fixed',
-              right: 0,
-              top: 200,
-              width: 300,
-              height: 200,
-            }}
-          >
-            <p>
-              Cart sidebar{' '}
-              <a
-                href="javascript:;"
-                onClick={() => {
-                  primaryRoute.$replace({}, {leaves: ['sidebar']});
-                }}
-              >
-                x
-              </a>
-            </p>
-          </div>
-        </Route>
-        <Route match={primaryRoute.news}>
-          <p>News page</p>
-          <Link to={primaryRoute.default}>Home</Link>
-        </Route>
-        <Route match={primaryRoute.about}>
-          <p>About page</p>
-          <Link to={primaryRoute.default}>Home</Link>
-        </Route>
-        <Route match={primaryRoute.contact}>
-          <p>Contact page</p>
-          <Link to={primaryRoute.default}>Home</Link>
-        </Route>
-        <Route match={primaryRoute.notFound}>
-          <p>Not found</p>
-          <Link to={primaryRoute.default}>Home</Link>
-        </Route>
-      </>
-    );
-  }
-}
+          </Route>
+          <Route match={match.login}>
+            <p>- Login</p>
+            <Link to={match}>Back</Link>
+          </Route>
+          <Route match={match.register}>
+            <p>- Register</p>
+            <Link to={match}>Back</Link>
+          </Route>
+        </div>
+      )}
+    </Route>
+    <Route match={popupRoute.profile}>
+      {match => (
+        <div
+          style={{
+            position: 'fixed',
+            right: 0,
+            top: 0,
+            width: 300,
+            height: 200,
+          }}
+        >
+          <p>
+            Profile popup{' '}
+            <Link to={match} leave>
+              x
+            </Link>
+          </p>
+          <p>
+            <Link to={popupRoute.account}>Account</Link>
+          </p>
+        </div>
+      )}
+    </Route>
+    <Route match={sidebarRoute.cart}>
+      {match => (
+        <div
+          style={{
+            position: 'fixed',
+            right: 0,
+            top: 200,
+            width: 300,
+            height: 200,
+          }}
+        >
+          <p>
+            Cart sidebar{' '}
+            <Link to={match} leave>
+              x
+            </Link>
+          </p>
+        </div>
+      )}
+    </Route>
+    <Route match={primaryRoute.news}>
+      <p>News page</p>
+      <Link to={primaryRoute.default}>Home</Link>
+    </Route>
+    <Route match={primaryRoute.about}>
+      <p>About page</p>
+      <Link to={primaryRoute.default}>Home</Link>
+    </Route>
+    <Route match={primaryRoute.contact}>
+      <p>Contact page</p>
+      <Link to={primaryRoute.default}>Home</Link>
+    </Route>
+    <Route match={primaryRoute.notFound}>
+      <p>Not found</p>
+      <Link to={primaryRoute.default}>Home</Link>
+    </Route>
+  </>
+));
 
 ReactDOM.render(<App />, document.getElementById('app'));

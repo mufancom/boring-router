@@ -1,14 +1,13 @@
 import {Router} from 'boring-router';
-import {observer} from 'mobx-react';
-import React, {Component, ReactNode} from 'react';
-import ReactDOM from 'react-dom';
-
 import {
   BrowserHistory,
   Link,
   Route,
   RouteComponentProps,
-} from '../../bld/library';
+} from 'boring-router-react';
+import {observer} from 'mobx-react-lite';
+import React from 'react';
+import ReactDOM from 'react-dom';
 
 const history = new BrowserHistory();
 
@@ -29,46 +28,35 @@ const route = router.$route({
   },
 });
 
-export type RouteType = typeof route;
+type RouteType = typeof route;
 
-export type AccountPageProps = RouteComponentProps<RouteType['account']>;
+type AccountPageProps = RouteComponentProps<RouteType['account']>;
 
-export class AccountPage extends Component<AccountPageProps> {
-  render(): ReactNode {
-    let {match} = this.props;
+const AccountPage = observer(({match}: AccountPageProps) => (
+  <>
+    <p>Account page</p>
+    <Link to={route.default}>Home</Link>
+    <hr />
+    <Link to={match.details}>Details</Link>
+    <Route match={match.details}>
+      <p>Account {match.$params.id} details page</p>
+    </Route>
+  </>
+));
 
-    return (
-      <>
-        <p>Account page</p>
-        <Link to={route.default}>Home</Link>
-        <hr />
-        <Link to={match.details}>Details</Link>
-        <Route match={match.details}>
-          <p>Account {match.$params.id} details page</p>
-        </Route>
-      </>
-    );
-  }
-}
-
-@observer
-export class App extends Component {
-  render(): ReactNode {
-    return (
-      <>
-        <h1>Boring Router</h1>
-        <Route match={route.default}>
-          <p>Home page</p>
-          <div>
-            <Link to={route.account} params={{id: '123'}}>
-              Account 123
-            </Link>
-          </div>
-        </Route>
-        <Route match={route.account} component={AccountPage} />
-      </>
-    );
-  }
-}
+const App = observer(() => (
+  <>
+    <h1>Boring Router</h1>
+    <Route match={route.default}>
+      <p>Home page</p>
+      <div>
+        <Link to={route.account} params={{id: '123'}}>
+          Account 123
+        </Link>
+      </div>
+    </Route>
+    <Route match={route.account} component={AccountPage} />
+  </>
+));
 
 ReactDOM.render(<App />, document.getElementById('app'));

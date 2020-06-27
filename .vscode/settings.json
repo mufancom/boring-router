@@ -11,6 +11,7 @@
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
   "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.tsc.autoDetect": "off",
   "eslint.enable": true,
   "eslint.validate": [
     "javascript",
@@ -19,5 +20,17 @@
     "typescriptreact",
     "handlebars"
   ],
-  "eslint.workingDirectories": [{"mode": "auto"}]
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "cSpell.words": [
+    "docz",
+    "magicspace",
+    "mobx",
+    "tsbuildinfo",
+    "tslang",
+    "tslib"
+  ]
 }

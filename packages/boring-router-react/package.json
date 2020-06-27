@@ -1,7 +1,7 @@
 {
   "name": "boring-router-react",
   "version": "0.3.0-alpha.50",
-  "description": "A light-weight, type-safe, yet reactive router service using MobX.",
+  "description": "A type-safe MobX router with parallel routing support.",
   "repository": {
     "type": "git",
     "url": "https://github.com/makeflow/boring-router.git"
@@ -18,7 +18,6 @@
   "peerDependencies": {
     "boring-router": "^0.3.0-alpha.47",
     "mobx": "5",
-    "mobx-react": "6",
     "react": "16"
   },
   "devDependencies": {
@@ -31,6 +30,8 @@
   "dependencies": {
     "classnames": "^2.2.6",
     "debug": "^4.1.1",
-    "tslang": "^0.1.22"
+    "mobx-react-lite": "^2.0.7",
+    "tslang": "^0.1.22",
+    "tslib": "^2.0.0"
   }
 }
