@@ -3,6 +3,7 @@
   "description": "A type-safe MobX router with parallel routing support.",
   "private": true,
   "scripts": {
+    "publish-doc": "docz build && gh-pages -d .docz/dist",
     "link-global": "yarn workspace boring-router link && yarn workspace boring-router-react link",
     "lerna:publish": "lerna publish patch --registry=https://registry.npmjs.org",
     "build": "rimraf packages/*/{bld,.bld-cache} && tsc --build tsconfig.json",
@@ -17,6 +18,7 @@
     "@magicspace/eslint-plugin": "^0.1.26",
     "docz": "^2.3.1",
     "eslint": "^7.3.1",
+    "gh-pages": "^3.1.0",
     "lerna": "^3.22.1",
     "prettier": "^2.0.5",
     "react": "^16.13.1",

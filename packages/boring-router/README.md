@@ -1,5 +1,5 @@
 # Boring Router
 
-The core of boring router.
+The core of Boring Router.
 
-Checkout https://github.com/makeflow/boring-router for documentation.
+Checkout https://makeflow.github.io/boring-router/ for documentation.

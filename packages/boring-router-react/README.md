@@ -1,5 +1,5 @@
 # Boring Router React
 
-React components for boring router.
+React components for Boring Router.
 
-Checkout https://github.com/makeflow/boring-router for documentation.
+Checkout https://makeflow.github.io/boring-router/ for documentation.

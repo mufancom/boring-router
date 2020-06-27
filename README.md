@@ -5,26 +5,39 @@
 
 A type-safe, yet reactive router using MobX.
 
+[Documentation](https://makeflow.github.io/boring-router/)
+
+## Installation
+
+```shell
+# Install dependencies if you haven't
+yarn add react react-dom mobx mobx-react-lite
+
+# Install Boring Router packages
+yarn add boring-router boring-router-react
+```
+
 ## Introduction
 
 Boring Router is a state-first router with light-weight route components. It manages observable (MobX) route states like `route.$matched` and `route.$params`, so the route components as well as your code can react to those states. Boring Router is written in TypeScript and it puts type safety in mind designing the API.
 
-## Features
+### Route Notation
 
-- **Schema-based, type-safe route representation**: You don't need, and it is not recommended to write routes as strings with Boring Router. Route schema can be shared with Node.js backend and this makes route representations type-safe everywhere.
-- **Parallel routes support**: Views like sidebar, overlay can be easily routed with Boring Router parallel routes. Parallel routes can be manipulated separately for different views.
-- **Full life-cycle hooks support**: Boring Router implements its own `BrowserHistory` with the ability to restore browser history stack according to a given snapshot. This makes it possible to support full life-cycle hooks while keeping history navigation behavior right.
+Boring Router uses schema-based, type-safe route notation. You don't need, and it is not recommended to write routes as strings with Boring Router.
 
-## Installation
+Route schema can be shared with Node.js backend and this makes route notations type-safe everywhere.
 
-```sh
-# peer dependencies
-yarn add react mobx mobx-react
+### Parallel Routes
 
-# boring router packages
-yarn add boring-router
-yarn add boring-router-react
-```
+Views like sidebar, overlay can be easily routed with Boring Router parallel routes.
+
+URL for parallel routes looks like `/workbench?_sidebar=/notifications`. Additional parallel routes work like primary route except that it does not have dedicated query strings.
+
+### Life-cycle Hooks
+
+Boring Router supports `before/will/after` x `enter/update/leave` hooks.
+
+To support full life-cycle hooks while keeping history navigation behavior right, Boring Router implements its own `BrowserHistory` with the ability to restore browser history stack according to a given snapshot.
 
 ## Usage
 

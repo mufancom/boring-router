@@ -1,6 +1,7 @@
 module.exports = {
   title: 'Boring Router',
   src: 'doc',
+  base: '/boring-router/',
   menu: ['Introduction', 'Get Started'],
   themeConfig: {
     initialColorMode: 'dark',
