@@ -1,5 +1,6 @@
 .cache/
 .bld-cache/
+.docz/
 
 dist/
 bld/

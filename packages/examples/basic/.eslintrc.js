@@ -1,6 +1,7 @@
 module.exports = {
   root: true,
   extends: ['eslint:recommended'],
+  ignorePatterns: ['dist'],
   env: {
     node: true,
     es2020: true,
