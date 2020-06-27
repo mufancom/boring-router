@@ -4252,27 +4252,6 @@ boolbase@^1.0.0, boolbase@~1.0.0:
   resolved "https://registry.yarnpkg.com/boolbase/-/boolbase-1.0.0.tgz#68dff5fbe60c51eb37725ea9e3ed310dcc1e776e"
   integrity sha1-aN/1++YMUes3cl6p4+0xDcwed24=
 
-boring-router-react@latest:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/boring-router-react/-/boring-router-react-0.3.1.tgz#09a73f420e7b2e0ac35fe1f2384d819160ecba26"
-  integrity sha512-6atqF5P2L6HTsZp1CWQOmjlHrL1Ppb6iqYnOZcx8iX1iod1Ijokb6TPaUzd9d8gksCmlwYaD8Da9/R7Blug9LA==
-  dependencies:
-    classnames "^2.2.6"
-    debug "^4.1.1"
-    mobx-react-lite "^2.0.7"
-    tslang "^0.1.22"
-    tslib "^2.0.0"
-
-boring-router@latest:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/boring-router/-/boring-router-0.3.1.tgz#4a3af47f20d6abd4bcff5e7ec8fc4ddbc86de3bf"
-  integrity sha512-17p44bNkb+VAapIU4pVfv1LG/7qGU2f2QkWeFXU9IbsCNPHeGhFU7S11KdIf9OgHi61IEB1SPmah951HpVXRlw==
-  dependencies:
-    hyphenate "^0.2.4"
-    lodash "^4.17.15"
-    tslang "^0.1.22"
-    tslib "^2.0.0"
-
 boxen@^3.0.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/boxen/-/boxen-3.2.0.tgz#fbdff0de93636ab4450886b6ff45b92d098f45eb"

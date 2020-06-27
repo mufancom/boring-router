@@ -1,8 +1,9 @@
 {
-  "name": "@boring-router-examples/basic",
+  "name": "@boring-router-examples/life-cycle-hooks",
   "version": "0.0.0",
   "private": true,
   "main": "index.html",
+  "browserslist": ["last 5 Chrome versions"],
   "devDependencies": {
     "@magicspace/configs": "^0.2.5",
     "@magicspace/eslint-plugin": "^0.1.26",
