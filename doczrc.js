@@ -2,7 +2,7 @@ module.exports = {
   title: 'Boring Router',
   base: '/boring-router/',
   files: 'doc/**/*.mdx',
-  menu: ['Introduction', 'Get Started', 'Examples'],
+  menu: ['Introduction', 'Get Started', 'Examples', 'References'],
   themeConfig: {
     initialColorMode: 'dark',
     styles: {
