@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "link-global": "yarn workspace boring-router link && yarn workspace boring-router-react link",
-    "lerna:publish": "lerna publish prerelease --registry=https://registry.npmjs.org",
+    "lerna:publish": "lerna publish patch --registry=https://registry.npmjs.org",
     "build": "rimraf packages/*/{bld,.bld-cache} && tsc --build tsconfig.json",
     "typecheck-examples": "run-in-every directory --echo --parallel --pattern packages/examples/* -- tsc",
     "test:boring-router": "yarn workspace boring-router test",
