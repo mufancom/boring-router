@@ -1,0 +1,75 @@
+---
+name: Get Started
+route: /get-started
+---
+
+# Get Started
+
+## Installation
+
+```shell
+# Install dependencies if you haven't
+yarn add react react-dom mobx mobx-react-lite
+
+# Install Boring Router packages
+yarn add boring-router boring-router-react
+```
+
+## Setup a router
+
+```ts
+import {Router} from 'boring-router';
+import {BrowserHistory} from 'boring-router-react';
+
+const history = new BrowserHistory();
+
+const router = new Router(history);
+```
+
+## Create primary route
+
+```ts
+const route = router.$route({
+  // Match `/`.
+  home: {
+    $match: '',
+  },
+  // Match `/workbench`.
+  workbench: true,
+  // Match `/user-settings`.
+  userSettings: true,
+  // Match the rest.
+  notFound: {
+    $match: /.*/,
+  },
+});
+```
+
+## Add some route components
+
+```tsx
+import {Route, Link} from 'boring-router-react';
+
+const App = () => {
+  return (
+    <>
+      <ul>
+        <li>
+          <Link to={route.home}>Home</Link>
+        </li>
+        <li>
+          <Link to={route.workbench}>Workbench</Link>
+        </li>
+        <li>
+          <Link to={route.userSettings}>User Settings</Link>
+        </li>
+      </ul>
+      <hr />
+      <Route match={route.home} component={HomeView} />
+      <Route match={route.workbench} component={WorkbenchView} />
+      <Route match={route.userSettings} component={UserSettingsView} />
+      <Route match={route.notFound} component={NotFoundView} />
+    </>
+  );
+};
+```

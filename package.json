@@ -6,10 +6,11 @@
     "link-global": "yarn workspace boring-router link && yarn workspace boring-router-react link",
     "lerna:publish": "lerna publish prerelease --registry=https://registry.npmjs.org",
     "build": "rimraf packages/*/{bld,.bld-cache} && tsc --build tsconfig.json",
+    "typecheck-examples": "run-in-every directory --echo --parallel --pattern packages/examples/* -- tsc",
     "test:boring-router": "yarn workspace boring-router test",
     "lint": "run-in-every eslint-project --echo --parallel -- eslint --config {configFileName} .",
     "lint-prettier": "prettier --list-different \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "test": "yarn lint-prettier && yarn build && yarn lint && yarn test:boring-router"
+    "test": "yarn lint-prettier && yarn build && yarn lint && yarn test:boring-router && yarn typecheck-examples"
   },
   "devDependencies": {
     "@magicspace/configs": "0.2.5",
@@ -26,7 +27,7 @@
   },
   "workspaces": {
     "packages": [
-      "packages/*"
+      "packages/**"
     ]
   }
 }

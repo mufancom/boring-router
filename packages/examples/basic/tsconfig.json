@@ -1,13 +1,11 @@
 {
   "extends": "@magicspace/configs/tsconfig.json",
   "compilerOptions": {
-    "composite": true,
-
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "experimentalDecorators": true,
     "jsx": "react",
 
-    "outDir": "../../.bld-cache/examples/parallel-routes"
-  },
-  "references": [{"path": "../../src/library"}]
+    "rootDir": ".",
+    "noEmit": true
+  }
 }
