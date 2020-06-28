@@ -81,13 +81,16 @@ export type RouteBeforeLeaveCallback = () =>
 
 export type RouteWillEnterCallback<
   TRouteMatch extends RouteMatch = RouteMatch
-> = (next: TRouteMatch['$next']) => void;
+> = (next: TRouteMatch['$next']) => Promise<void> | void;
 
 // will update //
 
 export type RouteWillUpdateCallback<
   TRouteMatch extends RouteMatch = RouteMatch
-> = (next: TRouteMatch['$next'], data: RouteUpdateCallbackData) => void;
+> = (
+  next: TRouteMatch['$next'],
+  data: RouteUpdateCallbackData,
+) => Promise<void> | void;
 
 export interface RouteWillUpdateOptions {
   traceDescendants: boolean;
@@ -102,7 +105,7 @@ export interface RouteWillUpdateEntry<
 
 // will leave //
 
-export type RouteWillLeaveCallback = () => void;
+export type RouteWillLeaveCallback = () => Promise<void> | void;
 
 // after enter //
 
@@ -148,7 +151,7 @@ export type RouteBeforeEnterOrUpdateCallback<
 
 export type RouteWillEnterOrUpdateCallback<
   TRouteMatch extends RouteMatch = RouteMatch
-> = (next: TRouteMatch['$next']) => Promise<boolean | void> | boolean | void;
+> = (next: TRouteMatch['$next']) => Promise<void> | void;
 
 export type RouteAfterEnterOrUpdateCallback = () => void;
 
@@ -728,49 +731,60 @@ export class RouteMatch<
       autorunDisposer();
     }
 
-    for (let callback of this._willLeaveCallbackSet) {
-      tolerate(callback);
-    }
+    await Promise.all([
+      ...Array.from(this._willLeaveCallbackSet).map(callback =>
+        tolerate(callback),
+      ),
+      (async () => {
+        let service = await this._getService();
 
-    let service = await this._getService();
-
-    if (service && service.willLeave) {
-      tolerate(() => service!.willLeave!());
-    }
+        if (service && service.willLeave) {
+          return tolerate(() => service!.willLeave!());
+        }
+      })(),
+    ]);
   }
 
   /** @internal */
   async _willEnter(): Promise<void> {
     let next = this.$next;
 
-    for (let callback of this._willEnterCallbackSet) {
-      tolerate(callback, next);
-    }
+    await Promise.all([
+      ...Array.from(this._willEnterCallbackSet).map(callback =>
+        tolerate(callback, next),
+      ),
+      (async () => {
+        let service = await this._getService();
 
-    let service = await this._getService();
-
-    if (service && service.willEnter) {
-      tolerate(() => service!.willEnter!(next));
-    }
+        if (service && service.willEnter) {
+          return tolerate(() => service!.willEnter!(next));
+        }
+      })(),
+    ]);
   }
 
   /** @internal */
   async _willUpdate(triggeredByDescendants: boolean): Promise<void> {
     let next = this.$next;
 
-    for (let {callback, options} of this._willUpdateEntrySet) {
-      if (triggeredByDescendants ? options && options.traceDescendants : true) {
-        tolerate(callback, next, {descendants: triggeredByDescendants});
-      }
-    }
+    await Promise.all([
+      ...Array.from(this._willUpdateEntrySet)
+        .filter(({options}) =>
+          triggeredByDescendants ? options && options.traceDescendants : true,
+        )
+        .map(({callback}) =>
+          tolerate(callback, next, {descendants: triggeredByDescendants}),
+        ),
+      (async () => {
+        let service = await this._getService();
 
-    let service = await this._getService();
-
-    if (service && service.willUpdate) {
-      tolerate(() =>
-        service!.willUpdate!(next, {descendants: triggeredByDescendants}),
-      );
-    }
+        if (service && service.willUpdate) {
+          return tolerate(() =>
+            service!.willUpdate!(next, {descendants: triggeredByDescendants}),
+          );
+        }
+      })(),
+    ]);
   }
 
   /** @internal */
