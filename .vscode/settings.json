@@ -25,6 +25,7 @@
       "mode": "auto"
     }
   ],
+  "cSpell.enableFiletypes": ["mdx"],
   "cSpell.words": [
     "Parens",
     "autorun",

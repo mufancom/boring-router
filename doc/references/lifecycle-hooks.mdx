@@ -1,0 +1,38 @@
+---
+menu: References
+name: Lifecycle Hooks
+route: /references/lifecycle-hooks
+---
+
+# Lifecycle Hooks
+
+## Overview
+
+Boring Router is a state-first router of which the core has nothing to do with React components. This makes Boring Router fundamentally different with [React Router](https://github.com/ReactTraining/react-router) and removes the first barrier providing full lifecycle hooks.
+
+The second barrier of full lifecycle hooks support is browser history stack. As navigation can happen without accessing the router managed by us (e.g., user clicking "back", "forward" and even "goto"), it is unavoidable for lifecycle hooks like `beforeEnter` to be called after the navigation actually happens. To support `before` hooks, we need to acquire the ability to restore history stack to a previous state. Otherwise, we will have broken browser navigation behavior. To solve this problem, we choose to implement our own `BrowserHistory` with the ability to track and restore history stack instead of using the popular [history](https://github.com/ReactTraining/history).
+
+Those makes it possible for Boring Router to support full lifecycle hooks: `before/will/after` x `enter/update/leave`.
+
+## Hook Phases
+
+### Before Hooks
+
+"Before hooks" (`beforeEnter`/`beforeUpdate`/`beforeLeave`) are called before applying a navigation. All of the "before hooks" support asynchronous callbacks and allow cancellation or interruption in between. This means if another navigation is queued before "before" phase completes, the current navigation will be interrupted.
+
+So besides returning `false` in a "before hook" to cancel a navigation, it is designed to allow additional navigation within a "before hook" to interrupt current navigation:
+
+```ts
+route.task.numericId.$beforeEnter(async next => {
+  let id = await getTaskIdByNumericId(next.$params.numericId);
+  route.task.id.$replace({id});
+});
+```
+
+### Will Hooks
+
+"Will hooks" (`willEnter`/`willUpdate`/`willLeave`) are called once all the "before hooks" are called and the navigation has not been cancelled or interrupted. "Will hooks" can also be asynchronous. But unlike "before hooks", it cannot cancel or interrupt a happening navigation. If another navigation is queued before "will" phase completes, it will be processed after the current navigation completes.
+
+### After Hooks
+
+"After hooks" (`afterEnter`/`afterUpdate`/`afterLeave`) are called just before navigation completes. The wording "after" is still considered accurate, because at this phase the route states have already been updated. "After hooks" are synchronous hooks, you can do anything you like in those hooks as it's no longer within the scope of Boring Router.

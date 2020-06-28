@@ -76,6 +76,8 @@ const route = router.$route({
 });
 ```
 
+### Exact Match Default
+
 Sometimes we might want a default child route to act as matched if its parent is exactly matched. E.g., for settings pages `/settings/user` and `/settings/organization`, we might want an exact match of `/settings` to act as if `/settings/user` is matched. And we may specify a string value for `$exact` to achieve that:
 
 ```ts
@@ -90,9 +92,9 @@ const route = router.$route({
 });
 ```
 
-Note this value is not specified according to the key but the path segement. So if the key of the child route is `awesomeUser`, the `$exact` value should be `awesome-user` with default configuration.
+Note this value is not specified according to the key but the path segment. So if the key of the child route is `awesomeUser`, the `$exact` value should be `awesome-user` with default configuration.
 
-## Match a Segment
+## Segment Match
 
 By default, Boring Router matches a segment according to the "hyphenated" string of the route key.
 
@@ -114,7 +116,7 @@ const route = router.$route({
 });
 ```
 
-To make the segment a segement parameter, we may add `$match` option as regular expression:
+To make the segment a segment parameter, we may add `$match` option as regular expression:
 
 ```ts
 const route = router.$route({
@@ -127,7 +129,7 @@ const route = router.$route({
 
 And now we can get the actual matched segment by `route.userSettings.$params.userSettings`.
 
-Please note that the regular expression must match the whole string of a segement. Assuming the path is `/settings-suffix`, even though `/(?:user-)?settings/.test('settings-suffix')` is true, but it won't match the route because it matches only `settings` instead of the whole segment `settings-suffix`.
+Please note that the regular expression must match the whole string of a segment. Assuming the path is `/settings-suffix`, even though `/(?:user-)?settings/.test('settings-suffix')` is true, but it won't match the route because it matches only `settings` instead of the whole segment `settings-suffix`.
 
 ## Query String
 
@@ -142,7 +144,7 @@ const route = router.$route({
       group: true,
       id: true,
     },
-    $chilren: {
+    $children: {
       profile: true,
     },
   },
@@ -157,3 +159,43 @@ route.account.$params.id;
 route.account.profile.$params.group;
 route.account.profile.$params.id;
 ```
+
+### Query String Preservation
+
+By default, route builder (when you click a `<Link>` or trigger `RouteMatch#$ref()` directly or indirectly) keeps query strings declared at the next matching route when creating a new "ref" for navigation. Think of the example below:
+
+```ts
+const route = router.$route({
+  account: {
+    $query: {
+      source: true,
+    },
+  },
+  about: {
+    $query: {
+      source: true,
+    },
+  },
+});
+```
+
+If the current route matches `/account?source=123`, the result of `route.about.$ref()` would be `/about?source=123`.
+
+We can provide specific query IDs for different queries to achieve more accurate query string preservation:
+
+```ts
+const route = router.$route({
+  account: {
+    $query: {
+      source: 'account-source',
+    },
+  },
+  about: {
+    $query: {
+      source: 'about-source',
+    },
+  },
+});
+```
+
+A query ID could be either a string or a symbol. If `true` is provided, it will always preserve query string with the same key or be preserved by other query string with the same key.
