@@ -21,9 +21,9 @@ import {
   RouteMatchSharedOptions,
 } from './route-match-shared';
 
-//////////////////////
-// life-cycle hooks //
-//////////////////////
+/////////////////////
+// lifecycle hooks //
+/////////////////////
 
 export interface RouteUpdateCallbackData {
   descendants: boolean;
