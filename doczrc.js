@@ -1,5 +1,5 @@
 module.exports = {
-  title: 'Boring Router',
+  title: '🥱 Boring Router',
   base: '/boring-router/',
   files: 'doc/**/*.mdx',
   menu: [
