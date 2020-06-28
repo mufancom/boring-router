@@ -1,11 +1,11 @@
 import {EmptyObjectPatch} from 'tslang';
 
-import {buildPath, buildRef, hasOwnProperty, parseSearch} from './@utils';
+import {buildPath, buildRef, parseSearch} from './@utils';
 import {
   GeneralParamDict,
-  GeneralQueryDict,
   RouteMatchShared,
   RouteMatchSharedToParamDict,
+  RouteSourceQuery,
 } from './route-match';
 import {Router, RouterNavigateOptions} from './router';
 
@@ -17,7 +17,7 @@ export interface RouteBuilderBuildingPart {
 export class RouteBuilder<TGroupName extends string = string> {
   constructor(
     private sourcePathMap: Map<string | undefined, string>,
-    private sourceQueryDict: GeneralQueryDict,
+    private sourceQueryMap: Map<string, RouteSourceQuery>,
     private router: Router<TGroupName>,
     private buildingParts: (RouteBuilderBuildingPart | string)[] = [],
     private leavingGroupSet = new Set<string>(),
@@ -49,7 +49,7 @@ export class RouteBuilder<TGroupName extends string = string> {
 
     return new RouteBuilder(
       this.sourcePathMap,
-      this.sourceQueryDict,
+      this.sourceQueryMap,
       this.router,
       [...this.buildingParts, buildingPart],
     );
@@ -64,7 +64,7 @@ export class RouteBuilder<TGroupName extends string = string> {
 
     return new RouteBuilder(
       this.sourcePathMap,
-      this.sourceQueryDict,
+      this.sourceQueryMap,
       this.router,
       this.buildingParts,
       leavingGroupSet,
@@ -73,11 +73,12 @@ export class RouteBuilder<TGroupName extends string = string> {
 
   $ref(): string {
     let pathMap = new Map(this.sourcePathMap);
-    let queryDict = this.sourceQueryDict;
+
+    let queryMap: Map<string, string | undefined> | undefined;
 
     for (let buildingPart of this.buildingParts) {
       if (typeof buildingPart === 'string') {
-        let {groups, query: buildingPartQueryDict} = parseStringBuildingPart(
+        let {groups, query: buildingPartQueryMap} = parseStringBuildingPart(
           buildingPart,
           this.router.$groups,
         );
@@ -86,11 +87,8 @@ export class RouteBuilder<TGroupName extends string = string> {
           pathMap.set(name, path);
         }
 
-        if (buildingPartQueryDict) {
-          queryDict = {
-            ...queryDict,
-            ...buildingPartQueryDict,
-          };
+        if (buildingPartQueryMap) {
+          queryMap = buildingPartQueryMap;
         }
       } else {
         let {route, params: paramDict = {}} = buildingPart;
@@ -111,26 +109,26 @@ export class RouteBuilder<TGroupName extends string = string> {
         pathMap.set(group, path);
 
         if (primary) {
-          let {queryDict: sourceQueryDict} = route._source;
+          let {queryMap: sourceQueryMap} = route._source;
 
-          let queryKeySet = route._queryKeySet;
+          let queryKeyToIdMap = route._queryKeyToIdMap;
 
-          queryDict = {};
+          queryMap = new Map();
 
-          for (let [key, value] of Object.entries(sourceQueryDict)) {
-            if (queryKeySet.has(key)) {
-              queryDict[key] = value;
+          for (let [key, {id, value}] of sourceQueryMap) {
+            if (queryKeyToIdMap.get(key) === id) {
+              queryMap.set(key, value);
             }
           }
 
           for (let key of restParamKeySet) {
-            if (!queryKeySet.has(key)) {
+            if (!queryKeyToIdMap.has(key)) {
               throw new Error(
                 `Parameter "${key}" is defined as neither segment nor query`,
               );
             }
 
-            queryDict[key] = paramDict[key];
+            queryMap.set(key, paramDict[key]);
           }
         }
       }
@@ -140,7 +138,13 @@ export class RouteBuilder<TGroupName extends string = string> {
       pathMap.delete(group);
     }
 
-    return buildRef(pathMap, pathMap.get(undefined) ? queryDict : {});
+    if (pathMap.get(undefined) && !queryMap) {
+      queryMap = new Map(
+        Array.from(this.sourceQueryMap).map(([key, {value}]) => [key, value]),
+      );
+    }
+
+    return buildRef(pathMap, queryMap);
   }
 
   $href(): string {
@@ -172,7 +176,7 @@ interface ParsedStringBuildingPartGroup {
 
 interface ParsedStringBuildingPart {
   groups: ParsedStringBuildingPartGroup[];
-  query: GeneralQueryDict | undefined;
+  query: Map<string, string> | undefined;
 }
 
 function parseStringBuildingPart(
@@ -182,14 +186,14 @@ function parseStringBuildingPart(
   let searchIndex = part.indexOf('?');
 
   let primaryPath: string | undefined;
-  let queryDict: GeneralQueryDict | undefined;
+  let queryMap: Map<string, string> | undefined;
 
   if (searchIndex >= 0) {
     primaryPath = part.slice(0, searchIndex);
-    queryDict = parseSearch(part.slice(searchIndex));
+    queryMap = parseSearch(part.slice(searchIndex));
   } else {
     primaryPath = part;
-    queryDict = undefined;
+    queryMap = undefined;
   }
 
   let buildingPartGroups: ParsedStringBuildingPartGroup[] = [];
@@ -201,27 +205,35 @@ function parseStringBuildingPart(
     });
   }
 
-  if (queryDict) {
+  if (queryMap) {
     for (let group of groups) {
       let key = `_${group}`;
 
-      if (hasOwnProperty(queryDict, key)) {
+      if (queryMap.has(key)) {
         buildingPartGroups.push({
           name: group,
-          path: queryDict[key]!,
+          path: queryMap.get(key)!,
         });
 
-        delete queryDict[key];
+        queryMap.delete(key);
       }
     }
 
-    if (Object.keys(queryDict).length === 0) {
-      queryDict = undefined;
+    if (queryMap.size === 0) {
+      queryMap = undefined;
+    }
+
+    if (queryMap && !primaryPath) {
+      console.error(
+        `Unexpected query in string building part without primary route path: "${part}"`,
+      );
+
+      queryMap = undefined;
     }
   }
 
   return {
     groups: buildingPartGroups,
-    query: queryDict,
+    query: queryMap,
   };
 }

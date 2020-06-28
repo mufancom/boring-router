@@ -137,13 +137,13 @@ route.redirect.target.$beforeEnter(next => {
     // recommended to use `$next` most of the cases inside a `before/will` x
     // `enter/update`.
     case 'account':
-      route.account.$next.$replace();
+      route.$next.account.$replace();
       break;
     case 'about':
-      route.about.$next.$replace();
+      route.$next.about.$replace();
       break;
     default:
-      route.home.$next.$replace();
+      route.$next.home.$replace();
       break;
   }
 });

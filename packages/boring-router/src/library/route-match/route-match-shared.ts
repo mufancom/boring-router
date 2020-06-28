@@ -36,7 +36,7 @@ export interface RouteMatchNavigateOptions<TGroupName extends string>
 
 export interface RouteMatchSharedOptions {
   match: string | symbol | RegExp;
-  query: Dict<boolean> | undefined;
+  query: Map<string, string | symbol>;
   group: string | undefined;
 }
 
@@ -67,7 +67,7 @@ export abstract class RouteMatchShared<
   readonly _source: RouteSource;
 
   /** @internal */
-  readonly _queryKeySet: Set<string>;
+  readonly _queryKeyToIdMap: Map<string, string | symbol>;
 
   /** @internal */
   _children: this[] | undefined;
@@ -101,9 +101,10 @@ export abstract class RouteMatchShared<
 
     this._matchPattern = match;
 
-    this._queryKeySet = new Set([
-      ...(query ? Object.keys(query) : []),
-      ...(parent ? parent._queryKeySet : []),
+    this._queryKeyToIdMap = new Map([
+      ...query,
+      ...Object.entries(query ?? {}),
+      ...(parent?._queryKeyToIdMap ?? []),
     ]);
   }
 
@@ -217,14 +218,16 @@ export abstract class RouteMatchShared<
   /** @internal */
   @computed
   protected get _query(): GeneralQueryDict | undefined {
-    let sourceQueryDict = this._source.queryDict;
+    let sourceQueryMap = this._source.queryMap;
 
-    return Array.from(this._queryKeySet).reduce((dict, key) => {
-      let value = sourceQueryDict[key];
+    return Array.from(this._queryKeyToIdMap).reduce((dict, [key, id]) => {
+      let sourceQuery = sourceQueryMap.get(key);
 
-      if (value !== undefined) {
-        dict[key] = sourceQueryDict[key];
+      if (!sourceQuery || sourceQuery.id !== id) {
+        return dict;
       }
+
+      dict[key] = sourceQuery.value;
 
       return dict;
     }, {} as GeneralQueryDict);
@@ -233,7 +236,7 @@ export abstract class RouteMatchShared<
   $(params?: Partial<TParamDict> & EmptyObjectPatch): RouteBuilder<TGroupName> {
     return new RouteBuilder<TGroupName>(
       new Map(),
-      this._source.queryDict,
+      this._source.queryMap,
       this.$router,
       [{route: this, params}],
     );

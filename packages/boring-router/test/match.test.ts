@@ -67,6 +67,31 @@ let primaryRoute = router.$route({
       extension: true,
     },
   },
+  queryTest1: {
+    $exact: true,
+    $query: {
+      foo: true,
+      bar: 'bar',
+      pia: 'pia',
+    },
+    $children: {
+      subPath: true,
+    },
+  },
+  queryTest2: {
+    $exact: true,
+    $query: {
+      foo: true,
+      bar: 'bar',
+    },
+    $children: {
+      subPath: {
+        $query: {
+          pia: 'pia',
+        },
+      },
+    },
+  },
   notFound: {
     $match: RouteMatch.rest,
   },
@@ -588,4 +613,24 @@ test('should build route with string building part without primary route', async
   expect(
     router.$scratch().$('?_popup=/invite').$('?_sidebar=/friends').$ref(),
   ).toBe('?_popup=/invite&_sidebar=/friends');
+});
+
+test('should keep correct queries between navigation', async () => {
+  primaryRoute.queryTest1.$push({foo: 'a', bar: 'b', pia: 'c'});
+
+  await nap();
+
+  expect(primaryRoute.queryTest1.$ref()).toBe(
+    '/query-test-1?foo=a&bar=b&pia=c',
+  );
+
+  expect(primaryRoute.queryTest1.subPath.$ref()).toBe(
+    '/query-test-1/sub-path?foo=a&bar=b&pia=c',
+  );
+
+  expect(primaryRoute.queryTest2.$ref()).toBe('/query-test-2?bar=b');
+
+  expect(primaryRoute.queryTest2.subPath.$ref()).toBe(
+    '/query-test-2/sub-path?bar=b&pia=c',
+  );
 });

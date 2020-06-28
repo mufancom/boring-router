@@ -15,7 +15,6 @@ import {Router} from '../router';
 import {NextRouteMatch} from './next-route-match';
 import {
   GeneralParamDict,
-  GeneralQueryDict,
   GeneralSegmentDict,
   ROUTE_MATCH_START_ANCHOR_PATTERN,
   RouteMatchShared,
@@ -202,12 +201,17 @@ export interface RouteMatchEntry {
   rest: string;
 }
 
+export interface RouteSourceQuery {
+  id: string | symbol;
+  value: string;
+}
+
 export interface RouteSource {
   groupToMatchToMatchEntryMapMap: Map<
     string | undefined,
     Map<RouteMatch, RouteMatchEntry>
   >;
-  queryDict: GeneralQueryDict;
+  queryMap: Map<string, RouteSourceQuery>;
   pathMap: Map<string | undefined, string>;
 }
 

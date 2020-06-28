@@ -1,16 +1,4 @@
-import {Dict} from 'tslang';
-
-import {
-  GeneralParamDict,
-  GeneralQueryDict,
-  GeneralSegmentDict,
-} from './route-match';
-
-const _hasOwnProperty = Object.prototype.hasOwnProperty;
-
-export function hasOwnProperty(object: object, name: string): boolean {
-  return _hasOwnProperty.call(object, name);
-}
+import {GeneralParamDict, GeneralSegmentDict} from './route-match';
 
 export function buildPath(
   segmentDict: GeneralSegmentDict,
@@ -34,7 +22,7 @@ export function buildPath(
 
 export function buildRef(
   pathMap: Map<string | undefined, string>,
-  queryDict: Dict<string | undefined>,
+  queryMap: Map<string, string | undefined> | undefined,
 ): string {
   let primaryPath = pathMap.get(undefined) ?? '';
 
@@ -45,11 +33,13 @@ export function buildRef(
       .join('&'),
   );
 
-  let normalQuery = new URLSearchParams(
-    Object.entries(queryDict).filter(
-      (entry): entry is [string, string] => entry[1] !== undefined,
-    ),
-  ).toString();
+  let normalQuery =
+    queryMap &&
+    new URLSearchParams(
+      Array.from(queryMap).filter(
+        (entry): entry is [string, string] => entry[1] !== undefined,
+      ),
+    ).toString();
 
   let query = pathQuery
     ? normalQuery
@@ -85,13 +75,10 @@ export function parseRef(ref: string): ParseRefResult {
   };
 }
 
-export function parseSearch(search: string): GeneralQueryDict {
+export function parseSearch(search: string): Map<string, string> {
   let searchParams = new URLSearchParams(search);
 
-  return Array.from(searchParams).reduce((dict, [key, value]) => {
-    dict[key] = value;
-    return dict;
-  }, {} as GeneralQueryDict);
+  return new Map(searchParams);
 }
 
 export function testPathPrefix(path: string, prefix: string): boolean {

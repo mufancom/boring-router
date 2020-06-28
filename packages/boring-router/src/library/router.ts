@@ -3,7 +3,7 @@ import _ from 'lodash';
 import {action, observable, runInAction} from 'mobx';
 import {Dict, EmptyObjectPatch} from 'tslang';
 
-import {hasOwnProperty, parseRef, parseSearch} from './@utils';
+import {parseRef, parseSearch} from './@utils';
 import {HistorySnapshot, IHistory, getActiveHistoryEntry} from './history';
 import {RouteBuilder} from './route-builder';
 import {
@@ -16,6 +16,7 @@ import {
   RouteMatchShared,
   RouteMatchSharedToParamDict,
   RouteSource,
+  RouteSourceQuery,
 } from './route-match';
 import {RouteSchemaDict} from './schema';
 
@@ -220,7 +221,7 @@ export interface RouterOptions {
 interface BuildRouteMatchOptions {
   match: string | symbol | RegExp;
   exact: boolean | string;
-  query: Dict<boolean> | undefined;
+  query: Dict<string | symbol | true> | undefined;
   children: RouteSchemaDict | undefined;
   extension: object | undefined;
   metadata: object | undefined;
@@ -260,7 +261,7 @@ export class Router<TGroupName extends string = string> {
   /** @internal */
   private _source: RouteSource = observable({
     groupToMatchToMatchEntryMapMap: new Map(),
-    queryDict: {},
+    queryMap: new Map(),
     pathMap: new Map(),
   });
 
@@ -268,7 +269,7 @@ export class Router<TGroupName extends string = string> {
   @observable
   private _matchingSource: RouteSource = observable({
     groupToMatchToMatchEntryMapMap: new Map(),
-    queryDict: {},
+    queryMap: new Map(),
     pathMap: new Map(),
   });
 
@@ -294,9 +295,9 @@ export class Router<TGroupName extends string = string> {
   }
 
   get $current(): RouteBuilder<TGroupName> {
-    let {pathMap, queryDict} = this._source;
+    let {pathMap, queryMap} = this._source;
 
-    return new RouteBuilder(pathMap, queryDict, this);
+    return new RouteBuilder(pathMap, queryMap, this);
   }
 
   get $routing(): boolean {
@@ -304,9 +305,9 @@ export class Router<TGroupName extends string = string> {
   }
 
   get $next(): RouteBuilder<TGroupName> {
-    let {pathMap, queryDict} = this._matchingSource;
+    let {pathMap, queryMap} = this._matchingSource;
 
-    return new RouteBuilder(pathMap, queryDict, this);
+    return new RouteBuilder(pathMap, queryMap, this);
   }
 
   get $groups(): TGroupName[] {
@@ -369,7 +370,7 @@ export class Router<TGroupName extends string = string> {
   ): RouteBuilder<TGroupName>;
   $(part: string): RouteBuilder<TGroupName>;
   $(route: RouteMatchShared | string, params?: GeneralParamDict): RouteBuilder {
-    let {pathMap, queryDict} = this._source;
+    let {pathMap, queryMap} = this._source;
 
     let buildingPart =
       typeof route === 'string'
@@ -379,11 +380,11 @@ export class Router<TGroupName extends string = string> {
             params,
           };
 
-    return new RouteBuilder(pathMap, queryDict, this, [buildingPart]);
+    return new RouteBuilder(pathMap, queryMap, this, [buildingPart]);
   }
 
   $scratch(): RouteBuilder<TGroupName> {
-    return new RouteBuilder(new Map(), {}, this);
+    return new RouteBuilder(new Map(), new Map(), this);
   }
 
   $push(ref: string, options?: RouterNavigateOptions): void {
@@ -450,7 +451,7 @@ export class Router<TGroupName extends string = string> {
       return;
     }
 
-    let queryDict = parseSearch(search);
+    let queryMap = parseSearch(search);
 
     let pathMap = new Map<string | undefined, string>();
 
@@ -462,17 +463,17 @@ export class Router<TGroupName extends string = string> {
     for (let group of groups) {
       let key = `_${group}`;
 
-      if (!hasOwnProperty(queryDict, key)) {
+      if (!queryMap.has(key)) {
         continue;
       }
 
-      let path = queryDict[key];
+      let path = queryMap.get(key);
 
       if (path) {
         pathMap.set(group, path);
       }
 
-      delete queryDict[key];
+      queryMap.delete(key);
     }
 
     // Match parallel routes
@@ -538,12 +539,26 @@ export class Router<TGroupName extends string = string> {
       }
     }
 
+    let matchingSource = this._matchingSource;
+
     runInAction(() => {
-      Object.assign(this._matchingSource, {
-        groupToMatchToMatchEntryMapMap,
-        queryDict,
-        pathMap,
-      });
+      matchingSource.groupToMatchToMatchEntryMapMap = groupToMatchToMatchEntryMapMap;
+      matchingSource.pathMap = pathMap;
+
+      let matchingQueryKeyToIdMap = groupToRouteMatchMap.get(undefined)!.$next
+        .$rest._queryKeyToIdMap;
+
+      matchingSource.queryMap = new Map(
+        _.compact(
+          Array.from(queryMap).map(([key, value]):
+            | [string, RouteSourceQuery]
+            | undefined =>
+            matchingQueryKeyToIdMap.has(key)
+              ? [key, {id: matchingQueryKeyToIdMap.get(key)!, value}]
+              : undefined,
+          ),
+        ),
+      );
     });
 
     let generalGroups = [undefined, ...groups];
@@ -714,7 +729,7 @@ export class Router<TGroupName extends string = string> {
     let source = this._source;
     let matchingSource = this._matchingSource;
 
-    source.queryDict = matchingSource.queryDict;
+    source.queryMap = matchingSource.queryMap;
 
     for (let group of generalGroups) {
       let path = matchingSource.pathMap.get(group)!;
@@ -874,7 +889,7 @@ export class Router<TGroupName extends string = string> {
     {
       match,
       exact,
-      query,
+      query: queryDict,
       children,
       extension,
       metadata,
@@ -883,6 +898,16 @@ export class Router<TGroupName extends string = string> {
     let source = this._source;
     let matchingSource = this._matchingSource;
     let history = this._history;
+
+    let query = new Map(
+      Object.entries(queryDict ?? {}).map(([key, id]): [
+        string,
+        string | symbol,
+      ] => [
+        key,
+        typeof id === 'boolean' ? Symbol(`query:${routeName}.${key}`) : id,
+      ]),
+    );
 
     let options: RouteMatchOptions = {
       match,

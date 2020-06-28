@@ -2,7 +2,7 @@ import {Dict} from 'tslang';
 
 export interface RouteSchema {
   $match?: string | RegExp;
-  $query?: Dict<boolean>;
+  $query?: Dict<string | symbol | true>;
   /**
    * Whether to allow exact match while if this route has children. Only
    * applies if this route has children.
