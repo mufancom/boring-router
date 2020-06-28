@@ -298,10 +298,8 @@ export class RouteMatch<
     if (extension) {
       for (let [key, defaultValue] of Object.entries(extension)) {
         Object.defineProperty(this, key, {
-          get() {
-            let service = (this as RouteMatch).$matched
-              ? (this as RouteMatch)._service
-              : undefined;
+          get(this: RouteMatch) {
+            let service = this.$matched ? this._service : undefined;
 
             return service && key in (service as any)
               ? (service as any)[key]
