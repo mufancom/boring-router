@@ -73,6 +73,8 @@ let primaryRoute = router.$route({
       foo: true,
       bar: 'bar',
       pia: 'pia',
+      hia: 'hia',
+      yo: 'yo-1',
     },
     $children: {
       subPath: true,
@@ -83,11 +85,14 @@ let primaryRoute = router.$route({
     $query: {
       foo: true,
       bar: 'bar',
+      hia: true,
+      yo: 'yo-2',
     },
     $children: {
       subPath: {
         $query: {
           pia: 'pia',
+          yo: 'yo-1',
         },
       },
     },
@@ -616,21 +621,41 @@ test('should build route with string building part without primary route', async
 });
 
 test('should keep correct queries between navigation', async () => {
-  primaryRoute.queryTest1.$push({foo: 'a', bar: 'b', pia: 'c'});
+  primaryRoute.queryTest1.$push({
+    foo: 'a',
+    bar: 'b',
+    pia: 'c',
+    hia: 'd',
+    yo: 'e',
+  });
 
   await nap();
 
   expect(primaryRoute.queryTest1.$ref()).toBe(
-    '/query-test-1?foo=a&bar=b&pia=c',
+    '/query-test-1?foo=a&bar=b&pia=c&hia=d&yo=e',
   );
 
   expect(primaryRoute.queryTest1.subPath.$ref()).toBe(
-    '/query-test-1/sub-path?foo=a&bar=b&pia=c',
+    '/query-test-1/sub-path?foo=a&bar=b&pia=c&hia=d&yo=e',
   );
 
-  expect(primaryRoute.queryTest2.$ref()).toBe('/query-test-2?bar=b');
+  expect(primaryRoute.queryTest2.$ref()).toBe(
+    '/query-test-2?foo=a&bar=b&hia=d',
+  );
 
   expect(primaryRoute.queryTest2.subPath.$ref()).toBe(
-    '/query-test-2/sub-path?bar=b&pia=c',
+    '/query-test-2/sub-path?foo=a&bar=b&pia=c&hia=d&yo=e',
   );
+
+  primaryRoute.queryTest2.$push();
+
+  await nap();
+
+  expect(primaryRoute.queryTest2.$matched).toBe(true);
+
+  expect(primaryRoute.queryTest2.$params).toEqual({
+    foo: 'a',
+    bar: 'b',
+    hia: 'd',
+  });
 });

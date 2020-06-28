@@ -899,15 +899,7 @@ export class Router<TGroupName extends string = string> {
     let matchingSource = this._matchingSource;
     let history = this._history;
 
-    let query = new Map(
-      Object.entries(queryDict ?? {}).map(([key, id]): [
-        string,
-        string | symbol,
-      ] => [
-        key,
-        typeof id === 'boolean' ? Symbol(`query:${routeName}.${key}`) : id,
-      ]),
-    );
+    let query = new Map(Object.entries(queryDict ?? {}));
 
     let options: RouteMatchOptions = {
       match,

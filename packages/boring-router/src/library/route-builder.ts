@@ -1,6 +1,6 @@
 import {EmptyObjectPatch} from 'tslang';
 
-import {buildPath, buildRef, parseSearch} from './@utils';
+import {buildPath, buildRef, isQueryIdsMatched, parseSearch} from './@utils';
 import {
   GeneralParamDict,
   RouteMatchShared,
@@ -116,7 +116,12 @@ export class RouteBuilder<TGroupName extends string = string> {
           queryMap = new Map();
 
           for (let [key, {id, value}] of sourceQueryMap) {
-            if (queryKeyToIdMap.get(key) === id) {
+            let routeQueryId = queryKeyToIdMap.get(key);
+
+            if (
+              routeQueryId !== undefined &&
+              isQueryIdsMatched(routeQueryId, id)
+            ) {
               queryMap.set(key, value);
             }
           }

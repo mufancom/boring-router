@@ -1,6 +1,7 @@
 import {computed} from 'mobx';
 import {Dict, EmptyObjectPatch} from 'tslang';
 
+import {isQueryIdsMatched} from '../@utils';
 import {IHistory} from '../history';
 import {RouteBuilder} from '../route-builder';
 import {Router, RouterNavigateOptions} from '../router';
@@ -36,7 +37,7 @@ export interface RouteMatchNavigateOptions<TGroupName extends string>
 
 export interface RouteMatchSharedOptions {
   match: string | symbol | RegExp;
-  query: Map<string, string | symbol>;
+  query: Map<string, string | symbol | true>;
   group: string | undefined;
 }
 
@@ -67,7 +68,7 @@ export abstract class RouteMatchShared<
   readonly _source: RouteSource;
 
   /** @internal */
-  readonly _queryKeyToIdMap: Map<string, string | symbol>;
+  readonly _queryKeyToIdMap: Map<string, string | symbol | true>;
 
   /** @internal */
   _children: this[] | undefined;
@@ -102,9 +103,8 @@ export abstract class RouteMatchShared<
     this._matchPattern = match;
 
     this._queryKeyToIdMap = new Map([
-      ...query,
-      ...Object.entries(query ?? {}),
       ...(parent?._queryKeyToIdMap ?? []),
+      ...query,
     ]);
   }
 
@@ -172,7 +172,7 @@ export abstract class RouteMatchShared<
     let matchPattern = this._matchPattern;
     let segment = this._segment;
 
-    if (typeof matchPattern === 'string') {
+    if (!(matchPattern instanceof RegExp)) {
       return {
         ...upperSegmentDict,
       };
@@ -193,10 +193,7 @@ export abstract class RouteMatchShared<
     let matchPattern = this._matchPattern;
     let segment = this._segment;
 
-    if (
-      typeof matchPattern === 'symbol' &&
-      matchPattern === ROUTE_MATCH_START_ANCHOR_PATTERN
-    ) {
+    if (matchPattern === ROUTE_MATCH_START_ANCHOR_PATTERN) {
       return {
         ...upperSegmentDict,
       };
@@ -223,7 +220,7 @@ export abstract class RouteMatchShared<
     return Array.from(this._queryKeyToIdMap).reduce((dict, [key, id]) => {
       let sourceQuery = sourceQueryMap.get(key);
 
-      if (!sourceQuery || sourceQuery.id !== id) {
+      if (!sourceQuery || !isQueryIdsMatched(sourceQuery.id, id)) {
         return dict;
       }
 

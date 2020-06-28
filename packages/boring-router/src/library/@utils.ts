@@ -1,5 +1,12 @@
 import {GeneralParamDict, GeneralSegmentDict} from './route-match';
 
+export function isQueryIdsMatched(
+  a: string | symbol | true,
+  b: string | symbol | true,
+): boolean {
+  return a === true || b === true || a === b;
+}
+
 export function buildPath(
   segmentDict: GeneralSegmentDict,
   paramDict: GeneralParamDict = {},

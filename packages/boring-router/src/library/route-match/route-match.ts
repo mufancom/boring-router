@@ -202,7 +202,7 @@ export interface RouteMatchEntry {
 }
 
 export interface RouteSourceQuery {
-  id: string | symbol;
+  id: string | symbol | true;
   value: string;
 }
 
