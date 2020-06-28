@@ -23,7 +23,7 @@ const route = router.$route({
   about: true,
   revert: true,
   notFound: {
-    $match: RouteMatch.rest,
+    $match: RouteMatch.REST,
   },
 });
 

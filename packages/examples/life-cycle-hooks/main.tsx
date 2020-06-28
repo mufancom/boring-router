@@ -17,7 +17,7 @@ const route = router.$route({
   redirect: {
     $children: {
       target: {
-        $match: RouteMatch.segment,
+        $match: RouteMatch.SEGMENT,
       },
     },
   },
@@ -28,13 +28,13 @@ const route = router.$route({
     $exact: true,
     $children: {
       accountId: {
-        $match: RouteMatch.segment,
+        $match: RouteMatch.SEGMENT,
       },
     },
   },
   about: true,
   notFound: {
-    $match: RouteMatch.rest,
+    $match: RouteMatch.REST,
   },
 });
 

@@ -55,7 +55,7 @@ const route = router.$route({
   account: true,
   about: true,
   notFound: {
-    $match: RouteMatch.rest,
+    $match: RouteMatch.REST,
   },
 });
 

@@ -28,7 +28,7 @@ let primaryRoute = router.$route({
   account: {
     $children: {
       accountId: {
-        $match: RouteMatch.segment,
+        $match: RouteMatch.SEGMENT,
         $extension: {
           account: undefined! as Account,
           name: undefined! as string,

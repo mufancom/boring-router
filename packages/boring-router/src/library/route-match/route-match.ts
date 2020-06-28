@@ -867,6 +867,6 @@ export class RouteMatch<
     }
   }
 
-  static segment = /[^/]+/;
-  static rest = /.+/;
+  static SEGMENT = /[^/]+/;
+  static REST = /.*/;
 }

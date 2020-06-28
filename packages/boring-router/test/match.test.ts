@@ -57,7 +57,7 @@ let primaryRoute = router.$route({
         $match: /\d+/,
       },
       mixed: {
-        $match: RouteMatch.segment,
+        $match: RouteMatch.SEGMENT,
       },
     },
   },
@@ -93,7 +93,7 @@ let primaryRoute = router.$route({
     },
   },
   notFound: {
-    $match: RouteMatch.rest,
+    $match: RouteMatch.REST,
   },
 });
 
