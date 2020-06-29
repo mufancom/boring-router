@@ -23,7 +23,7 @@ const route = router.$route({
   },
   revert: true,
   account: {
-    // For route will children, exact match is by default ignored. Make
+    // For route with children, exact match is by default ignored. Make
     // `$exact` true to enable exact match.
     $exact: true,
     $children: {
