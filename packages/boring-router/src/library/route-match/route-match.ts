@@ -299,14 +299,14 @@ export class RouteMatch<
     super(name, router, source, parent, history, sharedOptions);
 
     if (extension) {
-      for (let [key, defaultValue] of Object.entries(extension)) {
+      for (let key of Object.keys(extension)) {
         Object.defineProperty(this, key, {
           get(this: RouteMatch) {
             let service = this.$matched ? this._service : undefined;
 
             return service && key in (service as any)
               ? (service as any)[key]
-              : defaultValue;
+              : (extension as any)[key];
           },
         });
       }
