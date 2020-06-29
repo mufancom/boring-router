@@ -1,0 +1,60 @@
+---
+menu: References
+name: Service
+route: /references/service
+---
+
+# Service
+
+Every `RouteMatch` can be backed by a route service in Boring Router, providing additional flexibility with states comparing to lifecycle hooks.
+
+A route service gets only "activated" when the route matches. And we can provide both pre-instantiated service or service factory:
+
+```ts
+route.account.$service(new AccountRouteService());
+
+route.settings.$service(match => new SettingsRouteService(match));
+
+route.workbench.$service(async match => {
+  // asynchronous code...
+  return new WorkbenchRouteService(match);
+});
+```
+
+## Lifecycle Hooks
+
+Lifecycle hooks is supported by service as optional methods:
+
+```ts
+type AccountRoute = typeof route.account;
+
+class AccountRouteService implements IRouteService<AccountRoute> {
+  constructor(private match: AccountRoute) {}
+
+  async beforeEnter(next: AccountRoute['$next']): Promise<void> {}
+
+  async willEnter(next: AccountRoute['$next']): Promise<void> {}
+
+  async afterEnter(): void {}
+
+  async beforeUpdate(next: AccountRoute['$next']): Promise<void> {
+    this.beforeEnter(next);
+  }
+
+  async willUpdate(next: AccountRoute['$next']): Promise<void> {
+    this.willEnter(next);
+  }
+
+  async afterUpdate(): void {
+    this.afterEnter();
+  }
+
+  async beforeLeave(): Promise<void> {}
+
+  async willLeave(): Promise<void> {}
+
+  afterLeave(): void {}
+}
+```
+
+> For full signatures of lifecycle hook methods, checkout [Lifecycle Hooks](./lifecycle-hooks) and type information.

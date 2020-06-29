@@ -8,7 +8,7 @@ module.exports = {
     'Examples',
     {
       name: 'References',
-      menu: ['Route Schema', 'Lifecycle Hooks'],
+      menu: ['Route Schema', 'Lifecycle Hooks', 'Service'],
     },
   ],
   themeConfig: {

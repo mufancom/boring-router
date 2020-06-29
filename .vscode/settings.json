@@ -36,6 +36,7 @@
     "tsbuildinfo",
     "tslang",
     "tslib",
-    "typecheck"
+    "typecheck",
+    "typeof"
   ]
 }
