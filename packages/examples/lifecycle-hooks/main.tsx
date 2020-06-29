@@ -158,6 +158,10 @@ route.revert.$beforeEnter(() => false);
 const App = observer(() => (
   <>
     <h1>Boring Router</h1>
+    <p>
+      Try "Account" -&gt; "Account 1" -&gt; "Account 2" -&gt; "Redirect to
+      About"
+    </p>
     <nav>
       <Link to={route.home}>Home</Link>
       {' | '}
