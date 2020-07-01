@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Boring Router</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      #app {
+        display: flex;
+        height: 100%;
+      }
+
+      #app a.active {
+        font-weight: bold;
+      }
+
+      #sidebar {
+        flex-shrink: 0;
+        padding: 10px;
+        width: 30px;
+        background-color: #eee;
+      }
+
+      #sidebar.expanded {
+        width: 200px;
+      }
+
+      #sidebar .toggle {
+        display: block;
+        width: 30px;
+        line-height: 30px;
+        text-align: center;
+        background-color: #ccc;
+        color: #333;
+        text-decoration: none;
+      }
+
+      #sidebar .nav {
+        padding: 10px 0;
+      }
+
+      #sidebar .content {
+        padding: 10px 0;
+      }
+
+      #main {
+        position: relative;
+        flex: 1;
+        padding: 0 20px;
+      }
+
+      #overlay {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: #fff;
+      }
+
+      #overlay a {
+        color: rgba(255, 255, 255, 0.8);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app"></div>
+    <script src="main.tsx"></script>
+  </body>
+</html>
