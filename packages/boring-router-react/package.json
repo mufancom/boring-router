@@ -16,7 +16,7 @@
     "!*.tsbuildinfo"
   ],
   "peerDependencies": {
-    "boring-router": "^0.3.0-alpha.47",
+    "boring-router": "0.3",
     "mobx": "5",
     "react": "16"
   },
