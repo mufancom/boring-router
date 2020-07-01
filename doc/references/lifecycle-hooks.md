@@ -14,6 +14,8 @@ The second barrier of full lifecycle hooks support is browser history stack. As 
 
 Those make it possible for Boring Router to support full lifecycle hooks: `before/will/after` x `enter/update/leave`.
 
+> Check out an example <a href="https://codesandbox.io/s/github/makeflow/boring-router/tree/master/packages/examples/lifecycle-hooks?file=/main.tsx&amp;expanddevtools=1" target="_blank" >here</a>.
+
 ## Hook Phases
 
 ### Before Hooks
