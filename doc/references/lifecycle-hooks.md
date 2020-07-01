@@ -56,6 +56,8 @@ route.task.numericId.$beforeEnter(async next => {
 - `/account/123/profile` -> `/account/456/profile` will have "update hooks" correspondent to `/account/:account-id` and `/account/:account-id/profile` be called. Because the `profile` route inherits parameters from its parent.
 - `/account` -> `/account/123` (or vice versa) will have "update hooks" correspondent to `/account` be called. This is because the state `$exact` of route `/account` changes from `true` to `false`.
 
+Note that query changes **WILL NOT** trigger "update hooks", however `$params` are of course observable.
+
 ### Leave Hooks
 
 "Leave hooks" (`beforeLeave`/`willLeave`/`afterLeave`) are called during a navigation that turns specific routes from matched (`$matched`) to the other way.

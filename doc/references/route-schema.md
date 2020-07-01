@@ -152,7 +152,9 @@ Note this value is not specified according to the key but the path segment. So i
 
 ## Query
 
-The ability of handling query string in Boring Router is limited for now. It has some handful usages, but all `$query` definition is handled as optional strings without validations. This problem is partially solved by route `extensions`/`services` though.
+The ability of handling query string in Boring Router is limited for now. It has some handful usages, but all `$query` definition is handled as optional strings without validations.
+
+> This problem can be partially solved by [Extension](/references/route-schema#extension) & [Service](/references/service#managed-extension).
 
 To get access to a specific query string, just add `$query` options and set a `true` value of the desired key:
 

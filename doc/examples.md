@@ -20,3 +20,7 @@ route: /examples
 - <a href="https://codesandbox.io/s/github/makeflow/boring-router/tree/master/packages/examples/lifecycle-hooks?file=/main.tsx&amp;expanddevtools=1" target="_blank">Lifecycle Hooks</a>
 
   Lifecycle hooks example including `before/will/after` hooks and navigation cancellation.
+
+- <a href="https://codesandbox.io/s/github/makeflow/boring-router/tree/master/packages/examples/parallel-routes?file=/main.tsx" target="_blank">Parallel Routes</a>
+
+  Parallel routes example with sidebar and overlay.
