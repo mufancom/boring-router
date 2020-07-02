@@ -777,15 +777,18 @@ export class RouteMatch<
       reactionDisposer();
     }
 
-    for (let callback of this._willLeaveCallbackSet) {
-      tolerate(callback);
-    }
+    await Promise.all([
+      ...Array.from(this._willLeaveCallbackSet).map(callback =>
+        tolerate(callback),
+      ),
+      (async () => {
+        let service = await this._getService();
 
-    let service = await this._getService();
-
-    if (service && service.willLeave) {
-      tolerate(() => service!.willLeave!());
-    }
+        if (service && service.willLeave) {
+          return tolerate(() => service!.willLeave!());
+        }
+      })(),
+    ]);
   }
 
   /** @internal */
