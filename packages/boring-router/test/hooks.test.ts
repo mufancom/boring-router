@@ -34,11 +34,13 @@ let redirectBeforeEnter = jest.fn(() => {
 let redirectWillEnter = jest.fn();
 let redirectAfterEnter = jest.fn();
 let redirectAutorun = jest.fn();
+let redirectReaction = jest.fn();
 
 primaryRoute.redirect.$beforeEnter(redirectBeforeEnter);
 primaryRoute.redirect.$willEnter(redirectWillEnter);
 primaryRoute.redirect.$afterEnter(redirectAfterEnter);
 primaryRoute.redirect.$autorun(redirectAutorun);
+primaryRoute.redirect.$reaction(() => {}, redirectReaction);
 
 let revertBeforeEnter = jest.fn(() => false);
 let revertAfterEnter = jest.fn();
@@ -64,21 +66,29 @@ let aboutAfterEnter = jest.fn();
 let aboutBeforeLeave = jest.fn();
 let aboutWillLeave = jest.fn();
 let aboutAfterLeave = jest.fn(() => {
-  increaseAboutAutorunChangeTestNumber();
+  increaseAboutObserveChangeTestNumber();
 });
 let aboutAfterEnterAutorun = jest.fn();
+let aboutAfterEnterReactionExpression = jest.fn();
+let aboutAfterEnterReactionEffect = jest.fn();
 
-let aboutAutorunChangeTestNumber = observable.box(0);
+let aboutObserveChangeTestNumber = observable.box(0);
 
-let increaseAboutAutorunChangeTestNumber = action(() => {
-  aboutAutorunChangeTestNumber.set(aboutAutorunChangeTestNumber.get() + 1);
+let increaseAboutObserveChangeTestNumber = action(() => {
+  aboutObserveChangeTestNumber.set(aboutObserveChangeTestNumber.get() + 1);
 });
 
 let aboutAutorun = jest.fn(() => {
-  aboutAutorunChangeTestNumber.get();
+  aboutObserveChangeTestNumber.get();
 });
 
+let aboutReactionExpression = jest.fn(() => {
+  return aboutObserveChangeTestNumber.get();
+});
+let aboutReactionEffect = jest.fn();
+
 primaryRoute.about.$autorun(aboutAutorun);
+primaryRoute.about.$reaction(aboutReactionExpression, aboutReactionEffect);
 
 primaryRoute.about.$beforeEnter(aboutBeforeEnter);
 primaryRoute.about.$willEnter(aboutWillEnter);
@@ -110,26 +120,44 @@ test('should navigate from `redirect` to `about`', async () => {
   expect(redirectWillEnter).not.toHaveBeenCalled();
   expect(redirectAfterEnter).not.toHaveBeenCalled();
   expect(redirectAutorun).not.toHaveBeenCalled();
+  expect(redirectReaction).not.toHaveBeenCalled();
 
   expect(aboutBeforeEnter).toHaveBeenCalled();
   expect(aboutWillEnter).toHaveBeenCalled();
   expect(aboutAfterEnter).toHaveBeenCalled();
   expect(aboutAutorun).toHaveBeenCalled();
+  expect(aboutReactionExpression).toHaveBeenCalled();
+  expect(aboutReactionEffect).not.toHaveBeenCalled();
 
   primaryRoute.about.$autorun(aboutAfterEnterAutorun);
+  primaryRoute.about.$reaction(
+    aboutAfterEnterReactionExpression,
+    aboutAfterEnterReactionEffect,
+  );
 
-  increaseAboutAutorunChangeTestNumber();
+  increaseAboutObserveChangeTestNumber();
+
+  expect(aboutReactionEffect).toHaveBeenCalled();
 
   expect(aboutAfterEnterAutorun).toHaveBeenCalled();
+  expect(aboutAfterEnterReactionExpression).toHaveBeenCalled();
+  expect(aboutAfterEnterReactionEffect).not.toHaveBeenCalled();
+
   expect(aboutAutorun).toHaveBeenCalledTimes(2);
-  expect(aboutAutorunChangeTestNumber.get()).toEqual(1);
+  expect(aboutReactionExpression).toHaveBeenCalledTimes(2);
+  expect(aboutReactionEffect).toHaveBeenCalledTimes(1);
+
+  expect(aboutObserveChangeTestNumber.get()).toEqual(1);
+  expect(aboutReactionEffect.mock.calls[0][0]).toBe(1);
 
   await history.push('/');
 
   await nap();
 
   expect(aboutAutorun).toHaveBeenCalledTimes(2);
-  expect(aboutAutorunChangeTestNumber.get()).toEqual(2);
+  expect(aboutReactionExpression).toHaveBeenCalledTimes(2);
+  expect(aboutReactionEffect).toHaveBeenCalledTimes(1);
+  expect(aboutObserveChangeTestNumber.get()).toEqual(2);
 
   await history.push('/about');
 

@@ -1,9 +1,11 @@
 import {
   IAutorunOptions,
   IReactionDisposer,
+  IReactionOptions,
   IReactionPublic,
   autorun,
   observable,
+  reaction,
 } from 'mobx';
 import {OmitValueOfKey, OmitValueWithType} from 'tslang';
 
@@ -140,6 +142,23 @@ export interface RouteAutorunEntry {
   options: RouteAutorunOptions | undefined;
 }
 
+export type RouteReactionExpression<T> = (reaction: IReactionPublic) => T;
+
+export type RouteReactionEffect<T> = (
+  arg: T,
+  reaction: IReactionPublic,
+) => void;
+
+export type RouteReactionOptions = IReactionOptions | undefined;
+
+export type RouteReactionDisposer = IReactionDisposer;
+
+export interface RouteReactionEntry<T = unknown> {
+  expression: RouteReactionExpression<T>;
+  effect: RouteReactionEffect<T>;
+  options: RouteReactionOptions | undefined;
+}
+
 export type RouteHookRemovalCallback = () => void;
 
 export type RouteBeforeEnterOrUpdateCallback<
@@ -267,6 +286,12 @@ export class RouteMatch<
 
   /** @internal */
   private _autorunDisposers: RouteAutorunDisposer[] = [];
+
+  /** @internal */
+  private _reactionEntrySet = new Set<RouteReactionEntry>();
+
+  /** @internal */
+  private _reactionDisposers: RouteReactionDisposer[] = [];
 
   /** @internal */
   @observable
@@ -431,6 +456,26 @@ export class RouteMatch<
 
     return () => {
       this._autorunEntrySet.delete(autorunEntry);
+    };
+  }
+
+  $reaction<T>(
+    expression: RouteReactionExpression<T>,
+    effect: RouteReactionEffect<T>,
+    options?: RouteReactionOptions,
+  ): RouteHookRemovalCallback {
+    let reactionEntry: RouteReactionEntry = {expression, effect, options};
+
+    this._reactionEntrySet.add(reactionEntry);
+
+    if (this.$matched) {
+      tolerate(() => {
+        this._reactionDisposers.push(reaction(expression, effect, options));
+      });
+    }
+
+    return () => {
+      this._reactionEntrySet.delete(reactionEntry);
     };
   }
 
@@ -728,6 +773,10 @@ export class RouteMatch<
       autorunDisposer();
     }
 
+    for (let reactionDisposer of this._reactionDisposers) {
+      reactionDisposer();
+    }
+
     for (let callback of this._willLeaveCallbackSet) {
       tolerate(callback);
     }
@@ -802,6 +851,18 @@ export class RouteMatch<
       tolerate(() => {
         this._autorunDisposers.push(
           autorun(autorunEntry.view, autorunEntry.options),
+        );
+      });
+    }
+
+    for (let reactionEntry of this._reactionEntrySet) {
+      tolerate(() => {
+        this._reactionDisposers.push(
+          reaction(
+            reactionEntry.expression,
+            reactionEntry.effect,
+            reactionEntry.options,
+          ),
         );
       });
     }
