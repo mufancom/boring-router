@@ -23,7 +23,7 @@ const route = router.$route({
   },
   revert: true,
   account: {
-    // For route will children, exact match is by default ignored. Make
+    // For route with children, exact match is by default ignored. Make
     // `$exact` true to enable exact match.
     $exact: true,
     $children: {
@@ -93,10 +93,6 @@ route.account.$afterLeave(() => {
 
 // route.account.accountId //
 
-route.account.accountId.$afterEnter(() => {
-  console.info('route.account.accountId.$afterEnter');
-});
-
 route.account.accountId.$beforeUpdate(async () => {
   // It's safe to have asynchronous before hooks with Boring Router, because we
   // can restore the history stack afterwards.
@@ -106,14 +102,6 @@ route.account.accountId.$beforeUpdate(async () => {
   await new Promise(resolve => setTimeout(resolve, 100));
 
   return confirm('route.account.accountId.$beforeUpdate');
-});
-
-route.account.accountId.$willUpdate(() => {
-  console.info('route.account.accountId.$willUpdate');
-});
-
-route.account.accountId.$afterUpdate(() => {
-  console.info('route.account.accountId.$afterUpdate');
 });
 
 route.account.accountId.$beforeLeave(async () => {
@@ -158,6 +146,10 @@ route.revert.$beforeEnter(() => false);
 const App = observer(() => (
   <>
     <h1>Boring Router</h1>
+    <p>
+      Try "Account" -&gt; "Account 1" -&gt; "Account 2" -&gt; "Redirect to
+      About"
+    </p>
     <nav>
       <Link to={route.home}>Home</Link>
       {' | '}

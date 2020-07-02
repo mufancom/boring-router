@@ -23,9 +23,9 @@ import {
   RouteMatchSharedOptions,
 } from './route-match-shared';
 
-//////////////////////
-// life-cycle hooks //
-//////////////////////
+/////////////////////
+// lifecycle hooks //
+/////////////////////
 
 export interface RouteUpdateCallbackData {
   descendants: boolean;
@@ -83,13 +83,16 @@ export type RouteBeforeLeaveCallback = () =>
 
 export type RouteWillEnterCallback<
   TRouteMatch extends RouteMatch = RouteMatch
-> = (next: TRouteMatch['$next']) => void;
+> = (next: TRouteMatch['$next']) => Promise<void> | void;
 
 // will update //
 
 export type RouteWillUpdateCallback<
   TRouteMatch extends RouteMatch = RouteMatch
-> = (next: TRouteMatch['$next'], data: RouteUpdateCallbackData) => void;
+> = (
+  next: TRouteMatch['$next'],
+  data: RouteUpdateCallbackData,
+) => Promise<void> | void;
 
 export interface RouteWillUpdateOptions {
   traceDescendants: boolean;
@@ -104,7 +107,7 @@ export interface RouteWillUpdateEntry<
 
 // will leave //
 
-export type RouteWillLeaveCallback = () => void;
+export type RouteWillLeaveCallback = () => Promise<void> | void;
 
 // after enter //
 
@@ -167,7 +170,7 @@ export type RouteBeforeEnterOrUpdateCallback<
 
 export type RouteWillEnterOrUpdateCallback<
   TRouteMatch extends RouteMatch = RouteMatch
-> = (next: TRouteMatch['$next']) => Promise<boolean | void> | boolean | void;
+> = (next: TRouteMatch['$next']) => Promise<void> | void;
 
 export type RouteAfterEnterOrUpdateCallback = () => void;
 
@@ -321,14 +324,14 @@ export class RouteMatch<
     super(name, router, source, parent, history, sharedOptions);
 
     if (extension) {
-      for (let [key, defaultValue] of Object.entries(extension)) {
+      for (let key of Object.keys(extension)) {
         Object.defineProperty(this, key, {
           get(this: RouteMatch) {
             let service = this.$matched ? this._service : undefined;
 
             return service && key in (service as any)
               ? (service as any)[key]
-              : defaultValue;
+              : (extension as any)[key];
           },
         });
       }
@@ -795,34 +798,42 @@ export class RouteMatch<
   async _willEnter(): Promise<void> {
     let next = this.$next;
 
-    for (let callback of this._willEnterCallbackSet) {
-      tolerate(callback, next);
-    }
+    await Promise.all([
+      ...Array.from(this._willEnterCallbackSet).map(callback =>
+        tolerate(callback, next),
+      ),
+      (async () => {
+        let service = await this._getService();
 
-    let service = await this._getService();
-
-    if (service && service.willEnter) {
-      tolerate(() => service!.willEnter!(next));
-    }
+        if (service && service.willEnter) {
+          return tolerate(() => service!.willEnter!(next));
+        }
+      })(),
+    ]);
   }
 
   /** @internal */
   async _willUpdate(triggeredByDescendants: boolean): Promise<void> {
     let next = this.$next;
 
-    for (let {callback, options} of this._willUpdateEntrySet) {
-      if (triggeredByDescendants ? options && options.traceDescendants : true) {
-        tolerate(callback, next, {descendants: triggeredByDescendants});
-      }
-    }
+    await Promise.all([
+      ...Array.from(this._willUpdateEntrySet)
+        .filter(({options}) =>
+          triggeredByDescendants ? options && options.traceDescendants : true,
+        )
+        .map(({callback}) =>
+          tolerate(callback, next, {descendants: triggeredByDescendants}),
+        ),
+      (async () => {
+        let service = await this._getService();
 
-    let service = await this._getService();
-
-    if (service && service.willUpdate) {
-      tolerate(() =>
-        service!.willUpdate!(next, {descendants: triggeredByDescendants}),
-      );
-    }
+        if (service && service.willUpdate) {
+          return tolerate(() =>
+            service!.willUpdate!(next, {descendants: triggeredByDescendants}),
+          );
+        }
+      })(),
+    ]);
   }
 
   /** @internal */

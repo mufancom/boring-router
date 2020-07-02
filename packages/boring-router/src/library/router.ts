@@ -511,11 +511,11 @@ export class Router<TGroupName extends string = string> {
 
     let primaryMatchEntries = groupToMatchEntriesMap.get(undefined);
 
-    if (primaryMatchEntries) {
+    {
       let primaryMatch =
-        primaryMatchEntries[primaryMatchEntries.length - 1].match;
+        primaryMatchEntries?.[primaryMatchEntries.length - 1].match;
 
-      let options = primaryMatch._parallel;
+      let options = primaryMatch?._parallel;
 
       let {groups = [], matches = []} = options || {};
 

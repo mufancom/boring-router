@@ -33,11 +33,11 @@ Views like sidebar, overlay can be easily routed with Boring Router parallel rou
 
 URL for parallel routes looks like `/workbench?_sidebar=/notifications`. Additional parallel routes work like primary route except that it does not have dedicated query strings.
 
-### Life-cycle Hooks
+### Lifecycle Hooks
 
 Boring Router supports `before/will/after` x `enter/update/leave` hooks.
 
-To support full life-cycle hooks while keeping history navigation behavior right, Boring Router implements its own `BrowserHistory` with the ability to restore browser history stack according to a given snapshot.
+To support full lifecycle hooks while keeping history navigation behavior right, Boring Router implements its own `BrowserHistory` with the ability to restore browser history stack according to a given snapshot.
 
 ## Usage
 

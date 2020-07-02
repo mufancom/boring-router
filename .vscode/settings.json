@@ -25,16 +25,19 @@
       "mode": "auto"
     }
   ],
+  "cSpell.enableFiletypes": ["mdx"],
   "cSpell.words": [
     "Parens",
     "autorun",
     "browserslist",
     "docz",
+    "hrefs",
     "magicspace",
     "mobx",
     "tsbuildinfo",
     "tslang",
     "tslib",
-    "typecheck"
+    "typecheck",
+    "typeof"
   ]
 }

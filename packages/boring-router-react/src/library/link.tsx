@@ -4,13 +4,7 @@ import {
   RouteMatchSharedToParamDict,
 } from 'boring-router';
 import {observer, useLocalStore} from 'mobx-react-lite';
-import React, {
-  HTMLAttributes,
-  MouseEvent,
-  MouseEventHandler,
-  ReactNode,
-  useCallback,
-} from 'react';
+import React, {HTMLAttributes, MouseEvent, ReactNode} from 'react';
 
 import {composeEventHandler} from './@utils';
 
@@ -26,78 +20,81 @@ export interface LinkProps<T extends RouteMatch | RouteBuilder>
 }
 
 export const Link = observer(
-  <T extends RouteMatch | RouteBuilder>({
-    className,
-    to,
-    params,
-    replace = false,
-    toggle = false,
-    leave,
-    onClick,
-    ...props
-  }: LinkProps<T>) => {
-    let store = useLocalStore(() => {
-      return {
-        get href() {
-          try {
-            if (to instanceof RouteMatch) {
-              return to.$href(params);
-            } else {
-              return to.$href();
-            }
-          } catch (error) {
-            return '#';
-          }
-          // eslint-disable-next-line @magicspace/empty-line-around-blocks
-        },
-      };
-    });
+  <T extends RouteMatch | RouteBuilder>(props: LinkProps<T>) => {
+    let {
+      to,
+      params,
+      replace,
+      toggle = false,
+      leave = false,
+      onClick,
+      ...restProps
+    } = props;
 
-    let composedOnClick: MouseEventHandler = useCallback(
-      composeEventHandler(
-        [
-          onClick,
-          (event: MouseEvent) => {
-            if (
-              event.ctrlKey ||
-              event.metaKey ||
-              event.button === 1 /* middle button */
-            ) {
-              return;
-            }
+    let store = useLocalStore(
+      props => {
+        return {
+          get href() {
+            let {to, params} = props;
 
-            event.preventDefault();
-
-            if (to instanceof RouteMatch) {
-              let leaveOption =
-                leave === undefined ? toggle && to.$matched : leave;
-
-              if (replace) {
-                to.$replace(params, {leave: leaveOption});
+            try {
+              if (to instanceof RouteMatch) {
+                return to.$href(params);
               } else {
-                to.$push(params, {leave: leaveOption});
+                return to.$href();
               }
-            } else {
-              if (replace) {
-                to.$replace();
-              } else {
-                to.$push();
-              }
+            } catch (error) {
+              return '#';
             }
+            // eslint-disable-next-line @magicspace/empty-line-around-blocks
           },
-        ],
-        true,
-      ),
-      [onClick],
+          // eslint-disable-next-line @magicspace/empty-line-around-blocks
+          get composedOnClick() {
+            let {to, params, leave, toggle, replace, onClick} = props;
+
+            return composeEventHandler(
+              [
+                onClick,
+                (event: MouseEvent) => {
+                  if (
+                    event.ctrlKey ||
+                    event.metaKey ||
+                    event.button === 1 /* middle button */
+                  ) {
+                    return;
+                  }
+
+                  event.preventDefault();
+
+                  if (to instanceof RouteMatch) {
+                    let leaveOption =
+                      leave === undefined ? toggle && to.$matched : leave;
+
+                    if (replace) {
+                      to.$replace(params, {leave: leaveOption});
+                    } else {
+                      to.$push(params, {leave: leaveOption});
+                    }
+                  } else {
+                    if (replace) {
+                      to.$replace();
+                    } else {
+                      to.$push();
+                    }
+                  }
+                },
+              ],
+              true,
+            );
+            // eslint-disable-next-line @magicspace/empty-line-around-blocks
+          },
+        };
+      },
+      {to, params, leave, toggle, replace, onClick},
     );
 
     return (
-      <a
-        className={className}
-        href={store.href}
-        onClick={composedOnClick}
-        {...props}
-      />
+      <a {...restProps} href={store.href} onClick={store.composedOnClick} />
     );
   },
 );

@@ -1,7 +1,7 @@
 import {RouteBuilder, RouteMatch} from 'boring-router';
 import classNames from 'classnames';
-import {observer} from 'mobx-react-lite';
-import React, {useMemo} from 'react';
+import {observer, useLocalStore} from 'mobx-react-lite';
+import React from 'react';
 
 import {Link, LinkProps} from './link';
 
@@ -12,36 +12,55 @@ export interface NavLinkProps<T extends RouteMatch | RouteBuilder>
 }
 
 export const NavLink = observer(
-  <T extends RouteMatch | RouteBuilder>({
-    className,
-    activeClassName = 'active',
-    exact,
-    ...props
-  }: NavLinkProps<T>) => {
-    let {to} = props;
+  <T extends RouteMatch | RouteBuilder>(props: NavLinkProps<T>) => {
+    let {to, exact = false} = props;
 
-    let route = useMemo(() => {
-      if (to instanceof RouteBuilder) {
-        let builderRoute = to.$route;
+    let store = useLocalStore(
+      props => {
+        return {
+          get route() {
+            let {to} = props;
 
-        if (!(builderRoute instanceof RouteMatch)) {
-          throw new Error(
-            '`RouteBuilder` for `NavLink` component must have first building part as a `Route`',
-          );
-        }
+            if (to instanceof RouteBuilder) {
+              let builderRoute = to.$route;
 
-        return builderRoute;
-      } else {
-        return to as RouteMatch;
-      }
-    }, [to]);
+              if (!(builderRoute instanceof RouteMatch)) {
+                throw new Error(
+                  '`RouteBuilder` for `NavLink` component must have first building part as a `Route`',
+                );
+              }
 
-    let matched = exact ? route.$exact : route.$matched;
+              return builderRoute;
+            } else {
+              return to as RouteMatch;
+            }
+            // eslint-disable-next-line @magicspace/empty-line-around-blocks
+          },
+          // eslint-disable-next-line @magicspace/empty-line-around-blocks
+          get matched() {
+            let {exact = false} = props;
+
+            let route = this.route;
+
+            return exact ? route.$exact : route.$matched;
+            // eslint-disable-next-line @magicspace/empty-line-around-blocks
+          },
+        };
+      },
+      {to, exact},
+    );
+
+    let {
+      className,
+      activeClassName = 'active',
+      exact: _exact,
+      ...restProps
+    } = props;
 
     return (
       <Link
-        className={classNames(className, matched && activeClassName)}
-        {...props}
+        className={classNames(className, store.matched && activeClassName)}
+        {...restProps}
       />
     );
   },

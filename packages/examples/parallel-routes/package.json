@@ -1,9 +1,8 @@
 {
-  "name": "@boring-router-examples/life-cycle-hooks",
+  "name": "@boring-router-examples/parallel-routes",
   "version": "0.0.0",
   "private": true,
   "main": "index.html",
-  "browserslist": ["last 5 Chrome versions"],
   "devDependencies": {
     "@magicspace/configs": "^0.2.5",
     "@magicspace/eslint-plugin": "^0.1.26",
@@ -15,8 +14,8 @@
     "typescript": "^3.9.5"
   },
   "dependencies": {
-    "boring-router": "^0.3.2",
-    "boring-router-react": "^0.3.1",
+    "boring-router": "^0.3.7",
+    "boring-router-react": "^0.3.8",
     "mobx": "^5.15.4",
     "mobx-react-lite": "^2.0.7",
     "react": "^16.13.1",

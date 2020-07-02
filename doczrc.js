@@ -1,8 +1,23 @@
 module.exports = {
-  title: 'Boring Router',
+  title: '🥱 Boring Router',
   base: '/boring-router/',
-  files: 'doc/**/*.mdx',
-  menu: ['Introduction', 'Get Started', 'Examples', 'References'],
+  files: 'doc/**/*.{md,mdx}',
+  menu: [
+    'Introduction',
+    'Get Started',
+    'Examples',
+    {
+      name: 'References',
+      menu: [
+        'Route Schema',
+        'Parallel Routes',
+        'Route Builder',
+        'Ref & HRef',
+        'Lifecycle Hooks',
+        'Service',
+      ],
+    },
+  ],
   themeConfig: {
     initialColorMode: 'dark',
     styles: {
