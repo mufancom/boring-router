@@ -288,13 +288,10 @@ export class RouteMatch<
   private _autorunEntrySet = new Set<RouteAutorunEntry>();
 
   /** @internal */
-  private _autorunDisposers: RouteAutorunDisposer[] = [];
-
-  /** @internal */
   private _reactionEntrySet = new Set<RouteReactionEntry>();
 
   /** @internal */
-  private _reactionDisposers: RouteReactionDisposer[] = [];
+  private _reactiveDisposers: RouteAutorunDisposer[] = [];
 
   /** @internal */
   @observable
@@ -453,7 +450,7 @@ export class RouteMatch<
 
     if (this.$matched) {
       tolerate(() => {
-        this._autorunDisposers.push(autorun(view, options));
+        this._reactiveDisposers.push(autorun(view, options));
       });
     }
 
@@ -473,7 +470,7 @@ export class RouteMatch<
 
     if (this.$matched) {
       tolerate(() => {
-        this._reactionDisposers.push(reaction(expression, effect, options));
+        this._reactiveDisposers.push(reaction(expression, effect, options));
       });
     }
 
@@ -772,12 +769,8 @@ export class RouteMatch<
 
   /** @internal */
   async _willLeave(): Promise<void> {
-    for (let autorunDisposer of this._autorunDisposers) {
-      autorunDisposer();
-    }
-
-    for (let reactionDisposer of this._reactionDisposers) {
-      reactionDisposer();
+    for (let reactiveDisposer of this._reactiveDisposers) {
+      reactiveDisposer();
     }
 
     await Promise.all([
@@ -863,7 +856,7 @@ export class RouteMatch<
 
     for (let autorunEntry of this._autorunEntrySet) {
       tolerate(() => {
-        this._autorunDisposers.push(
+        this._reactiveDisposers.push(
           autorun(autorunEntry.view, autorunEntry.options),
         );
       });
@@ -871,7 +864,7 @@ export class RouteMatch<
 
     for (let reactionEntry of this._reactionEntrySet) {
       tolerate(() => {
-        this._reactionDisposers.push(
+        this._reactiveDisposers.push(
           reaction(
             reactionEntry.expression,
             reactionEntry.effect,
