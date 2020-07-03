@@ -9,6 +9,12 @@ import Debug from 'debug';
 
 const debug = Debug('boring-router:react:browser-history');
 
+export type BrowserHistoryNavigateAwayHandler = (href: string) => void;
+
+const NAVIGATE_AWAY_HANDLER_DEFAULT: BrowserHistoryNavigateAwayHandler = href => {
+  location.href = href;
+};
+
 type BrowserHistoryEntry<TData> = HistoryEntry<number, TData>;
 
 type BrowserHistorySnapshot<TData> = HistorySnapshot<number, TData>;
@@ -190,11 +196,32 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     await promise;
   }
 
-  async navigate(href: string): Promise<void> {
+  async navigate(
+    href: string,
+    navigateAwayHandler = NAVIGATE_AWAY_HANDLER_DEFAULT,
+  ): Promise<void> {
+    let originalHRef = href;
+
+    let groups = /^([\w\d]+:)?\/\/([^/?]+)(.*)/.exec(href);
+
+    if (groups) {
+      let [, protocol, host, rest] = groups;
+
+      if (
+        (protocol && protocol !== location.protocol) ||
+        host !== location.host
+      ) {
+        navigateAwayHandler(originalHRef);
+        return;
+      }
+
+      href = rest.startsWith('/') ? rest : `/${rest}`;
+    }
+
     let prefix = this.prefix;
 
-    if (/^[\w\d]+:\/\//.test(href) || !href.startsWith(prefix)) {
-      location.href = href;
+    if (!href.startsWith(prefix)) {
+      navigateAwayHandler(originalHRef);
       return;
     }
 
