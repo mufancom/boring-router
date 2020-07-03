@@ -134,19 +134,16 @@ export type RouteAfterLeaveCallback = () => void;
 
 // autorun & reaction //
 
-export const TYPE_AUTORUN_ENTRY = Symbol();
-export const TYPE_REACTION_ENTRY = Symbol();
-
 export type RouteAutorunView = (reaction: IReactionPublic) => void;
 
 export type RouteAutorunOptions = IAutorunOptions;
 
 export type RouteAutorunDisposer = IReactionDisposer;
 
-export interface RouteAutorunEntry {
+interface RouteAutorunEntry {
+  type: 'autorun';
   view: RouteAutorunView;
   options: RouteAutorunOptions | undefined;
-  type: typeof TYPE_AUTORUN_ENTRY;
 }
 
 export type RouteReactionExpression<T> = (reaction: IReactionPublic) => T;
@@ -160,11 +157,11 @@ export type RouteReactionOptions = IReactionOptions | undefined;
 
 export type RouteReactionDisposer = IReactionDisposer;
 
-export interface RouteReactionEntry<T = unknown> {
+interface RouteReactionEntry<T = unknown> {
+  type: 'reaction';
   expression: RouteReactionExpression<T>;
   effect: RouteReactionEffect<T>;
   options: RouteReactionOptions | undefined;
-  type: typeof TYPE_REACTION_ENTRY;
 }
 
 export type RouteHookRemovalCallback = () => void;
@@ -203,7 +200,7 @@ export type RouteServiceExtension<
   false
 >;
 
-export type RouteReactiveEntry = RouteAutorunEntry | RouteReactionEntry;
+type RouteReactiveEntry = RouteAutorunEntry | RouteReactionEntry;
 
 interface RouteMatchInternalResult {
   matched: boolean;
@@ -444,31 +441,14 @@ export class RouteMatch<
     };
   }
 
-  registerAsReactiveDisposer(entry: RouteReactiveEntry): void {
-    tolerate(() => {
-      switch (entry.type) {
-        case TYPE_AUTORUN_ENTRY: {
-          let {view, options} = entry;
-          this._reactiveDisposers.push(autorun(view, options));
-          break;
-        }
-        case TYPE_REACTION_ENTRY: {
-          let {expression, effect, options} = entry;
-          this._reactiveDisposers.push(reaction(expression, effect, options));
-          break;
-        }
-      }
-    });
-  }
-
   $autorun(
     view: RouteAutorunView,
     options?: RouteAutorunOptions,
   ): RouteHookRemovalCallback {
     let autorunEntry: RouteAutorunEntry = {
+      type: 'autorun',
       view,
       options,
-      type: TYPE_AUTORUN_ENTRY,
     };
     this._reactiveEntrySet.add(autorunEntry);
 
@@ -487,10 +467,10 @@ export class RouteMatch<
     options?: RouteReactionOptions,
   ): RouteHookRemovalCallback {
     let reactionEntry: RouteReactionEntry = {
+      type: 'reaction',
       expression,
       effect,
       options,
-      type: TYPE_REACTION_ENTRY,
     };
     this._reactiveEntrySet.add(reactionEntry);
 
@@ -939,6 +919,24 @@ export class RouteMatch<
       this._service = output;
       return output;
     }
+  }
+
+  /** @internal */
+  private registerAsReactiveDisposer(entry: RouteReactiveEntry): void {
+    tolerate(() => {
+      switch (entry.type) {
+        case 'autorun': {
+          let {view, options} = entry;
+          this._reactiveDisposers.push(autorun(view, options));
+          break;
+        }
+        case 'reaction': {
+          let {expression, effect, options} = entry;
+          this._reactiveDisposers.push(reaction(expression, effect, options));
+          break;
+        }
+      }
+    });
   }
 
   static SEGMENT = /[^/]+/;
