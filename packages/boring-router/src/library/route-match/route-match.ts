@@ -132,7 +132,10 @@ export interface RouteAfterUpdateEntry {
 
 export type RouteAfterLeaveCallback = () => void;
 
-// autorun //
+// autorun & reaction //
+
+export const TYPE_AUTORUN_ENTRY = Symbol();
+export const TYPE_REACTION_ENTRY = Symbol();
 
 export type RouteAutorunView = (reaction: IReactionPublic) => void;
 
@@ -143,6 +146,7 @@ export type RouteAutorunDisposer = IReactionDisposer;
 export interface RouteAutorunEntry {
   view: RouteAutorunView;
   options: RouteAutorunOptions | undefined;
+  type: typeof TYPE_AUTORUN_ENTRY;
 }
 
 export type RouteReactionExpression<T> = (reaction: IReactionPublic) => T;
@@ -160,6 +164,7 @@ export interface RouteReactionEntry<T = unknown> {
   expression: RouteReactionExpression<T>;
   effect: RouteReactionEffect<T>;
   options: RouteReactionOptions | undefined;
+  type: typeof TYPE_REACTION_ENTRY;
 }
 
 export type RouteHookRemovalCallback = () => void;
@@ -197,6 +202,8 @@ export type RouteServiceExtension<
   RouteMatch,
   false
 >;
+
+export type RouteReactiveEntry = RouteAutorunEntry | RouteReactionEntry;
 
 interface RouteMatchInternalResult {
   matched: boolean;
@@ -285,10 +292,7 @@ export class RouteMatch<
   private _afterLeaveCallbackSet = new Set<RouteAfterLeaveCallback>();
 
   /** @internal */
-  private _autorunEntrySet = new Set<RouteAutorunEntry>();
-
-  /** @internal */
-  private _reactionEntrySet = new Set<RouteReactionEntry>();
+  private _reactiveEntrySet = new Set<RouteReactiveEntry>();
 
   /** @internal */
   private _reactiveDisposers: RouteAutorunDisposer[] = [];
@@ -440,22 +444,40 @@ export class RouteMatch<
     };
   }
 
+  registerAsReactiveDisposer(entry: RouteReactiveEntry): void {
+    tolerate(() => {
+      switch (entry.type) {
+        case TYPE_AUTORUN_ENTRY: {
+          let {view, options} = entry;
+          this._reactiveDisposers.push(autorun(view, options));
+          break;
+        }
+        case TYPE_REACTION_ENTRY: {
+          let {expression, effect, options} = entry;
+          this._reactiveDisposers.push(reaction(expression, effect, options));
+          break;
+        }
+      }
+    });
+  }
+
   $autorun(
     view: RouteAutorunView,
     options?: RouteAutorunOptions,
   ): RouteHookRemovalCallback {
-    let autorunEntry: RouteAutorunEntry = {view, options};
-
-    this._autorunEntrySet.add(autorunEntry);
+    let autorunEntry: RouteAutorunEntry = {
+      view,
+      options,
+      type: TYPE_AUTORUN_ENTRY,
+    };
+    this._reactiveEntrySet.add(autorunEntry);
 
     if (this.$matched) {
-      tolerate(() => {
-        this._reactiveDisposers.push(autorun(view, options));
-      });
+      this.registerAsReactiveDisposer(autorunEntry);
     }
 
     return () => {
-      this._autorunEntrySet.delete(autorunEntry);
+      this._reactiveEntrySet.delete(autorunEntry);
     };
   }
 
@@ -464,18 +486,20 @@ export class RouteMatch<
     effect: RouteReactionEffect<T>,
     options?: RouteReactionOptions,
   ): RouteHookRemovalCallback {
-    let reactionEntry: RouteReactionEntry = {expression, effect, options};
-
-    this._reactionEntrySet.add(reactionEntry);
+    let reactionEntry: RouteReactionEntry = {
+      expression,
+      effect,
+      options,
+      type: TYPE_REACTION_ENTRY,
+    };
+    this._reactiveEntrySet.add(reactionEntry);
 
     if (this.$matched) {
-      tolerate(() => {
-        this._reactiveDisposers.push(reaction(expression, effect, options));
-      });
+      this.registerAsReactiveDisposer(reactionEntry);
     }
 
     return () => {
-      this._reactionEntrySet.delete(reactionEntry);
+      this._reactiveEntrySet.delete(reactionEntry);
     };
   }
 
@@ -854,24 +878,8 @@ export class RouteMatch<
       tolerate(() => service!.afterEnter!());
     }
 
-    for (let autorunEntry of this._autorunEntrySet) {
-      tolerate(() => {
-        this._reactiveDisposers.push(
-          autorun(autorunEntry.view, autorunEntry.options),
-        );
-      });
-    }
-
-    for (let reactionEntry of this._reactionEntrySet) {
-      tolerate(() => {
-        this._reactiveDisposers.push(
-          reaction(
-            reactionEntry.expression,
-            reactionEntry.effect,
-            reactionEntry.options,
-          ),
-        );
-      });
+    for (let reactiveEntry of this._reactiveEntrySet) {
+      this.registerAsReactiveDisposer(reactiveEntry);
     }
   }
 
