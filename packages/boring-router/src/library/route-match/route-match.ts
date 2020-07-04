@@ -1,9 +1,11 @@
 import {
   IAutorunOptions,
   IReactionDisposer,
+  IReactionOptions,
   IReactionPublic,
   autorun,
   observable,
+  reaction,
 } from 'mobx';
 import {OmitValueOfKey, OmitValueWithType} from 'tslang';
 
@@ -112,6 +114,7 @@ export type RouteWillLeaveCallback = () => Promise<void> | void;
 export type RouteAfterEnterCallback = () => void;
 
 // after update //
+
 /**
  * Route after update callback.
  */
@@ -130,20 +133,41 @@ export interface RouteAfterUpdateEntry {
 
 export type RouteAfterLeaveCallback = () => void;
 
-// autorun //
+// reactive //
+
+export type RouteReactiveDisposer = IReactionDisposer;
 
 export type RouteAutorunView = (reaction: IReactionPublic) => void;
 
 export type RouteAutorunOptions = IAutorunOptions;
 
-export type RouteAutorunDisposer = IReactionDisposer;
-
-export interface RouteAutorunEntry {
+interface RouteAutorunEntry {
+  type: 'autorun';
   view: RouteAutorunView;
   options: RouteAutorunOptions | undefined;
 }
 
+export type RouteReactionExpression<T> = (reaction: IReactionPublic) => T;
+
+export type RouteReactionEffect<T> = (
+  value: T,
+  reaction: IReactionPublic,
+) => void;
+
+export type RouteReactionOptions = IReactionOptions | undefined;
+
+interface RouteReactionEntry<T = unknown> {
+  type: 'reaction';
+  expression: RouteReactionExpression<T>;
+  effect: RouteReactionEffect<T>;
+  options: RouteReactionOptions | undefined;
+}
+
+// removal //
+
 export type RouteHookRemovalCallback = () => void;
+
+// enter or update combination //
 
 export type RouteBeforeEnterOrUpdateCallback<
   TRouteMatch extends RouteMatch = RouteMatch
@@ -154,6 +178,8 @@ export type RouteWillEnterOrUpdateCallback<
 > = (next: TRouteMatch['$next']) => Promise<void> | void;
 
 export type RouteAfterEnterOrUpdateCallback = () => void;
+
+///
 
 export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
@@ -178,6 +204,8 @@ export type RouteServiceExtension<
   RouteMatch,
   false
 >;
+
+type RouteReactiveEntry = RouteAutorunEntry | RouteReactionEntry;
 
 interface RouteMatchInternalResult {
   matched: boolean;
@@ -266,10 +294,10 @@ export class RouteMatch<
   private _afterLeaveCallbackSet = new Set<RouteAfterLeaveCallback>();
 
   /** @internal */
-  private _autorunEntrySet = new Set<RouteAutorunEntry>();
+  private _reactiveEntrySet = new Set<RouteReactiveEntry>();
 
   /** @internal */
-  private _autorunDisposers: RouteAutorunDisposer[] = [];
+  private _reactiveDisposers: RouteReactiveDisposer[] = [];
 
   /** @internal */
   @observable
@@ -422,18 +450,46 @@ export class RouteMatch<
     view: RouteAutorunView,
     options?: RouteAutorunOptions,
   ): RouteHookRemovalCallback {
-    let autorunEntry: RouteAutorunEntry = {view, options};
+    let autorunEntry: RouteAutorunEntry = {
+      type: 'autorun',
+      view,
+      options,
+    };
 
-    this._autorunEntrySet.add(autorunEntry);
+    this._reactiveEntrySet.add(autorunEntry);
 
     if (this.$matched) {
       tolerate(() => {
-        this._autorunDisposers.push(autorun(view, options));
+        this._reactiveDisposers.push(autorun(view, options));
       });
     }
 
     return () => {
-      this._autorunEntrySet.delete(autorunEntry);
+      this._reactiveEntrySet.delete(autorunEntry);
+    };
+  }
+
+  $reaction<T>(
+    expression: RouteReactionExpression<T>,
+    effect: RouteReactionEffect<T>,
+    options?: RouteReactionOptions,
+  ): RouteHookRemovalCallback {
+    let reactionEntry: RouteReactionEntry = {
+      type: 'reaction',
+      expression,
+      effect,
+      options,
+    };
+    this._reactiveEntrySet.add(reactionEntry);
+
+    if (this.$matched) {
+      tolerate(() => {
+        this._reactiveDisposers.push(reaction(expression, effect, options));
+      });
+    }
+
+    return () => {
+      this._reactiveEntrySet.delete(reactionEntry);
     };
   }
 
@@ -727,8 +783,8 @@ export class RouteMatch<
 
   /** @internal */
   async _willLeave(): Promise<void> {
-    for (let autorunDisposer of this._autorunDisposers) {
-      autorunDisposer();
+    for (let reactiveDisposer of this._reactiveDisposers) {
+      reactiveDisposer();
     }
 
     await Promise.all([
@@ -812,11 +868,24 @@ export class RouteMatch<
       tolerate(() => service!.afterEnter!());
     }
 
-    for (let autorunEntry of this._autorunEntrySet) {
+    for (let reactiveEntry of this._reactiveEntrySet) {
       tolerate(() => {
-        this._autorunDisposers.push(
-          autorun(autorunEntry.view, autorunEntry.options),
-        );
+        switch (reactiveEntry.type) {
+          case 'autorun':
+            this._reactiveDisposers.push(
+              autorun(reactiveEntry.view, reactiveEntry.options),
+            );
+            break;
+          case 'reaction':
+            this._reactiveDisposers.push(
+              reaction(
+                reactiveEntry.expression,
+                reactiveEntry.effect,
+                reactiveEntry.options,
+              ),
+            );
+            break;
+        }
       });
     }
   }
