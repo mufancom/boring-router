@@ -3,9 +3,10 @@
 
 # Boring Router
 
-A type-safe, yet reactive router using MobX.
+A type-safe MobX router with parallel routing support.
 
-[Documentation](https://makeflow.github.io/boring-router/)
+- [Examples](https://makeflow.github.io/boring-router/examples)
+- [Documentation](https://makeflow.github.io/boring-router/)
 
 ## Installation
 
@@ -42,34 +43,49 @@ To support full lifecycle hooks while keeping history navigation behavior right,
 ## Usage
 
 ```tsx
-import {RouteMatch, Router} from 'boring-router';
+import {Router} from 'boring-router';
 import {BrowserHistory, Link, Route} from 'boring-router-react';
 import {observer} from 'mobx-react-lite';
 import React from 'react';
+import ReactDOM from 'react-dom';
 
 const history = new BrowserHistory();
 
 const router = new Router(history);
 
 const route = router.$route({
-  account: true,
-  about: true,
+  home: {
+    $match: '',
+  },
+  workbench: true,
+  userSettings: true,
   notFound: {
-    $match: RouteMatch.REST,
+    $match: /.*/,
   },
 });
 
-const App = observer(() => (
-  <>
-    <Route match={route.account}>
-      Account page
+const App = observer(() => {
+  return (
+    <>
+      <ul>
+        <li>
+          <Link to={route.home}>Home</Link>
+        </li>
+        <li>
+          <Link to={route.workbench}>Workbench</Link>
+        </li>
+        <li>
+          <Link to={route.userSettings}>User Settings</Link>
+        </li>
+      </ul>
       <hr />
-      <Link to={route.about}>About</Link>
-    </Route>
-    <Route match={route.about}>About page</Route>
-    <Route match={route.notFound}>Not found</Route>
-  </>
-));
+      <Route match={route.home} component={HomeView} />
+      <Route match={route.workbench} component={WorkbenchView} />
+      <Route match={route.userSettings} component={UserSettingsView} />
+      <Route match={route.notFound} component={NotFoundView} />
+    </>
+  );
+});
 
 ReactDOM.render(<App />, document.getElementById('app'));
 ```
