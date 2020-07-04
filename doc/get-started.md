@@ -7,7 +7,7 @@ route: /get-started
 
 ## Installation
 
-```shell
+```bash
 # Install dependencies if you haven't
 yarn add react react-dom mobx mobx-react-lite
 

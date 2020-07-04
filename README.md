@@ -10,7 +10,7 @@ A type-safe MobX router with parallel routing support.
 
 ## Installation
 
-```shell
+```bash
 # Install dependencies if you haven't
 yarn add react react-dom mobx mobx-react-lite
 
