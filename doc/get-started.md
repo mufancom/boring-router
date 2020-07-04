@@ -49,8 +49,11 @@ const route = router.$route({
 
 ```tsx
 import {Route, Link} from 'boring-router-react';
+import {observer} from 'mobx-react-lite';
+import React from 'react';
+import ReactDOM from 'react-dom';
 
-const App = () => {
+const App = observer(() => {
   return (
     <>
       <ul>
@@ -71,5 +74,7 @@ const App = () => {
       <Route match={route.notFound} component={NotFoundView} />
     </>
   );
-};
+});
+
+ReactDOM.render(<App />, document.getElementById('app'));
 ```

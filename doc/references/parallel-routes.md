@@ -53,6 +53,36 @@ route.workbench.$(overlayRoute.task.taskId, {taskId: 456}).$push();
 
 Check out [Route Builder](/references/route-builder) for more information.
 
+## Leaving Parallel Routes
+
+To leave the route itself, use `leave` option:
+
+```ts
+sidebarRoute.$push({leave: true});
+```
+
+To leave other or multiple routes during a navigation, use `leaves` option:
+
+```ts
+route.foo.bar.$push({leaves: ['sidebar', 'overlay']});
+```
+
+If you are using `<Link>` component, you can add a `leave` boolean property:
+
+```tsx
+<Link to={sidebarRoute} leave>
+  Close Sidebar
+</Link>
+```
+
+And you can always use route builder for complex cases:
+
+```tsx
+<Link to={route.workbench.$(sidebarRoute.notification).$leave(['overlay'])}>
+  Open Workbench with Notification Sidebar
+</Link>
+```
+
 ## Experimental Whitelist
 
 Parallel routes currently support an experimental whitelist feature, check out the source code for more information.

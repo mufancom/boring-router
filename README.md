@@ -45,7 +45,7 @@ To support full lifecycle hooks while keeping history navigation behavior right,
 import {RouteMatch, Router} from 'boring-router';
 import {BrowserHistory, Link, Route} from 'boring-router-react';
 import {observer} from 'mobx-react-lite';
-import React, {Component} from 'react';
+import React from 'react';
 
 const history = new BrowserHistory();
 
@@ -59,22 +59,19 @@ const route = router.$route({
   },
 });
 
-@observer
-class App extends Component {
-  render() {
-    return (
-      <>
-        <Route match={route.account}>
-          Account page
-          <hr />
-          <Link to={route.about}>About</Link>
-        </Route>
-        <Route match={route.about}>About page</Route>
-        <Route match={route.notFound}>Not found</Route>
-      </>
-    );
-  }
-}
+const App = observer(() => (
+  <>
+    <Route match={route.account}>
+      Account page
+      <hr />
+      <Link to={route.about}>About</Link>
+    </Route>
+    <Route match={route.about}>About page</Route>
+    <Route match={route.notFound}>Not found</Route>
+  </>
+));
+
+ReactDOM.render(<App />, document.getElementById('app'));
 ```
 
 ## License
