@@ -50,7 +50,7 @@ route.account.accountId.contact;
 
 To get a parameter (including segment parameter and query string) from a route, we need to access `$params` of the target route object.
 
-In this case, to get `accountId`, we need to use `route.account.accountId.$params.accountId`. This might look a little bit weird at the beginning (may be forever), but it's also reasonable: because `accountId` (the segment parameter) is one of the properties of route `route.account.accountId`, and its name by convention is the same as the route key.
+In this case, to get `accountId`, we need to use `route.account.accountId.$params.accountId`. This might look a little bit weird at the beginning (maybe forever), but it's also reasonable: because `accountId` (the segment parameter) is one of the properties of route `route.account.accountId`, and its name by convention is the same as the route key.
 
 We can also get the parameter from a child route object, e.g.: `route.account.accountId.profile.$params.accountId`.
 
@@ -108,7 +108,7 @@ const route = router.$route({
 
 And now we can get the actual matched segment by `route.userSettings.$params.userSettings`.
 
-Please note that the regular expression must match the whole string of a segment. Assuming the path is `/settings-suffix`, even though `/(?:user-)?settings/.test('settings-suffix')` is true, but it won't match the route because it matches only `settings` instead of the whole segment `settings-suffix`.
+Please note that the regular expression must match the whole string of a segment. Assuming the path is `/settings-suffix`, even though `/(?:user-)?settings/.test('settings-suffix')` is true, but it won't match the route because the regular expression matches only `settings` instead of the whole segment `settings-suffix`.
 
 ### Exact Match
 
@@ -152,7 +152,7 @@ Note this value is not specified according to the key but the path segment. So i
 
 ## Query
 
-The ability of handling query string in Boring Router is limited for now. It has some handful usages, but all `$query` definition is handled as optional strings without validations.
+The ability of handling query string in Boring Router is limited for now. It has some handy usages, but all `$query` definition is handled as optional strings without validations.
 
 > This problem can be partially solved by [Extension](/references/route-schema#extension) & [Service](/references/service#managed-extension).
 

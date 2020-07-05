@@ -51,7 +51,7 @@ const sidebarRoute = router.$route('sidebar', {
 });
 ```
 
-URL for parallel routes looks like `/workbench?_sidebar=/notifications`. Additional parallel routes work like primary route except that it does not have dedicated query strings.
+URL for parallel routes looks like `/workbench?_sidebar=/notifications`. Additional parallel routes work like primary route except that they do not have dedicated query strings.
 
 ## Lifecycle Hooks
 
