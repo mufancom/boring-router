@@ -354,8 +354,12 @@ test('should match parallel `account`, `friends` and `invite`', async () => {
   expect(primaryRoute.account.$matched).toBe(true);
   expect(sidebarRoute.friends.$matched).toBe(true);
   expect(popupRoute.invite.$matched).toBe(true);
+
+  expect(sidebarRoute.friends.$ref()).toBe('?_sidebar=/friends');
+  expect(sidebarRoute.friends.$href()).toBe('/?_sidebar=/friends');
+
   expect(router.$(primaryRoute.account).$ref()).toBe(
-    '/account?_sidebar=/friends&_popup=/invite',
+    '/account?_popup=/invite&_sidebar=/friends',
   );
 });
 
@@ -420,9 +424,7 @@ test('parallel whitelist should take effect', async () => {
   expect(primaryRoute.onlySidebar.$matched).toBe(true);
   expect(sidebarRoute.friends.call.$matched).toBe(true);
   expect(popupRoute.invite.$matched).toBe(false);
-  expect(router.$ref()).toBe(
-    '/only-sidebar?_sidebar=/friends/call&_popup=/invite',
-  );
+  expect(router.$ref()).toBe('/only-sidebar?_sidebar=/friends/call');
 
   primaryRoute.onlySidebar.onlyChat.$push();
 
@@ -431,9 +433,7 @@ test('parallel whitelist should take effect', async () => {
   expect(primaryRoute.onlySidebar.onlyChat.$matched).toBe(true);
   expect(sidebarRoute.friends.call.$matched).toBe(false);
   expect(popupRoute.invite.$matched).toBe(false);
-  expect(router.$ref()).toBe(
-    '/only-sidebar/only-chat?_sidebar=/friends/call&_popup=/invite',
-  );
+  expect(router.$ref()).toBe('/only-sidebar/only-chat');
 
   sidebarRoute.groups.chat.$push();
 
@@ -442,9 +442,7 @@ test('parallel whitelist should take effect', async () => {
   expect(primaryRoute.onlySidebar.onlyChat.$matched).toBe(true);
   expect(sidebarRoute.groups.chat.$matched).toBe(true);
   expect(popupRoute.invite.$matched).toBe(false);
-  expect(router.$ref()).toBe(
-    '/only-sidebar/only-chat?_sidebar=/groups/chat&_popup=/invite',
-  );
+  expect(router.$ref()).toBe('/only-sidebar/only-chat?_sidebar=/groups/chat');
 
   primaryRoute.onlyFriends.$push();
 
@@ -472,18 +470,16 @@ test('parallel whitelist should take effect', async () => {
 
   expect(sidebarRoute.friends.transfer.$matched).toBe(true);
   expect(router.$ref()).toBe(
-    '/only-friends/only-transfer?_sidebar=/friends/transfer&_popup=/invite',
+    '/only-friends/only-transfer?_sidebar=/friends/transfer',
   );
 
-  primaryRoute.onlyPopup.$replace();
+  router.$(primaryRoute.onlyPopup).$(popupRoute.invite).$replace();
 
   await nap();
 
   expect(sidebarRoute.friends.transfer.$matched).toBe(false);
   expect(popupRoute.invite.$matched).toBe(true);
-  expect(router.$ref()).toBe(
-    '/only-popup?_sidebar=/friends/transfer&_popup=/invite',
-  );
+  expect(router.$ref()).toBe('/only-popup?_popup=/invite');
 });
 
 test('should match exact extension', async () => {

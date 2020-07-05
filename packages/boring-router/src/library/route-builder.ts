@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import {EmptyObjectPatch} from 'tslang';
 
 import {buildPath, buildRef, isQueryIdsMatched, parseSearch} from './@utils';
@@ -5,20 +6,28 @@ import {
   GeneralParamDict,
   RouteMatchShared,
   RouteMatchSharedToParamDict,
-  RouteSourceQuery,
 } from './route-match';
 import {Router, RouterNavigateOptions} from './router';
+
+type BuildingPart = RouteBuilderBuildingPart | StringBuildingPart;
+
+interface StringBuildingPart {
+  route?: RouteMatchShared;
+  path: string;
+  query: Map<string, string>;
+}
 
 export interface RouteBuilderBuildingPart {
   route: RouteMatchShared;
   params?: GeneralParamDict;
 }
 
+export type RouteBuilderSourceType = 'current' | 'next' | 'none';
+
 export class RouteBuilder<TGroupName extends string = string> {
   constructor(
-    private sourcePathMap: Map<string | undefined, string>,
-    private sourceQueryMap: Map<string, RouteSourceQuery>,
     private router: Router<TGroupName>,
+    private sourceType: RouteBuilderSourceType,
     private buildingParts: (RouteBuilderBuildingPart | string)[] = [],
     private leavingGroupSet = new Set<string>(),
   ) {}
@@ -48,10 +57,10 @@ export class RouteBuilder<TGroupName extends string = string> {
           };
 
     return new RouteBuilder(
-      this.sourcePathMap,
-      this.sourceQueryMap,
       this.router,
+      this.sourceType,
       [...this.buildingParts, buildingPart],
+      this.leavingGroupSet,
     );
   }
 
@@ -63,90 +72,141 @@ export class RouteBuilder<TGroupName extends string = string> {
     let leavingGroupSet = new Set([...this.leavingGroupSet, ...groups]);
 
     return new RouteBuilder(
-      this.sourcePathMap,
-      this.sourceQueryMap,
       this.router,
+      this.sourceType,
       this.buildingParts,
       leavingGroupSet,
     );
   }
 
   $ref(): string {
-    let pathMap = new Map(this.sourcePathMap);
+    let router = this.router;
+    let sourceType = this.sourceType;
 
-    let queryMap: Map<string, string | undefined> | undefined;
+    let leavingGroupSet = this.leavingGroupSet;
+
+    let groupToBuildingPartMap = new Map<string | undefined, BuildingPart>();
+
+    if (sourceType !== 'none') {
+      for (let [group, route] of router._groupToRouteMatchMap) {
+        if (group && leavingGroupSet.has(group)) {
+          continue;
+        }
+
+        let sourceRoute = sourceType === 'current' ? route : route.$next;
+
+        if (!sourceRoute.$matched) {
+          continue;
+        }
+
+        groupToBuildingPartMap.set(group, {
+          route: sourceRoute.$rest,
+        });
+      }
+    }
 
     for (let buildingPart of this.buildingParts) {
       if (typeof buildingPart === 'string') {
         let {groups, query: buildingPartQueryMap} = parseStringBuildingPart(
           buildingPart,
-          this.router.$groups,
+          router.$groups,
         );
 
-        for (let {name, path} of groups) {
-          pathMap.set(name, path);
+        for (let {name: group, path} of groups) {
+          if (group && leavingGroupSet.has(group)) {
+            continue;
+          }
+
+          // Preserve the route information if already exists.
+          let route = groupToBuildingPartMap.get(group)?.route;
+
+          groupToBuildingPartMap.set(group, {
+            path,
+            route,
+            query: buildingPartQueryMap,
+          });
+        }
+      } else {
+        let group = buildingPart.route.$group;
+
+        if (group && leavingGroupSet.has(group)) {
+          continue;
         }
 
-        if (buildingPartQueryMap) {
-          queryMap = buildingPartQueryMap;
+        groupToBuildingPartMap.set(group, buildingPart);
+      }
+    }
+
+    let pathMap = new Map<string | undefined, string>();
+
+    let queryMap = new Map<string, string | undefined>();
+
+    for (let [group, buildingPart] of groupToBuildingPartMap) {
+      if ('path' in buildingPart) {
+        let {path, route, query: buildingPartQueryMap} = buildingPart;
+
+        pathMap.set(group, path);
+
+        if (route) {
+          buildingPartQueryMap = new Map([
+            ...Array.from(route._source.queryMap).map(([key, {value}]): [
+              string,
+              string,
+            ] => [key, value]),
+            ...buildingPartQueryMap,
+          ]);
+        }
+
+        for (let [key, value] of buildingPartQueryMap) {
+          if (queryMap.has(key)) {
+            continue;
+          }
+
+          queryMap.set(key, value);
         }
       } else {
         let {route, params: paramDict = {}} = buildingPart;
 
-        let group = route.$group;
-        let primary = group === undefined;
-
-        let restParamKeySet = new Set(Object.keys(paramDict));
-
         let segmentDict = route._pathSegments;
 
-        let path = buildPath(segmentDict, paramDict);
+        pathMap.set(group, buildPath(segmentDict, paramDict));
 
-        for (let key of Object.keys(segmentDict)) {
-          restParamKeySet.delete(key);
+        let {queryMap: sourceQueryMap} = route._source;
+
+        let queryKeyToIdMap = route._queryKeyToIdMap;
+
+        for (let [key, {id, value}] of sourceQueryMap) {
+          let routeQueryId = queryKeyToIdMap.get(key);
+
+          if (
+            queryMap.has(key) ||
+            routeQueryId === undefined ||
+            !isQueryIdsMatched(routeQueryId, id)
+          ) {
+            continue;
+          }
+
+          queryMap.set(key, value);
         }
 
-        pathMap.set(group, path);
+        let restParamKeys = _.difference(
+          Object.keys(paramDict),
+          Object.keys(segmentDict),
+        );
 
-        if (primary) {
-          let {queryMap: sourceQueryMap} = route._source;
-
-          let queryKeyToIdMap = route._queryKeyToIdMap;
-
-          queryMap = new Map();
-
-          for (let [key, {id, value}] of sourceQueryMap) {
-            let routeQueryId = queryKeyToIdMap.get(key);
-
-            if (
-              routeQueryId !== undefined &&
-              isQueryIdsMatched(routeQueryId, id)
-            ) {
-              queryMap.set(key, value);
-            }
+        for (let key of restParamKeys) {
+          if (!queryKeyToIdMap.has(key)) {
+            throw new Error(
+              `Parameter "${key}" is defined as neither segment nor query`,
+            );
           }
 
-          for (let key of restParamKeySet) {
-            if (!queryKeyToIdMap.has(key)) {
-              throw new Error(
-                `Parameter "${key}" is defined as neither segment nor query`,
-              );
-            }
-
-            queryMap.set(key, paramDict[key]);
-          }
+          // Note a given param could be `undefined` here to remove the query.
+          // The reason why we use `undefined` instead of deleting the key is
+          // to ensure this overrides route queries iterated later.
+          queryMap.set(key, paramDict[key]);
         }
       }
-    }
-
-    for (let group of this.leavingGroupSet) {
-      pathMap.delete(group);
-    }
-
-    if (pathMap.get(undefined) && !queryMap) {
-      queryMap = new Map(
-        Array.from(this.sourceQueryMap).map(([key, {value}]) => [key, value]),
-      );
     }
 
     return buildRef(pathMap, queryMap);
@@ -154,6 +214,11 @@ export class RouteBuilder<TGroupName extends string = string> {
 
   $href(): string {
     let ref = this.$ref();
+
+    if (!ref.startsWith('/')) {
+      ref = `/${ref}`;
+    }
+
     return this.router._history.getHRefByRef(ref);
   }
 
@@ -181,7 +246,7 @@ interface ParsedStringBuildingPartGroup {
 
 interface ParsedStringBuildingPart {
   groups: ParsedStringBuildingPartGroup[];
-  query: Map<string, string> | undefined;
+  query: Map<string, string>;
 }
 
 function parseStringBuildingPart(
@@ -191,14 +256,14 @@ function parseStringBuildingPart(
   let searchIndex = part.indexOf('?');
 
   let primaryPath: string | undefined;
-  let queryMap: Map<string, string> | undefined;
+  let queryMap: Map<string, string>;
 
   if (searchIndex >= 0) {
     primaryPath = part.slice(0, searchIndex);
     queryMap = parseSearch(part.slice(searchIndex));
   } else {
     primaryPath = part;
-    queryMap = undefined;
+    queryMap = new Map();
   }
 
   let buildingPartGroups: ParsedStringBuildingPartGroup[] = [];
@@ -222,18 +287,6 @@ function parseStringBuildingPart(
 
         queryMap.delete(key);
       }
-    }
-
-    if (queryMap.size === 0) {
-      queryMap = undefined;
-    }
-
-    if (queryMap && !primaryPath) {
-      console.error(
-        `Unexpected query in string building part without primary route path: "${part}"`,
-      );
-
-      queryMap = undefined;
     }
   }
 

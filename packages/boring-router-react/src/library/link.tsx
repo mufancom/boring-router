@@ -39,7 +39,9 @@ export const Link = observer(
 
             try {
               if (to instanceof RouteMatch) {
-                return to.$href(params);
+                return to.$router
+                  .$((to as unknown) as RouteMatch, params)
+                  .$href();
               } else {
                 return to.$href();
               }

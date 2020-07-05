@@ -250,6 +250,9 @@ export class Router<TGroupName extends string = string> {
   readonly _history: RouterHistory;
 
   /** @internal */
+  readonly _groupToRouteMatchMap = new Map<string | undefined, RouteMatch>();
+
+  /** @internal */
   private _segmentMatcher: SegmentMatcherCallback;
 
   /** @internal */
@@ -283,9 +286,6 @@ export class Router<TGroupName extends string = string> {
   /** @internal */
   private _beforeLeaveHookCalledMatchSet = new Set<RouteMatch | undefined>();
 
-  /** @internal */
-  private _groupToRouteMatchMap = new Map<string | undefined, RouteMatch>();
-
   constructor(history: RouterHistory, {segmentMatcher}: RouterOptions = {}) {
     this._history = history;
 
@@ -294,20 +294,16 @@ export class Router<TGroupName extends string = string> {
     history.listen(this._onHistoryChange);
   }
 
-  get $current(): RouteBuilder<TGroupName> {
-    let {pathMap, queryMap} = this._source;
-
-    return new RouteBuilder(pathMap, queryMap, this);
-  }
-
   get $routing(): boolean {
     return this._routing > 0;
   }
 
-  get $next(): RouteBuilder<TGroupName> {
-    let {pathMap, queryMap} = this._matchingSource;
+  get $current(): RouteBuilder<TGroupName> {
+    return new RouteBuilder(this, 'current');
+  }
 
-    return new RouteBuilder(pathMap, queryMap, this);
+  get $next(): RouteBuilder<TGroupName> {
+    return new RouteBuilder(this, 'next');
   }
 
   get $groups(): TGroupName[] {
@@ -370,8 +366,6 @@ export class Router<TGroupName extends string = string> {
   ): RouteBuilder<TGroupName>;
   $(part: string): RouteBuilder<TGroupName>;
   $(route: RouteMatchShared | string, params?: GeneralParamDict): RouteBuilder {
-    let {pathMap, queryMap} = this._source;
-
     let buildingPart =
       typeof route === 'string'
         ? route
@@ -380,11 +374,11 @@ export class Router<TGroupName extends string = string> {
             params,
           };
 
-    return new RouteBuilder(pathMap, queryMap, this, [buildingPart]);
+    return new RouteBuilder(this, 'current', [buildingPart]);
   }
 
   $scratch(): RouteBuilder<TGroupName> {
-    return new RouteBuilder(new Map(), new Map(), this);
+    return new RouteBuilder(this, 'none');
   }
 
   $push(ref: string, options?: RouterNavigateOptions): void {
@@ -545,8 +539,12 @@ export class Router<TGroupName extends string = string> {
       matchingSource.groupToMatchToMatchEntryMapMap = groupToMatchToMatchEntryMapMap;
       matchingSource.pathMap = pathMap;
 
-      let matchingQueryKeyToIdMap = groupToRouteMatchMap.get(undefined)!.$next
-        .$rest._queryKeyToIdMap;
+      let matchingQueryKeyToIdMap = new Map(
+        _.flatMap(
+          Array.from(groupToRouteMatchMap.values()).reverse(),
+          route => [...route.$next.$rest._queryKeyToIdMap],
+        ),
+      );
 
       matchingSource.queryMap = new Map(
         _.compact(

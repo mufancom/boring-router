@@ -32,7 +32,7 @@ Route schema can be shared with Node.js backend and this makes route notations t
 
 Views like sidebar, overlay can be easily routed with Boring Router parallel routes.
 
-URL for parallel routes looks like `/workbench?_sidebar=/notifications`. Additional parallel routes work like primary route except that they do not have dedicated query strings.
+URL for parallel routes looks like `/workbench?_sidebar=/notifications`, and additional parallel routes work just like primary route in most cases.
 
 ### Lifecycle Hooks
 

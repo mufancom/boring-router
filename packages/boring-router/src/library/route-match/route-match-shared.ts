@@ -231,12 +231,9 @@ export abstract class RouteMatchShared<
   }
 
   $(params?: Partial<TParamDict> & EmptyObjectPatch): RouteBuilder<TGroupName> {
-    return new RouteBuilder<TGroupName>(
-      new Map(),
-      this._source.queryMap,
-      this.$router,
-      [{route: this, params}],
-    );
+    return new RouteBuilder<TGroupName>(this.$router, 'none', [
+      {route: this, params},
+    ]);
   }
 
   $ref(params?: Partial<TParamDict> & EmptyObjectPatch): string {
