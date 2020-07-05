@@ -9577,10 +9577,10 @@ humanize-url@^1.0.0:
     normalize-url "^1.0.0"
     strip-url-auth "^1.0.0"
 
-hyphenate@^0.2.1, hyphenate@^0.2.4:
-  version "0.2.4"
-  resolved "https://registry.yarnpkg.com/hyphenate/-/hyphenate-0.2.4.tgz#5c1a99cebef6fe889744cdc339beb60865e12438"
-  integrity sha512-COZPA5RLSvGJDlWrbMcKF16tKcfCaNNh63yA7QldGz6i/BVJAeYCXPQAiXUzS0y2pxY7c8VId0CPvxm2Rbisqw==
+hyphenate@^0.2.1, hyphenate@^0.2.5:
+  version "0.2.5"
+  resolved "https://registry.yarnpkg.com/hyphenate/-/hyphenate-0.2.5.tgz#57ac6637b2ce6ac7aa046350873693b0c36ea0cf"
+  integrity sha512-mSY0+dVLWFq7iIUgiID3EWo5S8rLnZa595mcuWiN8di91n6eL+WS8HKmcpiZZIX7iElri0a/2hOYpwzldsY4gQ==
 
 iconv-lite@0.4.24, iconv-lite@^0.4.17, iconv-lite@^0.4.24, iconv-lite@~0.4.13:
   version "0.4.24"
