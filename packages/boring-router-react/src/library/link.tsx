@@ -24,9 +24,10 @@ export const Link = observer(
     let {
       to,
       params,
-      replace,
+      replace = false,
       toggle = false,
-      leave = false,
+      // Do not provide `leave` option default value, check out its references.
+      leave,
       onClick,
       ...restProps
     } = props;
