@@ -105,7 +105,10 @@ export function tolerate<T extends (...args: any[]) => any>(
   fn: T,
   ...args: Parameters<T>
 ): ToleratedReturnType<ReturnType<T>>;
-export function tolerate(fn: Function, ...args: unknown[]): unknown {
+export function tolerate(
+  fn: (...args: any[]) => any,
+  ...args: unknown[]
+): unknown {
   let ret: unknown;
 
   try {

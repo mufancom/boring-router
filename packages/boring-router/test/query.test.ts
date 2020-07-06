@@ -143,7 +143,7 @@ test('should preserve query with for inherited routes', async () => {
   expect(route.foo.bar.$ref()).toBe('/foo/bar?b=2&c=3&d=4');
 });
 
-test.only('should work with parallel routes', async () => {
+test('should work with parallel routes', async () => {
   const history = new MemoryHistory('/foo?a=1');
 
   const router = new Router<'sidebar'>(history);
