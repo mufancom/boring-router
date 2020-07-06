@@ -19,7 +19,8 @@
   },
   "devDependencies": {
     "@magicspace/configs": "^0.2.5",
-    "@magicspace/eslint-plugin": "^0.1.26",
+    "@magicspace/eslint-plugin": "^0.1.31",
+    "@typescript-eslint/eslint-plugin": "^3.5.0",
     "docz": "^2.3.1",
     "eslint": "^7.3.1",
     "gatsby-plugin-catch-links": "^2.3.7",

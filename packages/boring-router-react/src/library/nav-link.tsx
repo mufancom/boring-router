@@ -34,16 +34,13 @@ export const NavLink = observer(
             } else {
               return to as RouteMatch;
             }
-            // eslint-disable-next-line @magicspace/empty-line-around-blocks
           },
-          // eslint-disable-next-line @magicspace/empty-line-around-blocks
           get matched() {
             let {exact = false} = props;
 
             let route = this.route;
 
             return exact ? route.$exact : route.$matched;
-            // eslint-disable-next-line @magicspace/empty-line-around-blocks
           },
         };
       },

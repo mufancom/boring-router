@@ -49,9 +49,7 @@ export const Link = observer(
             } catch (error) {
               return '#';
             }
-            // eslint-disable-next-line @magicspace/empty-line-around-blocks
           },
-          // eslint-disable-next-line @magicspace/empty-line-around-blocks
           get composedOnClick() {
             let {to, params, leave, toggle, replace, onClick} = props;
 
@@ -89,7 +87,6 @@ export const Link = observer(
               ],
               true,
             );
-            // eslint-disable-next-line @magicspace/empty-line-around-blocks
           },
         };
       },
