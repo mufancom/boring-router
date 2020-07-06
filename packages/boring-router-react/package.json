@@ -1,6 +1,6 @@
 {
   "name": "boring-router-react",
-  "version": "0.3.11",
+  "version": "0.3.13",
   "description": "A type-safe MobX router with parallel routing support.",
   "repository": {
     "type": "git",
