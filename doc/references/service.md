@@ -73,12 +73,14 @@ E.g.:
 
 ```ts
 const route = router.$route({
-  user: {
-    $children: {
-      userId: {
-        $match: /\d+/,
-        $extension: {
-          user: undefined! as User,
+  $children: {
+    user: {
+      $children: {
+        userId: {
+          $match: /\d+/,
+          $extension: {
+            user: undefined! as User,
+          },
         },
       },
     },

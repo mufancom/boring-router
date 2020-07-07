@@ -54,13 +54,12 @@ const history = new BrowserHistory();
 const router = new Router(history);
 
 const route = router.$route({
-  home: {
-    $match: '',
-  },
-  workbench: true,
-  userSettings: true,
-  notFound: {
-    $match: /.*/,
+  $children: {
+    workbench: true,
+    userSettings: true,
+    notFound: {
+      $match: /.*/,
+    },
   },
 });
 
@@ -69,7 +68,7 @@ const App = observer(() => {
     <>
       <ul>
         <li>
-          <Link to={route.home}>Home</Link>
+          <Link to={route}>Home</Link>
         </li>
         <li>
           <Link to={route.workbench}>Workbench</Link>
@@ -79,7 +78,7 @@ const App = observer(() => {
         </li>
       </ul>
       <hr />
-      <Route match={route.home} component={HomeView} />
+      <Route exact match={route} component={HomeView} />
       <Route match={route.workbench} component={WorkbenchView} />
       <Route match={route.userSettings} component={UserSettingsView} />
       <Route match={route.notFound} component={NotFoundView} />

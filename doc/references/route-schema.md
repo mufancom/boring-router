@@ -12,17 +12,19 @@ Boring Router defines routes by tree-structure route schemas:
 
 ```ts
 const route = router.$route({
-  account: {
-    $children: {
-      accountId: {
-        $match: /\d+/,
-        $children: {
-          profile: {
-            $query: {
-              'show-comment': true,
+  $children: {
+    account: {
+      $children: {
+        accountId: {
+          $match: /\d+/,
+          $children: {
+            profile: {
+              $query: {
+                'show-comment': true,
+              },
             },
+            contact: true,
           },
-          contact: true,
         },
       },
     },
@@ -56,18 +58,20 @@ We can also get the parameter from a child route object, e.g.: `route.account.ac
 
 ## Match
 
-By adding a child under schema root or `$children`, we create a `RouteMatch` for the correspondent segment:
+By adding a child under `$children`, we create a `RouteMatch` for the correspondent segment:
 
 ```ts
 const route = router.$route({
-  // Simply use `true` for default options.
-  workbench: true,
-  // Specify route options with an object.
-  settings: {
-    $match: /boring/,
-    $children: {
-      security: true,
-      notification: true,
+  $children: {
+    // Simply use `true` for default options.
+    workbench: true,
+    // Specify route options with an object.
+    settings: {
+      $match: /boring/,
+      $children: {
+        security: true,
+        notification: true,
+      },
     },
   },
 });
@@ -79,8 +83,10 @@ By default, Boring Router matches a segment according to the "hyphenated" string
 
 ```ts
 const route = router.$route({
-  // This matches `/user-settings`.
-  userSettings: true,
+  $children: {
+    // This matches `/user-settings`.
+    userSettings: true,
+  },
 });
 ```
 
@@ -88,9 +94,11 @@ To match another fixed string, we may add a string `$match` option:
 
 ```ts
 const route = router.$route({
-  // This matches `/settings`.
-  userSettings: {
-    $match: 'settings',
+  $children: {
+    // This matches `/settings`.
+    userSettings: {
+      $match: 'settings',
+    },
   },
 });
 ```
@@ -99,9 +107,11 @@ To make the segment a segment parameter, we may add `$match` option as regular e
 
 ```ts
 const route = router.$route({
-  // This matches both `/settings` and `/user-settings`.
-  userSettings: {
-    $match: /(?:user-)?settings/,
+  $children: {
+    // This matches both `/settings` and `/user-settings`.
+    userSettings: {
+      $match: /(?:user-)?settings/,
+    },
   },
 });
 ```
@@ -123,10 +133,12 @@ To allow exact match for those parent routes, we need to set `$exact` as `true` 
 
 ```ts
 const route = router.$route({
-  account: {
-    $exact: true,
-    $children: {
-      /* ... */
+  $children: {
+    account: {
+      $exact: true,
+      $children: {
+        /* ... */
+      },
     },
   },
 });
@@ -138,11 +150,13 @@ Sometimes we might want a default child route to act as matched if its parent is
 
 ```ts
 const route = router.$route({
-  settings: {
-    $exact: 'user',
-    $children: {
-      user: true,
-      organization: true,
+  $children: {
+    settings: {
+      $exact: 'user',
+      $children: {
+        user: true,
+        organization: true,
+      },
     },
   },
 });
@@ -160,13 +174,15 @@ To get access to a specific query string, just add `$query` options and set a `t
 
 ```ts
 const route = router.$route({
-  account: {
-    $query: {
-      group: true,
-      id: true,
-    },
-    $children: {
-      profile: true,
+  $children: {
+    account: {
+      $query: {
+        group: true,
+        id: true,
+      },
+      $children: {
+        profile: true,
+      },
     },
   },
 });
@@ -187,14 +203,16 @@ By default, route builder (when you click a `<Link>` or trigger `RouteMatch#$ref
 
 ```ts
 const route = router.$route({
-  account: {
-    $query: {
-      source: true,
+  $children: {
+    account: {
+      $query: {
+        source: true,
+      },
     },
-  },
-  about: {
-    $query: {
-      source: true,
+    about: {
+      $query: {
+        source: true,
+      },
     },
   },
 });
@@ -206,14 +224,16 @@ We can provide specific query IDs for different queries to achieve more accurate
 
 ```ts
 const route = router.$route({
-  account: {
-    $query: {
-      source: 'account-source',
+  $children: {
+    account: {
+      $query: {
+        source: 'account-source',
+      },
     },
-  },
-  about: {
-    $query: {
-      source: 'about-source',
+    about: {
+      $query: {
+        source: 'about-source',
+      },
     },
   },
 });
@@ -229,22 +249,24 @@ For example:
 
 ```ts
 const route = router.$route({
-  user: {
-    $metadata: {
-      title: 'User',
-    },
-    $exact: true,
-    $children: {
-      settings: {
-        $metadata: {
-          subTitle: 'Settings',
+  $children: {
+    user: {
+      $metadata: {
+        title: 'User',
+      },
+      $exact: true,
+      $children: {
+        settings: {
+          $metadata: {
+            subTitle: 'Settings',
+          },
         },
       },
     },
-  },
-  workbench: {
-    $metadata: {
-      title: 'Workbench',
+    workbench: {
+      $metadata: {
+        title: 'Workbench',
+      },
     },
   },
 });
@@ -275,13 +297,15 @@ Boring Router provides a way to add addition property to a specific route throug
 
 ```ts
 const route = router.$route({
-  user: {
-    $query: {
-      id: true,
-    },
-    $extension: {
-      get user() {
-        return new User(route.user.$params.id);
+  $children: {
+    user: {
+      $query: {
+        id: true,
+      },
+      $extension: {
+        get user() {
+          return new User(route.user.$params.id);
+        },
       },
     },
   },
@@ -292,12 +316,14 @@ One of our common use case is just to provide type information with `$extension`
 
 ```ts
 const route = router.$route({
-  user: {
-    $query: {
-      id: true,
-    },
-    $extension: {
-      user: undefined! as User,
+  $children: {
+    user: {
+      $query: {
+        id: true,
+      },
+      $extension: {
+        user: undefined! as User,
+      },
     },
   },
 });

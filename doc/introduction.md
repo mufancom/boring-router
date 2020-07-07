@@ -15,10 +15,12 @@ Boring Router uses schema-based, type-safe route notation. You don't need, and i
 
 ```ts
 const route = router.$route({
-  workbench: {
-    $children: {
-      taskId: {
-        $match: /\d+/,
+  $children: {
+    workbench: {
+      $children: {
+        taskId: {
+          $match: /\d+/,
+        },
       },
     },
   },
@@ -65,7 +67,7 @@ route.workbench.$beforeEnter(async next => {
     return;
   }
 
-  route.default.$replace();
+  route.$replace();
 });
 ```
 
