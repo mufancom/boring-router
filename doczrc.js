@@ -17,6 +17,10 @@ module.exports = {
         'Service',
       ],
     },
+    {
+      name: '中文文档',
+      route: 'https://www.yuque.com/makeflow/boring-router/introduction',
+    },
   ],
   themeConfig: {
     initialColorMode: 'dark',

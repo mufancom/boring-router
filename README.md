@@ -6,7 +6,7 @@
 A type-safe MobX router with parallel routing support.
 
 - [Examples](https://makeflow.github.io/boring-router/examples)
-- [Documentation](https://makeflow.github.io/boring-router/)
+- [Documentation](https://makeflow.github.io/boring-router/) | [中文文档](https://www.yuque.com/makeflow/boring-router/introduction)
 
 ## Installation
 
