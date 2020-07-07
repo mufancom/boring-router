@@ -22,6 +22,6 @@ export interface RouteSchema extends RootRouteSchema {
 export type RouteSchemaDict = Dict<RouteSchema | boolean>;
 export type GroupToRouteSchemaDictDict = Dict<RouteSchemaDict>;
 
-export function schema<T extends RouteSchemaDict>(schema: T): T {
+export function schema<T extends RouteSchema>(schema: T): T {
   return schema;
 }
