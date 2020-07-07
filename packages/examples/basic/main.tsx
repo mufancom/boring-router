@@ -11,19 +11,18 @@ const history = new BrowserHistory();
 const router = new Router(history);
 
 const route = router.$route({
-  home: {
-    $match: '',
-  },
-  account: {
-    $exact: true,
-    $children: {
-      details: true,
+  $children: {
+    account: {
+      $exact: true,
+      $children: {
+        details: true,
+      },
     },
-  },
-  about: true,
-  revert: true,
-  notFound: {
-    $match: RouteMatch.REST,
+    about: true,
+    revert: true,
+    notFound: {
+      $match: RouteMatch.REST,
+    },
   },
 });
 
@@ -32,7 +31,7 @@ route.revert.$beforeEnter(() => false);
 const App = observer(() => (
   <>
     <h1>Boring Router</h1>
-    <Route match={route.home}>
+    <Route exact match={route}>
       <p>Home page</p>
       <div>
         <Link to={route.account}>Account</Link>
@@ -56,7 +55,7 @@ const App = observer(() => (
     </Route>
     <Route match={route.account}>
       <p>Account page</p>
-      <Link to={route.home}>Home</Link>
+      <Link to={route}>Home</Link>
       <hr />
       <Route match={route.account} exact>
         <p>Exact account page</p>
@@ -69,11 +68,11 @@ const App = observer(() => (
     </Route>
     <Route match={route.about}>
       <p>About page</p>
-      <Link to={route.home}>Home</Link>
+      <Link to={route}>Home</Link>
     </Route>
     <Route match={route.notFound}>
       <p>Not found</p>
-      <Link to={route.home}>Home</Link>
+      <Link to={route}>Home</Link>
     </Route>
   </>
 ));

@@ -16,12 +16,11 @@ const history = new BrowserHistory();
 const router = new Router(history);
 
 const route = router.$route({
-  home: {
-    $match: '',
+  $children: {
+    element: true,
+    routeComponent: true,
+    functionAsChild: true,
   },
-  element: true,
-  routeComponent: true,
-  functionAsChild: true,
 });
 
 const RouteComponentView: FunctionComponent<RouteComponentProps<
@@ -32,7 +31,7 @@ const App = observer(() => (
   <>
     <h1>Boring Router</h1>
     <nav>
-      <Link to={route.home}>Home</Link>
+      <Link to={route}>Home</Link>
       {' | '}
       <Link to={route.element}>Element</Link>
       {' | '}
@@ -41,7 +40,9 @@ const App = observer(() => (
       <Link to={route.functionAsChild}>Function as Child</Link>
     </nav>
     <hr />
-    <Route match={route.home}>Home page</Route>
+    <Route exact match={route}>
+      Home page
+    </Route>
     <Route match={route.element}>
       <div>Element (path {route.element.$ref()})</div>
     </Route>

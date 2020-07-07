@@ -13,115 +13,118 @@ let history = new MemoryHistory();
 let router = new Router<'popup' | 'sidebar'>(history);
 
 let primaryRoute = router.$route({
-  default: {
-    $match: '',
-  },
-  account: {
-    $query: {
-      callback: true,
-    },
-    $exact: true,
-    $children: {
-      id: {
-        $match: /\d+/,
-        $exact: true,
-        $children: {
-          settings: true,
-          billings: true,
+  $children: {
+    account: {
+      $query: {
+        callback: true,
+      },
+      $exact: true,
+      $children: {
+        id: {
+          $match: /\d+/,
+          $exact: true,
+          $children: {
+            settings: true,
+            billings: true,
+          },
+          $metadata: {
+            'sub-title': 123,
+          },
         },
-        $metadata: {
-          'sub-title': 123,
+      },
+      $metadata: {
+        title: 'account',
+      },
+    },
+    onlySidebar: {
+      $exact: true,
+      $children: {
+        onlyChat: true,
+      },
+    },
+    onlyFriends: {
+      $exact: true,
+      $children: {
+        onlyTransfer: true,
+      },
+    },
+    onlyPopup: true,
+    multiple: {
+      $children: {
+        number: {
+          $match: /\d+/,
         },
-      },
-    },
-    $metadata: {
-      title: 'account',
-    },
-  },
-  onlySidebar: {
-    $exact: true,
-    $children: {
-      onlyChat: true,
-    },
-  },
-  onlyFriends: {
-    $exact: true,
-    $children: {
-      onlyTransfer: true,
-    },
-  },
-  onlyPopup: true,
-  multiple: {
-    $children: {
-      number: {
-        $match: /\d+/,
-      },
-      mixed: {
-        $match: RouteMatch.SEGMENT,
-      },
-    },
-  },
-  exactExtension: {
-    $exact: 'extension',
-    $children: {
-      extension: true,
-    },
-  },
-  queryTest1: {
-    $exact: true,
-    $query: {
-      foo: true,
-      bar: 'bar',
-      pia: 'pia',
-      hia: 'hia',
-      yo: 'yo-1',
-    },
-    $children: {
-      subPath: true,
-    },
-  },
-  queryTest2: {
-    $exact: true,
-    $query: {
-      foo: true,
-      bar: 'bar',
-      hia: true,
-      yo: 'yo-2',
-    },
-    $children: {
-      subPath: {
-        $query: {
-          pia: 'pia',
-          yo: 'yo-1',
+        mixed: {
+          $match: RouteMatch.SEGMENT,
         },
       },
     },
-  },
-  notFound: {
-    $match: RouteMatch.REST,
+    exactExtension: {
+      $exact: 'extension',
+      $children: {
+        extension: true,
+      },
+    },
+    queryTest1: {
+      $exact: true,
+      $query: {
+        foo: true,
+        bar: 'bar',
+        pia: 'pia',
+        hia: 'hia',
+        yo: 'yo-1',
+      },
+      $children: {
+        subPath: true,
+      },
+    },
+    queryTest2: {
+      $exact: true,
+      $query: {
+        foo: true,
+        bar: 'bar',
+        hia: true,
+        yo: 'yo-2',
+      },
+      $children: {
+        subPath: {
+          $query: {
+            pia: 'pia',
+            yo: 'yo-1',
+          },
+        },
+      },
+    },
+    notFound: {
+      $match: RouteMatch.REST,
+    },
   },
 });
 
 let popupRoute = router.$route('popup', {
-  invite: {
-    $exact: true,
+  $children: {
+    invite: {
+      $exact: true,
+    },
   },
 });
 
 let sidebarRoute = router.$route('sidebar', {
-  groups: {
-    $exact: true,
-    $children: {
-      chat: true,
-      call: true,
+  $children: {
+    groups: {
+      $exact: true,
+      $children: {
+        chat: true,
+        call: true,
+      },
     },
-  },
-  friends: {
-    $exact: true,
-    $children: {
-      chat: true,
-      transfer: true,
-      call: true,
+    friends: {
+      $exact: true,
+      $children: {
+        chat: true,
+        transfer: true,
+        call: true,
+      },
     },
   },
 });
@@ -142,9 +145,9 @@ primaryRoute.onlyPopup.$parallel({groups: ['popup']});
 test('should match `default`', async () => {
   await nap();
 
-  expect(primaryRoute.default.$matched).toBe(true);
-  expect(primaryRoute.default.$exact).toBe(true);
-  expect<object>({...primaryRoute.default.$params}).toEqual({});
+  expect(primaryRoute.$matched).toBe(true);
+  expect(primaryRoute.$exact).toBe(true);
+  expect<object>({...primaryRoute.$params}).toEqual({});
 });
 
 test('should match `notFound`', async () => {
@@ -172,8 +175,8 @@ test('should match `account`', async () => {
 
   await nap();
 
-  expect(primaryRoute.default.$matched).toBe(false);
-  expect(primaryRoute.default.$exact).toBe(false);
+  expect(primaryRoute.$matched).toBe(true);
+  expect(primaryRoute.$exact).toBe(false);
 
   expect(primaryRoute.account.$matched).toBe(true);
   expect(primaryRoute.account.$exact).toBe(true);
@@ -323,7 +326,7 @@ test('should match `multiple.mixed`', async () => {
 });
 
 test('should match `$group`', async () => {
-  expect(primaryRoute.default.$group).toBe(undefined);
+  expect(primaryRoute.$group).toBe(undefined);
   expect(primaryRoute.account.id.$group).toBe(undefined);
   expect(popupRoute.$group).toBe('popup');
   expect(popupRoute.invite.$group).toBe('popup');
@@ -538,11 +541,11 @@ test("should leave parallel routes by 'leaves' options when push a new route", a
   expect(sidebarRoute.friends.$matched).toBe(true);
   expect(popupRoute.invite.$matched).toBe(true);
 
-  primaryRoute.default.$push({}, {leaves: ['popup']});
+  primaryRoute.$push({}, {leaves: ['popup']});
 
   await nap();
 
-  expect(primaryRoute.default.$matched).toBe(true);
+  expect(primaryRoute.$matched).toBe(true);
   expect(sidebarRoute.friends.$matched).toBe(true);
   expect(popupRoute.invite.$matched).toBe(false);
 

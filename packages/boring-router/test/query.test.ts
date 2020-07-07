@@ -20,14 +20,16 @@ test('should preserve query with id `true` for sibling routes', async () => {
     const router = new Router(history);
 
     const route = router.$route({
-      foo: {
-        $query: {
-          a: fooQueryId,
+      $children: {
+        foo: {
+          $query: {
+            a: fooQueryId,
+          },
         },
-      },
-      bar: {
-        $query: {
-          a: barQueryId,
+        bar: {
+          $query: {
+            a: barQueryId,
+          },
         },
       },
     });
@@ -58,14 +60,16 @@ test('should not preserve query with different ids for sibling routes', async ()
   const router = new Router(history);
 
   const route = router.$route({
-    foo: {
-      $query: {
-        a: 'foo-a',
+    $children: {
+      foo: {
+        $query: {
+          a: 'foo-a',
+        },
       },
-    },
-    bar: {
-      $query: {
-        a: 'bar-a',
+      bar: {
+        $query: {
+          a: 'bar-a',
+        },
       },
     },
   });
@@ -95,19 +99,21 @@ test('should preserve query with for inherited routes', async () => {
   const router = new Router(history);
 
   const route = router.$route({
-    foo: {
-      $exact: true,
-      $query: {
-        a: 'foo-a',
-        b: 'foo-b',
-        c: true,
-        d: true,
-      },
-      $children: {
-        bar: {
-          $query: {
-            a: 'bar-a',
-            c: 'bar-c',
+    $children: {
+      foo: {
+        $exact: true,
+        $query: {
+          a: 'foo-a',
+          b: 'foo-b',
+          c: true,
+          d: true,
+        },
+        $children: {
+          bar: {
+            $query: {
+              a: 'bar-a',
+              c: 'bar-c',
+            },
           },
         },
       },
@@ -149,22 +155,26 @@ test('should work with parallel routes', async () => {
   const router = new Router<'sidebar'>(history);
 
   const route = router.$route({
-    foo: {
-      $query: {
-        a: true,
+    $children: {
+      foo: {
+        $query: {
+          a: true,
+        },
       },
-    },
-    yo: {
-      $query: {
-        a: 'yo-a',
+      yo: {
+        $query: {
+          a: 'yo-a',
+        },
       },
     },
   });
 
   const sidebarRoute = router.$route('sidebar', {
-    bar: {
-      $query: {
-        a: 'sidebar-bar-a',
+    $children: {
+      bar: {
+        $query: {
+          a: 'sidebar-bar-a',
+        },
       },
     },
   });

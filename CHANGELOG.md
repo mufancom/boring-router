@@ -1,6 +1,13 @@
 # Changelog
 
-## 0.3.13 - 2020-7-6
+## [0.4.0] - 2020-7-7
+
+### Breaking changes
+
+- Treat `/foo/bar/` as `/foo/bar`.
+- `Route#$route()` method now accepts a route schema similar to what for a child route except for `$match` option.
+
+## [0.3.13] - 2020-7-6
 
 ### Changes
 

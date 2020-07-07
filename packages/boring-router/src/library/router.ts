@@ -9,7 +9,6 @@ import {RouteBuilder} from './route-builder';
 import {
   GeneralParamDict,
   NextRouteMatch,
-  ROUTE_MATCH_START_ANCHOR_PATTERN,
   RouteMatch,
   RouteMatchEntry,
   RouteMatchOptions,
@@ -18,7 +17,7 @@ import {
   RouteSource,
   RouteSourceQuery,
 } from './route-match';
-import {RouteSchemaDict} from './schema';
+import {RootRouteSchema, RouteSchema, RouteSchemaDict} from './schema';
 
 export type SegmentMatcherCallback = (key: string) => string;
 
@@ -189,12 +188,12 @@ type NextRouteMatchType<
 >;
 
 export type RootRouteMatchType<
-  TRouteSchemaDict,
+  TRouteSchema,
   TSpecificGroupName extends string | undefined,
   TGroupName extends string,
   TMetadata extends object = {}
 > = RouteMatchType<
-  {$children: TRouteSchemaDict},
+  TRouteSchema,
   never,
   never,
   TSpecificGroupName,
@@ -216,15 +215,6 @@ export interface RouterOptions {
    * transformation.
    */
   segmentMatcher?: SegmentMatcherCallback;
-}
-
-interface BuildRouteMatchOptions {
-  match: string | symbol | RegExp;
-  exact: boolean | string;
-  query: Dict<string | symbol | true> | undefined;
-  children: RouteSchemaDict | undefined;
-  extension: object | undefined;
-  metadata: object | undefined;
 }
 
 export interface RouterNavigateOptions {
@@ -312,22 +302,22 @@ export class Router<TGroupName extends string = string> {
     );
   }
 
-  $route<TPrimaryRouteSchemaDict extends RouteSchemaDict>(
-    schema: TPrimaryRouteSchemaDict,
-  ): RootRouteMatchType<TPrimaryRouteSchemaDict, undefined, TGroupName>;
+  $route<TPrimaryRouteSchema extends RootRouteSchema>(
+    schema: TPrimaryRouteSchema,
+  ): RootRouteMatchType<TPrimaryRouteSchema, undefined, TGroupName>;
   $route<
-    TRouteSchemaDict extends RouteSchemaDict,
+    TRouteSchema extends RootRouteSchema,
     TSpecificGroupName extends TGroupName
   >(
     group: TSpecificGroupName,
-    schema: TRouteSchemaDict,
-  ): RootRouteMatchType<TRouteSchemaDict, TSpecificGroupName, TGroupName>;
+    schema: TRouteSchema,
+  ): RootRouteMatchType<TRouteSchema, TSpecificGroupName, TGroupName>;
   $route(
-    groupOrSchema: TGroupName | RouteSchemaDict,
-    schemaOrUndefined?: RouteSchemaDict,
+    groupOrSchema: TGroupName | RootRouteSchema,
+    schemaOrUndefined?: RootRouteSchema,
   ): RouteMatch {
     let group: TGroupName | undefined;
-    let schema: RouteSchemaDict;
+    let schema: RootRouteSchema;
 
     if (typeof groupOrSchema === 'string') {
       group = groupOrSchema;
@@ -338,12 +328,9 @@ export class Router<TGroupName extends string = string> {
     }
 
     let [routeMatch] = this._buildRouteMatch(group, '', undefined, undefined, {
-      match: ROUTE_MATCH_START_ANCHOR_PATTERN,
-      exact: false,
-      query: undefined,
-      children: schema,
-      extension: undefined,
-      metadata: undefined,
+      $exact: true,
+      $match: '',
+      ...schema,
     });
 
     this._groupToRouteMatchMap.set(group, routeMatch);
@@ -479,10 +466,9 @@ export class Router<TGroupName extends string = string> {
     let groupToRouteMatchMap = this._groupToRouteMatchMap;
 
     for (let [group, path] of pathMap) {
-      let routeMatch = groupToRouteMatchMap.get(group);
+      let routeMatch = groupToRouteMatchMap.get(group)!;
 
-      let routeMatchEntries =
-        this._match(routeMatch ? [routeMatch] : [], path) || [];
+      let routeMatchEntries = this._match([routeMatch], path) || [];
 
       if (!routeMatchEntries.length) {
         continue;
@@ -842,28 +828,12 @@ export class Router<TGroupName extends string = string> {
           schema = {};
         }
 
-        let {
-          $match: match = this._segmentMatcher(routeName),
-          $exact: exact = false,
-          $query: query,
-          $children: children,
-          $extension: extension,
-          $metadata: metadata,
-        } = schema;
-
         let [routeMatch, nextRouteMatch] = this._buildRouteMatch(
           group,
           routeName,
           parent,
           matchingParent,
-          {
-            match,
-            exact,
-            query,
-            children,
-            extension,
-            metadata,
-          },
+          schema,
         );
 
         (parent as any)[routeName] = routeMatch;
@@ -885,13 +855,13 @@ export class Router<TGroupName extends string = string> {
     parent: RouteMatch | undefined,
     matchingParent: NextRouteMatch | undefined,
     {
-      match,
-      exact,
-      query: queryDict,
-      children,
-      extension,
-      metadata,
-    }: BuildRouteMatchOptions,
+      $match: match = this._segmentMatcher(routeName),
+      $exact: exact = false,
+      $query: queryDict,
+      $children: children,
+      $extension: extension,
+      $metadata: metadata,
+    }: RouteSchema,
   ): [RouteMatch, NextRouteMatch] {
     let source = this._source;
     let matchingSource = this._matchingSource;

@@ -11,30 +11,29 @@ const history = new BrowserHistory();
 const router = new Router(history);
 
 const route = router.$route({
-  home: {
-    $match: '',
-  },
-  redirect: {
-    $children: {
-      target: {
-        $match: RouteMatch.SEGMENT,
+  $children: {
+    redirect: {
+      $children: {
+        target: {
+          $match: RouteMatch.SEGMENT,
+        },
       },
     },
-  },
-  revert: true,
-  account: {
-    // For route with children, exact match is by default ignored. Make
-    // `$exact` true to enable exact match.
-    $exact: true,
-    $children: {
-      accountId: {
-        $match: RouteMatch.SEGMENT,
+    revert: true,
+    account: {
+      // For route with children, exact match is by default ignored. Make
+      // `$exact` true to enable exact match.
+      $exact: true,
+      $children: {
+        accountId: {
+          $match: RouteMatch.SEGMENT,
+        },
       },
     },
-  },
-  about: true,
-  notFound: {
-    $match: RouteMatch.REST,
+    about: true,
+    notFound: {
+      $match: RouteMatch.REST,
+    },
   },
 });
 
@@ -131,7 +130,7 @@ route.redirect.target.$beforeEnter(next => {
       route.$next.about.$replace();
       break;
     default:
-      route.$next.home.$replace();
+      route.$next.$replace();
       break;
   }
 });
@@ -151,7 +150,7 @@ const App = observer(() => (
       About"
     </p>
     <nav>
-      <Link to={route.home}>Home</Link>
+      <Link to={route}>Home</Link>
       {' | '}
       <Link to={route.account}>Account</Link>
       {' | '}
@@ -173,7 +172,7 @@ const App = observer(() => (
       </Link>
     </nav>
     <hr />
-    <Route match={route.home}>
+    <Route exact match={route}>
       <p>Home page</p>
     </Route>
     <Route match={route.account}>

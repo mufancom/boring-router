@@ -18,7 +18,6 @@ import {NextRouteMatch} from './next-route-match';
 import {
   GeneralParamDict,
   GeneralSegmentDict,
-  ROUTE_MATCH_START_ANCHOR_PATTERN,
   RouteMatchShared,
   RouteMatchSharedOptions,
 } from './route-match-shared';
@@ -635,62 +634,42 @@ export class RouteMatch<
   _match(upperRest: string): RouteMatchInternalResult {
     let pattern = this._matchPattern;
 
-    if (typeof pattern === 'symbol') {
-      if (pattern === ROUTE_MATCH_START_ANCHOR_PATTERN) {
-        return {
-          matched: true,
-          exactlyMatched: false,
-          segment: undefined,
-          rest: upperRest,
-        };
-      }
-
-      throw new Error(`Unrecognized symbol pattern [${pattern.description}]`);
-    }
-
     let segment: string | undefined;
     let rest: string;
 
-    if (upperRest) {
-      if (!upperRest.startsWith('/')) {
-        throw new Error(
-          `Expecting rest of path to be started with "/", but got ${JSON.stringify(
-            upperRest,
-          )} instead`,
-        );
-      }
+    if (typeof pattern === 'string') {
+      if (testPathPrefix(upperRest, pattern)) {
+        segment = pattern;
+        rest = upperRest.slice(pattern.length);
 
-      upperRest = upperRest.slice(1);
-
-      if (typeof pattern === 'string') {
-        if (testPathPrefix(upperRest, pattern)) {
-          segment = pattern;
-          rest = upperRest.slice(pattern.length);
-        } else {
-          segment = undefined;
-          rest = '';
+        if (rest.startsWith('/')) {
+          rest = rest.slice(1);
         }
       } else {
-        let groups = pattern.exec(upperRest);
+        segment = undefined;
+        rest = '';
+      }
+    } else {
+      let groups = pattern.exec(upperRest);
 
-        if (groups) {
-          let matched = groups[0];
+      if (groups) {
+        let matched = groups[0];
 
-          if (testPathPrefix(upperRest, matched)) {
-            segment = matched;
-            rest = upperRest.slice(matched.length);
-          } else {
-            segment = undefined;
-            rest = '';
+        if (testPathPrefix(upperRest, matched)) {
+          segment = matched;
+          rest = upperRest.slice(matched.length);
+
+          if (rest.startsWith('/')) {
+            rest = rest.slice(1);
           }
         } else {
           segment = undefined;
           rest = '';
         }
+      } else {
+        segment = undefined;
+        rest = '';
       }
-    } else {
-      segment = undefined;
-      rest = '';
     }
 
     let matched = segment !== undefined;
@@ -700,8 +679,11 @@ export class RouteMatch<
       let allowExact = this._allowExact;
 
       if (typeof allowExact === 'string') {
-        rest = `/${allowExact}`;
+        // Specify a default rest path on an exact match.
+        rest = allowExact;
       } else if (this._children && !allowExact) {
+        // If this route has children and does not allow exact match, then this
+        // match is invalid and reset `matched` and `exactlyMatched` to false.
         matched = false;
         exactlyMatched = false;
       }

@@ -22,16 +22,15 @@ class Account {
 let router = new Router(history);
 
 let primaryRoute = router.$route({
-  default: {
-    $match: '',
-  },
-  account: {
-    $children: {
-      accountId: {
-        $match: RouteMatch.SEGMENT,
-        $extension: {
-          account: undefined! as Account,
-          name: undefined! as string,
+  $children: {
+    account: {
+      $children: {
+        accountId: {
+          $match: RouteMatch.SEGMENT,
+          $extension: {
+            account: undefined! as Account,
+            name: undefined! as string,
+          },
         },
       },
     },
@@ -173,7 +172,7 @@ test('should navigate from `default` to `account` and triggers `$beforeUpdate`',
 });
 
 test('should navigate from `account` to `default`', async () => {
-  primaryRoute.default.$push();
+  primaryRoute.$push();
 
   await nap();
 

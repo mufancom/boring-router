@@ -8,8 +8,6 @@ import {Router, RouterNavigateOptions} from '../router';
 
 import {RouteMatchEntry, RouteSource} from './route-match';
 
-export const ROUTE_MATCH_START_ANCHOR_PATTERN = Symbol('^');
-
 export type GeneralSegmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
@@ -36,7 +34,7 @@ export interface RouteMatchNavigateOptions<TGroupName extends string>
     RouterNavigateOptions {}
 
 export interface RouteMatchSharedOptions {
-  match: string | symbol | RegExp;
+  match: string | RegExp;
   query: Map<string, string | symbol | true>;
   group: string | undefined;
 }
@@ -77,7 +75,7 @@ export abstract class RouteMatchShared<
   protected _history: IHistory;
 
   /** @internal */
-  protected _matchPattern: string | symbol | RegExp;
+  protected _matchPattern: string | RegExp;
 
   constructor(
     name: string,
@@ -190,18 +188,16 @@ export abstract class RouteMatchShared<
     let parent = this.$parent;
     let upperSegmentDict = parent && parent._pathSegments;
 
+    let name = this.$name;
+
     let matchPattern = this._matchPattern;
     let segment = this._segment;
 
-    if (matchPattern === ROUTE_MATCH_START_ANCHOR_PATTERN) {
-      return {
-        ...upperSegmentDict,
-      };
-    }
-
     return {
       ...upperSegmentDict,
-      [this.$name]: typeof matchPattern === 'string' ? matchPattern : segment,
+      ...(name
+        ? {[name]: typeof matchPattern === 'string' ? matchPattern : segment}
+        : undefined),
     };
   }
 

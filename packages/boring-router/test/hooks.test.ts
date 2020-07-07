@@ -12,18 +12,17 @@ let history = new MemoryHistory();
 let router = new Router(history);
 
 let primaryRoute = router.$route({
-  default: {
-    $match: '',
-  },
-  about: true,
-  redirect: true,
-  revert: true,
-  persist: true,
-  routing: true,
-  parent: {
-    $exact: true,
-    $children: {
-      nested: true,
+  $children: {
+    about: true,
+    redirect: true,
+    revert: true,
+    persist: true,
+    routing: true,
+    parent: {
+      $exact: true,
+      $children: {
+        nested: true,
+      },
     },
   },
 });

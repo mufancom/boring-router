@@ -11,29 +11,32 @@ const history = new BrowserHistory();
 const router = new Router(history);
 
 const route = router.$route({
-  home: {
-    $match: '',
-  },
-  workbench: {
-    $exact: 'todo',
-    $children: {
-      todo: true,
-      done: true,
+  $children: {
+    workbench: {
+      $exact: 'todo',
+      $children: {
+        todo: true,
+        done: true,
+      },
     },
+    settings: true,
   },
-  settings: true,
 });
 
 const sidebarRoute = router.$route('sidebar', {
-  status: true,
-  notification: true,
+  $children: {
+    status: true,
+    notification: true,
+  },
 });
 
 const overlayRoute = router.$route('overlay', {
-  task: {
-    $children: {
-      taskId: {
-        $match: /\d+/,
+  $children: {
+    task: {
+      $children: {
+        taskId: {
+          $match: /\d+/,
+        },
       },
     },
   },
@@ -98,14 +101,16 @@ const Main = observer<{route: typeof route}>(({route}) => {
     <div id="main">
       <h1>Boring Router</h1>
       <div>
-        <NavLink to={route.home}>Home</NavLink>
+        <NavLink exact to={route}>
+          Home
+        </NavLink>
         {' | '}
         <NavLink to={route.workbench}>Workbench</NavLink>
         {' | '}
         <NavLink to={route.settings}>Settings</NavLink>
       </div>
       <hr />
-      <Route match={route.home}>
+      <Route exact match={route}>
         <p>Home page</p>
         <Link to={overlayRoute.task.taskId} params={{taskId: '123'}}>
           Task
