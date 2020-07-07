@@ -122,7 +122,7 @@ Please note that the regular expression must match the whole string of a segment
 
 ### Exact Match
 
-For route with children, by default it ignores the exact match. This means that the route previously defined does not match paths like:
+For route with children, by default it ignores the exact match. This means that the route defined in the [Overview](#overview) section does not match paths like:
 
 ```
 /account
