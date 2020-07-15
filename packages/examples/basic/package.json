@@ -14,7 +14,7 @@
     "typescript": "^3.9.5"
   },
   "dependencies": {
-    "boring-router": "^0.4.2",
+    "boring-router": "^0.4.3",
     "boring-router-react": "^0.4.0",
     "mobx": "^5.15.4",
     "mobx-react-lite": "^2.0.7",
