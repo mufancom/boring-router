@@ -144,6 +144,7 @@ interface RouteAutorunEntry {
   type: 'autorun';
   view: RouteAutorunView;
   options: RouteAutorunOptions | undefined;
+  disposer: RouteReactiveDisposer | undefined;
 }
 
 export type RouteReactionExpression<T> = (reaction: IReactionPublic) => T;
@@ -160,6 +161,7 @@ interface RouteReactionEntry<T = unknown> {
   expression: RouteReactionExpression<T>;
   effect: RouteReactionEffect<T>;
   options: RouteReactionOptions | undefined;
+  disposer: RouteReactiveDisposer | undefined;
 }
 
 // removal //
@@ -294,9 +296,6 @@ export class RouteMatch<
 
   /** @internal */
   private _reactiveEntrySet = new Set<RouteReactiveEntry>();
-
-  /** @internal */
-  private _reactiveDisposers: RouteReactiveDisposer[] = [];
 
   /** @internal */
   @observable
@@ -453,17 +452,23 @@ export class RouteMatch<
       type: 'autorun',
       view,
       options,
+      disposer: undefined,
     };
 
     this._reactiveEntrySet.add(autorunEntry);
 
     if (this.$matched) {
       tolerate(() => {
-        this._reactiveDisposers.push(autorun(view, options));
+        autorunEntry.disposer = autorun(view, options);
       });
     }
 
     return () => {
+      if (autorunEntry.disposer) {
+        autorunEntry.disposer();
+        autorunEntry.disposer = undefined;
+      }
+
       this._reactiveEntrySet.delete(autorunEntry);
     };
   }
@@ -478,16 +483,23 @@ export class RouteMatch<
       expression,
       effect,
       options,
+      disposer: undefined,
     };
+
     this._reactiveEntrySet.add(reactionEntry);
 
     if (this.$matched) {
       tolerate(() => {
-        this._reactiveDisposers.push(reaction(expression, effect, options));
+        reactionEntry.disposer = reaction(expression, effect, options);
       });
     }
 
     return () => {
+      if (reactionEntry.disposer) {
+        reactionEntry.disposer();
+        reactionEntry.disposer = undefined;
+      }
+
       this._reactiveEntrySet.delete(reactionEntry);
     };
   }
@@ -765,8 +777,11 @@ export class RouteMatch<
 
   /** @internal */
   async _willLeave(): Promise<void> {
-    for (let reactiveDisposer of this._reactiveDisposers) {
-      reactiveDisposer();
+    for (let reactiveEntry of this._reactiveEntrySet) {
+      if (reactiveEntry.disposer) {
+        reactiveEntry.disposer();
+        reactiveEntry.disposer = undefined;
+      }
     }
 
     await Promise.all([
@@ -851,20 +866,24 @@ export class RouteMatch<
     }
 
     for (let reactiveEntry of this._reactiveEntrySet) {
+      if (reactiveEntry.disposer) {
+        reactiveEntry.disposer();
+        console.warn('Unexpected disposer during afterEnter phase.');
+      }
+
       tolerate(() => {
         switch (reactiveEntry.type) {
           case 'autorun':
-            this._reactiveDisposers.push(
-              autorun(reactiveEntry.view, reactiveEntry.options),
+            reactiveEntry.disposer = autorun(
+              reactiveEntry.view,
+              reactiveEntry.options,
             );
             break;
           case 'reaction':
-            this._reactiveDisposers.push(
-              reaction(
-                reactiveEntry.expression,
-                reactiveEntry.effect,
-                reactiveEntry.options,
-              ),
+            reactiveEntry.disposer = reaction(
+              reactiveEntry.expression,
+              reactiveEntry.effect,
+              reactiveEntry.options,
             );
             break;
         }
