@@ -195,7 +195,7 @@ export type RootRouteMatchType<
 > = RouteMatchType<
   TRouteSchema,
   never,
-  never,
+  Extract<keyof RouteQuerySchemaType<TRouteSchema>, string>,
   TSpecificGroupName,
   TGroupName,
   TMetadata
