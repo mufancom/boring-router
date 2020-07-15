@@ -1,6 +1,6 @@
 {
   "name": "boring-router",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "A type-safe MobX router with parallel routing support.",
   "repository": {
     "type": "git",
