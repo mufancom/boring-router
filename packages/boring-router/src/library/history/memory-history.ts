@@ -9,13 +9,13 @@ const SNAP_PROMISE = Promise.resolve();
 
 export interface MemoryHistoryOptions {
   /**
+   * Initial ref, defaults to '/'.
+   */
+  initialRef?: string;
+  /**
    * URL prefix.
    */
   prefix?: string;
-  /**
-   * initial ref, defaults to '/'
-   */
-  initialRef?: string;
 }
 
 export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
@@ -24,10 +24,9 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
   private lastId: number;
   private prefix: string;
 
-  constructor(options: MemoryHistoryOptions = {}) {
+  constructor({initialRef = '/', prefix = ''}: MemoryHistoryOptions = {}) {
     super();
 
-    let {initialRef = '/', prefix = ''} = options;
     this.prefix = prefix;
 
     if (!initialRef.startsWith('/')) {
@@ -40,7 +39,7 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
     let entries: HistoryEntry<number, TData>[] = [
       {
         id,
-        ref: this.getRefByHRef(initialRef),
+        ref: initialRef,
         data,
       },
     ];
