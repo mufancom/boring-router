@@ -1,13 +1,24 @@
 import {AbstractHistory, HistorySnapshot} from './history';
 
+export interface ReadOnlyHistoryOptions {
+  /**
+   * URL prefix.
+   */
+  prefix?: string;
+}
+
 export class ReadOnlyHistory<TData = any> extends AbstractHistory<
   number,
   TData
 > {
   protected snapshot: HistorySnapshot<number, TData>;
 
-  constructor(private prefix = '') {
+  private prefix: string;
+
+  constructor({prefix = ''}: ReadOnlyHistoryOptions = {}) {
     super();
+
+    this.prefix = prefix;
 
     let id = 0;
 

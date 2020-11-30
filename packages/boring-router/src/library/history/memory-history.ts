@@ -7,13 +7,27 @@ import {
 
 const SNAP_PROMISE = Promise.resolve();
 
+export interface MemoryHistoryOptions {
+  /**
+   * Initial ref, defaults to '/'.
+   */
+  initialRef?: string;
+  /**
+   * URL prefix.
+   */
+  prefix?: string;
+}
+
 export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
   protected snapshot: HistorySnapshot<number, TData>;
 
   private lastId: number;
+  private prefix: string;
 
-  constructor(initialRef = '/') {
+  constructor({initialRef = '/', prefix = ''}: MemoryHistoryOptions = {}) {
     super();
+
+    this.prefix = prefix;
 
     if (!initialRef.startsWith('/')) {
       initialRef = `/${initialRef}`;
@@ -39,11 +53,13 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
   }
 
   getHRefByRef(ref: string): string {
-    return ref;
+    return `${this.prefix}${ref}`;
   }
 
   getRefByHRef(href: string): string {
-    return href;
+    let prefix = this.prefix;
+
+    return href.startsWith(prefix) ? href.slice(prefix.length) : href;
   }
 
   async back(): Promise<void> {

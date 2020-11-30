@@ -15,7 +15,7 @@ test('should preserve query with id `true` for sibling routes', async () => {
   ] as const;
 
   for (let {foo: fooQueryId, bar: barQueryId} of idsArray) {
-    const history = new MemoryHistory('/foo?a=1');
+    const history = new MemoryHistory({initialRef: '/foo?a=1'});
 
     const router = new Router(history);
 
@@ -55,7 +55,7 @@ test('should preserve query with id `true` for sibling routes', async () => {
 });
 
 test('should not preserve query with different ids for sibling routes', async () => {
-  const history = new MemoryHistory('/foo?a=1');
+  const history = new MemoryHistory({initialRef: '/foo?a=1'});
 
   const router = new Router(history);
 
@@ -94,7 +94,7 @@ test('should not preserve query with different ids for sibling routes', async ()
 });
 
 test('should preserve query with for inherited routes', async () => {
-  const history = new MemoryHistory('/foo?a=1&b=2&c=3&d=4');
+  const history = new MemoryHistory({initialRef: '/foo?a=1&b=2&c=3&d=4'});
 
   const router = new Router(history);
 
@@ -150,7 +150,7 @@ test('should preserve query with for inherited routes', async () => {
 });
 
 test('should work with parallel routes', async () => {
-  const history = new MemoryHistory('/foo?a=1');
+  const history = new MemoryHistory({initialRef: '/foo?a=1'});
 
   const router = new Router<'sidebar'>(history);
 
