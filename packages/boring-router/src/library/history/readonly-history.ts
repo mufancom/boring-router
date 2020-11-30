@@ -1,6 +1,9 @@
 import {AbstractHistory, HistorySnapshot} from './history';
 
 export interface ReadOnlyHistoryOptions {
+  /**
+   * URL prefix.
+   */
   prefix?: string;
 }
 
