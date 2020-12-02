@@ -1,9 +1,16 @@
 # Server-Side Rendering Example
 
 ```ts
-async function render(): Promise<string> {
+import {MemoryHistory, Router} from 'boring-router';
+import {when} from 'mobx';
+import {renderToString} from 'react-dom/server';
+
+import {App} from '...';
+
+export async function render(path: string): Promise<string> {
+  // Use `MemoryHistory` instead of `BrowserHistory` and pass in initial ref.
   let history = new MemoryHistory({
-    initialRef: ctx.path,
+    initialRef: path,
   });
 
   let router = new Router(history);
