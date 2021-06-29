@@ -167,7 +167,20 @@ export class RouteBuilder<TGroupName extends string = string> {
       } else {
         let {route, params: paramDict = {}} = buildingPart;
 
-        let segmentDict = route._pathSegments;
+        let nextSegmentDict = route._pathSegments;
+        let nextSegmentNames = _.keys(nextSegmentDict);
+
+        let restSegmentDict = _.pick(
+          router._groupToRouteMatchMap.get(group)?.$rest._pathSegments || {},
+          nextSegmentNames,
+        );
+
+        let segmentDict = _.fromPairs(
+          _.sortBy(
+            _.entries(_.merge(restSegmentDict, nextSegmentDict)),
+            ([key]) => nextSegmentNames.indexOf(key),
+          ),
+        );
 
         pathMap.set(group, buildPath(segmentDict, paramDict));
 
