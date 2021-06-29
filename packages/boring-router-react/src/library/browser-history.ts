@@ -135,23 +135,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
   }
 
   async push(ref: string, data?: TData): Promise<void> {
-    if (ref === this.ref) {
-      return this.replace(ref, data);
-    }
-
-    await this.restoringPromise;
-
-    let snapshot = this.pushEntry({
-      id: this.getNextId(),
-      ref,
-      data,
-    });
-
-    debug('push', snapshot);
-
-    this.snapshot = snapshot;
-
-    this.emitChange(snapshot);
+    return this._push(ref, data, true);
   }
 
   async replace(ref: string, data?: TData): Promise<void> {
@@ -230,10 +214,19 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     await this.push(ref);
   }
 
-  private onPopState = async (event: PopStateEvent): Promise<void> => {
+  private onPopState = (event: PopStateEvent): void => {
     let {entries: trackedEntries} = this.tracked;
 
-    let {id, data} = event.state as BrowserHistoryState<TData>;
+    let state = event.state as BrowserHistoryState<TData> | null;
+
+    // When using hash mode, entering a new hash directly in the browser will
+    // also trigger popstate. And in that case state is null.
+    if (!state) {
+      void this._push(this.getRefByHRef(location.href), undefined, false);
+      return;
+    }
+
+    let {id, data} = state;
 
     if (id > this.lastUsedId) {
       this.lastUsedId = id;
@@ -358,7 +351,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     }
 
     for (let entry of expectedEntries.slice(trackedActiveIndex + 1)) {
-      this.pushEntry(entry);
+      this.pushEntry(entry, true);
     }
 
     this.restoreActive();
@@ -391,11 +384,37 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     debug('tracked', this.tracked);
   }
 
-  private pushEntry({
-    id,
-    ref,
-    data,
-  }: BrowserHistoryEntry<TData>): BrowserHistorySnapshot<TData> {
+  private async _push(
+    ref: string,
+    data: TData | undefined,
+    toPushState: boolean,
+  ): Promise<void> {
+    if (ref === this.ref) {
+      return this.replace(ref, data);
+    }
+
+    await this.restoringPromise;
+
+    let snapshot = this.pushEntry(
+      {
+        id: this.getNextId(),
+        ref,
+        data,
+      },
+      toPushState,
+    );
+
+    debug('push', snapshot);
+
+    this.snapshot = snapshot;
+
+    this.emitChange(snapshot);
+  }
+
+  private pushEntry(
+    {id, ref, data}: BrowserHistoryEntry<TData>,
+    toPushState: boolean,
+  ): BrowserHistorySnapshot<TData> {
     let tracked = this.tracked;
 
     let {entries} = tracked;
@@ -409,12 +428,14 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     this.tracked = snapshot;
 
-    let href = this.getHRefByRef(ref);
+    if (toPushState) {
+      let href = this.getHRefByRef(ref);
 
-    try {
-      history.pushState({id, data}, '', href);
-    } catch (error) {
-      history.pushState({id}, '', href);
+      try {
+        history.pushState({id, data}, '', href);
+      } catch (error) {
+        history.pushState({id}, '', href);
+      }
     }
 
     return snapshot;
