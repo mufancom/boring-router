@@ -1,10 +1,12 @@
 {
-  "version": "0.4.7",
+  "version": "0.5.0",
   "npmClient": "yarn",
   "command": {
     "publish": {
       "npmClient": "npm"
     }
   },
-  "packages": ["packages/*"]
+  "packages": [
+    "packages/*"
+  ]
 }

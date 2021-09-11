@@ -1,6 +1,6 @@
 {
   "name": "boring-router",
-  "version": "0.4.7",
+  "version": "0.5.0",
   "description": "A type-safe MobX router with parallel routing support.",
   "license": "MIT",
   "author": "Chengdu Mufan Technology Co., Ltd.",
