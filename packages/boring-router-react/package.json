@@ -6,6 +6,7 @@
   "main": "bld/library/index.js",
   "types": "bld/library/index.d.ts",
   "dependencies": {
+    "boring-router": "*",
     "tslib": "^2.3.1"
   }
 }

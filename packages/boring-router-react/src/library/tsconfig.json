@@ -3,5 +3,10 @@
   "compilerOptions": {
     "composite": true,
     "outDir": "../../bld/library"
-  }
+  },
+  "references": [
+    {
+      "path": "../../../boring-router/src/library"
+    }
+  ]
 }

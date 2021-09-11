@@ -3,5 +3,13 @@
   "compilerOptions": {
     "composite": true,
     "outDir": ".bld-cache"
-  }
+  },
+  "references": [
+    {
+      "path": "../../boring-router/src/library"
+    },
+    {
+      "path": "../../boring-router-react/src/library"
+    }
+  ]
 }

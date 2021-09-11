@@ -4,6 +4,8 @@
   "license": "MIT",
   "author": "Chengdu Mufan Technology Co., Ltd.",
   "dependencies": {
+    "boring-router": "*",
+    "boring-router-react": "*",
     "tslib": "^2.3.1"
   }
 }
