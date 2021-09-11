@@ -1,5 +1,3 @@
-import 'mobx-react-lite/batchingForReactDom';
-
 import {Router} from 'boring-router';
 import {
   BrowserHistory,
@@ -7,7 +5,7 @@ import {
   Route,
   RouteComponentProps,
 } from 'boring-router-react';
-import {observer} from 'mobx-react-lite';
+import {observer} from 'mobx-react';
 import React, {FunctionComponent} from 'react';
 import ReactDOM from 'react-dom';
 

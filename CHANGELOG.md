@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.0] - 2021-9-12
+
+### Breaking changes
+
+- Upgraded to MobX 6.
+
 ## [0.4.6] - 2021-1-5
 
 ### Changes

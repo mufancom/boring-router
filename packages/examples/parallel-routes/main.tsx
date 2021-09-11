@@ -1,8 +1,6 @@
-import 'mobx-react-lite/batchingForReactDom';
-
 import {Router} from 'boring-router';
 import {BrowserHistory, Link, NavLink, Route} from 'boring-router-react';
-import {observer} from 'mobx-react-lite';
+import {observer} from 'mobx-react';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -10,7 +8,7 @@ const history = new BrowserHistory();
 
 const router = new Router(history);
 
-const route = router.$route({
+const primaryRoute = router.$route({
   $children: {
     workbench: {
       $exact: 'todo',
@@ -42,7 +40,7 @@ const overlayRoute = router.$route('overlay', {
   },
 });
 
-const Sidebar = observer<{route: typeof sidebarRoute}>(({route}) => {
+const Sidebar = observer(({route}: {route: typeof sidebarRoute}) => {
   return (
     <div id="sidebar" className={route.$matched ? 'expanded' : 'collapsed'}>
       {route.$matched ? (
@@ -71,7 +69,7 @@ const Sidebar = observer<{route: typeof sidebarRoute}>(({route}) => {
   );
 });
 
-const TaskOverlay = observer<{route: typeof overlayRoute}>(({route}) => {
+const TaskOverlay = observer(({route}: {route: typeof overlayRoute}) => {
   return (
     <Route match={route.task.taskId}>
       {match => (
@@ -96,7 +94,7 @@ const TaskOverlay = observer<{route: typeof overlayRoute}>(({route}) => {
   );
 });
 
-const Main = observer<{route: typeof route}>(({route}) => {
+const Main = observer(({route}: {route: typeof primaryRoute}) => {
   return (
     <div id="main">
       <h1>Boring Router</h1>
@@ -143,7 +141,7 @@ const Main = observer<{route: typeof route}>(({route}) => {
 const App = observer(() => (
   <>
     <Sidebar route={sidebarRoute} />
-    <Main route={route} />
+    <Main route={primaryRoute} />
   </>
 ));
 

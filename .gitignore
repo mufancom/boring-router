@@ -7,3 +7,6 @@ npm-debug.log
 # TypeScript Build Artifacts
 bld/
 .bld-cache/
+# Other Build Artifacts
+dist/
+.cache/

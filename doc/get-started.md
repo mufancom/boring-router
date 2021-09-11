@@ -47,7 +47,7 @@ const route = router.$route({
 
 ```tsx
 import {Route, Link} from 'boring-router-react';
-import {observer} from 'mobx-react-lite';
+import {observer} from 'mobx-react';
 import React from 'react';
 import ReactDOM from 'react-dom';
 

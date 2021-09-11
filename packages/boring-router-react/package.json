@@ -17,21 +17,21 @@
     "!*.tsbuildinfo"
   ],
   "peerDependencies": {
-    "boring-router": "0.4",
-    "mobx": "5",
-    "react": "16"
+    "boring-router": "0.5",
+    "mobx": "6",
+    "react": "17"
   },
   "devDependencies": {
-    "@types/classnames": "^2.2.10",
-    "@types/debug": "^4.1.5",
-    "mobx": "^5.15.4",
-    "react": "^16.13.1"
+    "@types/classnames": "^2.3.1",
+    "@types/debug": "^4.1.7",
+    "mobx": "^6.3.3",
+    "react": "^17.0.2"
   },
   "dependencies": {
-    "classnames": "^2.2.6",
-    "debug": "^4.1.1",
-    "mobx-react-lite": "^2.0.7",
-    "tslang": "^0.1.22",
+    "classnames": "^2.3.1",
+    "debug": "^4.3.2",
+    "mobx-react": "^7.2.0",
+    "tslang": "^0.1.23",
     "tslib": "^2.3.1"
   }
 }

@@ -1,6 +1,6 @@
 {
   "root": true,
-  "ignorePatterns": ["bld", ".bld-cache"],
+  "ignorePatterns": ["bld", ".bld-cache", "dist"],
   "extends": ["eslint:recommended"],
   "env": {
     "node": true,

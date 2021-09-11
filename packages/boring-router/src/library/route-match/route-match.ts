@@ -151,16 +151,17 @@ export type RouteReactionExpression<T> = (reaction: IReactionPublic) => T;
 
 export type RouteReactionEffect<T> = (
   value: T,
+  previousValue: T,
   reaction: IReactionPublic,
 ) => void;
 
-export type RouteReactionOptions = IReactionOptions | undefined;
+export type RouteReactionOptions<T> = IReactionOptions<T> | undefined;
 
 interface RouteReactionEntry<T = unknown> {
   type: 'reaction';
   expression: RouteReactionExpression<T>;
   effect: RouteReactionEffect<T>;
-  options: RouteReactionOptions | undefined;
+  options: RouteReactionOptions<T> | undefined;
   disposer: RouteReactiveDisposer | undefined;
 }
 
@@ -473,7 +474,7 @@ export class RouteMatch<
   $reaction<T>(
     expression: RouteReactionExpression<T>,
     effect: RouteReactionEffect<T>,
-    options?: RouteReactionOptions,
+    options?: RouteReactionOptions<T>,
   ): RouteHookRemovalCallback {
     let reactionEntry: RouteReactionEntry = {
       type: 'reaction',

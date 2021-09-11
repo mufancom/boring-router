@@ -1,6 +1,6 @@
 import {RouteBuilder, RouteMatch} from 'boring-router';
 import classNames from 'classnames';
-import {observer, useLocalStore} from 'mobx-react-lite';
+import {observer, useLocalStore} from 'mobx-react';
 import React from 'react';
 
 import {Link, LinkProps} from './link';

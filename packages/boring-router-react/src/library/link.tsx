@@ -3,7 +3,7 @@ import {
   RouteMatch,
   RouteMatchSharedToParamDict,
 } from 'boring-router';
-import {observer, useLocalStore} from 'mobx-react-lite';
+import {observer, useLocalStore} from 'mobx-react';
 import React, {HTMLAttributes, MouseEvent, ReactNode} from 'react';
 
 import {composeEventHandler} from './@utils';

@@ -8,18 +8,18 @@
   ],
   "devDependencies": {
     "@mufan/code": "^0.2.9",
-    "typescript": "^3.9.5"
+    "typescript": "^4.4.3"
   },
   "dependencies": {
-    "@types/react": "^16.9.41",
-    "@types/react-dom": "^16.9.8",
-    "boring-router": "^0.4.3",
-    "boring-router-react": "^0.4.0",
-    "mobx": "^5.15.4",
-    "mobx-react-lite": "^2.0.7",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
-    "tslang": "^0.1.22",
+    "@types/react": "^17.0.20",
+    "@types/react-dom": "^17.0.9",
+    "boring-router": "^0.4.7",
+    "boring-router-react": "^0.4.7",
+    "mobx": "^6.3.3",
+    "mobx-react": "^7.2.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "tslang": "^0.1.23",
     "tslib": "^2.3.1"
   }
 }
