@@ -1,0 +1,70 @@
+{
+  "extends": "@mufan/code-boilerplates/typescript",
+  "options": {
+    "name": "boring-router-packages",
+    "license": "MIT",
+    "author": "Chengdu Mufan Technology Co., Ltd.",
+    "packages": [
+      {
+        "name": "boring-router",
+        "tsProjects": [
+          {
+            "name": "library"
+          },
+          {
+            "name": "test",
+            "src": false
+          }
+        ]
+      },
+      {
+        "name": "boring-router-react",
+        "tsProjects": [
+          {
+            "name": "library"
+          }
+        ]
+      },
+      {
+        "name": "@boring-router-examples/basic",
+        "dir": "examples/basic",
+        "tsProjects": [
+          {
+            "dir": false,
+            "src": false
+          }
+        ]
+      },
+      {
+        "name": "@boring-router-examples/lifecycle-hooks",
+        "dir": "examples/lifecycle-hooks",
+        "tsProjects": [
+          {
+            "dir": false,
+            "src": false
+          }
+        ]
+      },
+      {
+        "name": "@boring-router-examples/parallel-routes",
+        "dir": "examples/parallel-routes",
+        "tsProjects": [
+          {
+            "dir": false,
+            "src": false
+          }
+        ]
+      },
+      {
+        "name": "@boring-router-examples/route-content",
+        "dir": "examples/route-content",
+        "tsProjects": [
+          {
+            "dir": false,
+            "src": false
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,9 +1,3 @@
-.cache/
-.bld-cache/
-.docz/
-
-dist/
+# TypeScript Build Artifacts
 bld/
-
-package.json
-lerna.json
+.bld-cache/

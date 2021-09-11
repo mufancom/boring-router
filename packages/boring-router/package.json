@@ -2,11 +2,12 @@
   "name": "boring-router",
   "version": "0.4.7",
   "description": "A type-safe MobX router with parallel routing support.",
+  "license": "MIT",
+  "author": "Chengdu Mufan Technology Co., Ltd.",
   "repository": {
     "type": "git",
     "url": "https://github.com/makeflow/boring-router.git"
   },
-  "license": "MIT",
   "scripts": {
     "test": "jest"
   },
@@ -31,6 +32,6 @@
     "hyphenate": "^0.2.5",
     "lodash": "^4.17.15",
     "tslang": "^0.1.22",
-    "tslib": "^2.0.0"
+    "tslib": "^2.3.1"
   }
 }

@@ -2,11 +2,12 @@
   "name": "boring-router-react",
   "version": "0.4.7",
   "description": "A type-safe MobX router with parallel routing support.",
+  "license": "MIT",
+  "author": "Chengdu Mufan Technology Co., Ltd.",
   "repository": {
     "type": "git",
     "url": "https://github.com/makeflow/boring-router.git"
   },
-  "license": "MIT",
   "main": "bld/library/index.js",
   "types": "bld/library/index.d.ts",
   "files": [
@@ -31,6 +32,6 @@
     "debug": "^4.1.1",
     "mobx-react-lite": "^2.0.7",
     "tslang": "^0.1.22",
-    "tslib": "^2.0.0"
+    "tslib": "^2.3.1"
   }
 }

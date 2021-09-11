@@ -2,6 +2,8 @@
   "name": "boring-router-packages",
   "description": "A type-safe MobX router with parallel routing support.",
   "private": true,
+  "license": "MIT",
+  "author": "Chengdu Mufan Technology Co., Ltd.",
   "repository": {
     "type": "git",
     "url": "https://github.com/makeflow/boring-router.git"
@@ -11,32 +13,32 @@
     "link-global": "yarn workspace boring-router link && yarn workspace boring-router-react link",
     "unlink-global": "yarn workspace boring-router unlink && yarn workspace boring-router-react unlink",
     "lerna:publish": "lerna publish patch --registry=https://registry.npmjs.org",
-    "build": "rimraf packages/*/{bld,.bld-cache} && tsc --build tsconfig.json",
-    "typecheck-examples": "run-in-every directory --pattern 'packages/examples/*' --echo --parallel -- tsc",
-    "test:boring-router": "yarn workspace boring-router test",
-    "lint": "run-in-every eslint-project --echo --parallel -- eslint --config {configFileName} .",
-    "lint-prettier": "prettier --list-different \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "test": "yarn lint-prettier && yarn build && yarn test:boring-router && yarn typecheck-examples && yarn lint"
+    "build": "tsc --build",
+    "lint": "eslint .",
+    "lint-prettier": "prettier --check .",
+    "test": "yarn lint-prettier && yarn build && yarn lint"
   },
   "devDependencies": {
-    "@magicspace/configs": "^0.2.5",
-    "@magicspace/eslint-plugin": "^0.1.31",
+    "@mufan/code": "^0.2.9",
+    "@mufan/eslint-plugin": "^0.1.41",
     "@typescript-eslint/eslint-plugin": "^3.5.0",
     "docz": "^2.3.1",
-    "eslint": "^7.3.1",
+    "eslint": "^7.32.0",
     "gatsby-plugin-catch-links": "^2.3.7",
     "gh-pages": "^3.1.0",
     "lerna": "^3.22.1",
-    "prettier": "^2.0.5",
+    "prettier": "^2.4.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "rimraf": "^3.0.2",
-    "run-in-every": "^0.1.3",
-    "typescript": "^3.9.5"
+    "typescript": "^4.4.3"
   },
-  "workspaces": {
-    "packages": [
-      "packages/**"
-    ]
-  }
+  "workspaces": [
+    "packages/boring-router",
+    "packages/boring-router-react",
+    "packages/examples/basic",
+    "packages/examples/lifecycle-hooks",
+    "packages/examples/parallel-routes",
+    "packages/examples/route-content"
+  ]
 }

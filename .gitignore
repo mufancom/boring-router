@@ -1,24 +1,9 @@
-# Installable packages
-
+# General
+.DS_Store
+*.tgz
 node_modules/
-
-# Configuration
-
-.config/
-
-# Building artifacts
-
+yarn-error.log
+npm-debug.log
+# TypeScript Build Artifacts
 bld/
 .bld-cache/
-dist/
-.docz/
-.cache/
-*.tgz
-
-# Debugging outputs
-
-*.log
-
-# Testing files
-
-/test.*

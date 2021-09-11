@@ -1,13 +1,10 @@
 {
-  "extends": "@magicspace/configs/tsconfig.json",
+  "extends": "@mufan/code/tsconfig.json",
   "compilerOptions": {
     "composite": true,
-
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["jest"],
     "experimentalDecorators": true,
-
     "outDir": "../.bld-cache/test"
-  },
-  "references": [{"path": "../src/library"}]
+  }
 }
