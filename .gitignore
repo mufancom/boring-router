@@ -10,3 +10,4 @@ bld/
 # Other Build Artifacts
 dist/
 .cache/
+.docz/

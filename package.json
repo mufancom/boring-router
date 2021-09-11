@@ -32,6 +32,9 @@
     "rimraf": "^3.0.2",
     "typescript": "^4.4.3"
   },
+  "resolutions": {
+    "get-pkg-repo": "4.1.1"
+  },
   "workspaces": [
     "packages/boring-router",
     "packages/boring-router-react",
