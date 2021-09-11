@@ -6,7 +6,5 @@
       "npmClient": "npm"
     }
   },
-  "packages": [
-    "packages/*"
-  ]
+  "packages": ["packages/*"]
 }

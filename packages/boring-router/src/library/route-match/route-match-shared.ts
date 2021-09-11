@@ -12,11 +12,10 @@ export type GeneralSegmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
 export type GeneralParamDict = Dict<string | undefined>;
 
-export type RouteMatchSharedToParamDict<
-  TRouteMatchShared
-> = TRouteMatchShared extends RouteMatchShared<infer TParamDict>
-  ? TParamDict
-  : never;
+export type RouteMatchSharedToParamDict<TRouteMatchShared> =
+  TRouteMatchShared extends RouteMatchShared<infer TParamDict>
+    ? TParamDict
+    : never;
 
 export interface RouteMatchBuildOptions<TGroupName extends string> {
   /**
@@ -42,7 +41,7 @@ export interface RouteMatchSharedOptions {
 export abstract class RouteMatchShared<
   TParamDict extends GeneralParamDict = GeneralParamDict,
   TSpecificGroupName extends string | undefined = string | undefined,
-  TGroupName extends string = string
+  TGroupName extends string = string,
 > {
   /**
    * Name of this `RouteMatch`, correspondent to the field name of route
@@ -276,7 +275,8 @@ export abstract class RouteMatchShared<
         throw new Error('Cannot leave primary route');
       }
 
-      leaves.push((group as string) as TGroupName);
+      // eslint-disable-next-line @mufan/no-unnecessary-type-assertion
+      leaves.push(group as string as TGroupName);
     }
 
     return this._getBuilder()

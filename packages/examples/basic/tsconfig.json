@@ -2,6 +2,16 @@
   "extends": "@mufan/code/tsconfig.json",
   "compilerOptions": {
     "composite": true,
+    "lib": ["ESNext", "DOM"],
+    "jsx": "react",
     "outDir": ".bld-cache"
-  }
+  },
+  "references": [
+    {
+      "path": "../../boring-router/src/library"
+    },
+    {
+      "path": "../../boring-router-react/src/library"
+    }
+  ]
 }

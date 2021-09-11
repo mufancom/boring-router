@@ -16,7 +16,10 @@
     },
     {
       "files": ["packages/boring-router/test/**/*.{ts,tsx}"],
-      "extends": ["plugin:@mufan/override-dev"]
+      "extends": ["plugin:@mufan/override-dev"],
+      "settings": {
+        "import/core-modules": ["boring-router"]
+      }
     }
   ]
 }

@@ -23,9 +23,9 @@ const route = router.$route({
   },
 });
 
-const RouteComponentView: FunctionComponent<RouteComponentProps<
-  typeof route.routeComponent
->> = props => <div>Route Component (path {props.match.$ref()})</div>;
+const RouteComponentView: FunctionComponent<
+  RouteComponentProps<typeof route.routeComponent>
+> = props => <div>Route Component (path {props.match.$ref()})</div>;
 
 const App = observer(() => (
   <>

@@ -38,7 +38,7 @@ export interface RouteUpdateCallbackData {
  * this history change; return full path to redirect.
  */
 export type RouteBeforeEnterCallback<
-  TRouteMatch extends RouteMatch = RouteMatch
+  TRouteMatch extends RouteMatch = RouteMatch,
 > = (next: TRouteMatch['$next']) => Promise<boolean | void> | boolean | void;
 
 // before update //
@@ -49,7 +49,7 @@ export type RouteBeforeEnterCallback<
  * this history change; return full path to redirect.
  */
 export type RouteBeforeUpdateCallback<
-  TRouteMatch extends RouteMatch = RouteMatch
+  TRouteMatch extends RouteMatch = RouteMatch,
 > = (
   next: TRouteMatch['$next'],
   data: RouteUpdateCallbackData,
@@ -60,7 +60,7 @@ export interface RouteBeforeUpdateOptions {
 }
 
 export interface RouteBeforeUpdateEntry<
-  TRouteMatch extends RouteMatch = RouteMatch
+  TRouteMatch extends RouteMatch = RouteMatch,
 > {
   callback: RouteBeforeUpdateCallback<TRouteMatch>;
   options?: RouteBeforeUpdateOptions;
@@ -81,13 +81,13 @@ export type RouteBeforeLeaveCallback = () =>
 // will enter //
 
 export type RouteWillEnterCallback<
-  TRouteMatch extends RouteMatch = RouteMatch
+  TRouteMatch extends RouteMatch = RouteMatch,
 > = (next: TRouteMatch['$next']) => Promise<void> | void;
 
 // will update //
 
 export type RouteWillUpdateCallback<
-  TRouteMatch extends RouteMatch = RouteMatch
+  TRouteMatch extends RouteMatch = RouteMatch,
 > = (
   next: TRouteMatch['$next'],
   data: RouteUpdateCallbackData,
@@ -98,7 +98,7 @@ export interface RouteWillUpdateOptions {
 }
 
 export interface RouteWillUpdateEntry<
-  TRouteMatch extends RouteMatch = RouteMatch
+  TRouteMatch extends RouteMatch = RouteMatch,
 > {
   callback: RouteWillUpdateCallback<TRouteMatch>;
   options?: RouteWillUpdateOptions;
@@ -171,11 +171,11 @@ export type RouteHookRemovalCallback = () => void;
 // enter or update combination //
 
 export type RouteBeforeEnterOrUpdateCallback<
-  TRouteMatch extends RouteMatch = RouteMatch
+  TRouteMatch extends RouteMatch = RouteMatch,
 > = (next: TRouteMatch['$next']) => Promise<boolean | void> | boolean | void;
 
 export type RouteWillEnterOrUpdateCallback<
-  TRouteMatch extends RouteMatch = RouteMatch
+  TRouteMatch extends RouteMatch = RouteMatch,
 > = (next: TRouteMatch['$next']) => Promise<void> | void;
 
 export type RouteAfterEnterOrUpdateCallback = () => void;
@@ -198,13 +198,12 @@ export type IRouteService<TRouteMatch extends RouteMatch = RouteMatch> = {
   afterLeave?: RouteAfterLeaveCallback;
 } & RouteServiceExtension<TRouteMatch>;
 
-export type RouteServiceExtension<
-  TRouteMatch extends RouteMatch
-> = OmitValueWithType<
-  OmitValueOfKey<TRouteMatch, keyof RouteMatch>,
-  RouteMatch,
-  false
->;
+export type RouteServiceExtension<TRouteMatch extends RouteMatch> =
+  OmitValueWithType<
+    OmitValueOfKey<TRouteMatch, keyof RouteMatch>,
+    RouteMatch,
+    false
+  >;
 
 type RouteReactiveEntry = RouteAutorunEntry | RouteReactionEntry;
 
@@ -254,14 +253,12 @@ export interface RouteMatchOptions extends RouteMatchSharedOptions {
 
 export class RouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict,
-  TNextRouteMatch extends NextRouteMatch<TParamDict> = NextRouteMatch<
-    TParamDict
-  >,
+  TNextRouteMatch extends NextRouteMatch<TParamDict> = NextRouteMatch<TParamDict>,
   TSpecificGroupName extends string | undefined = string | undefined,
   TGroupName extends string = string,
-  TMetadata extends object = object
+  TMetadata extends object = object,
 > extends RouteMatchShared<TParamDict, TSpecificGroupName, TGroupName> {
-  readonly $parent: RouteMatch | undefined;
+  declare readonly $parent: RouteMatch | undefined;
 
   readonly $next!: TNextRouteMatch;
 
@@ -578,10 +575,8 @@ export class RouteMatch<
     let parent = this.$parent;
 
     if (parent instanceof RouteMatch && parent._parallel) {
-      let {
-        groups: parentGroups = [],
-        matches: parentMatches = [],
-      } = parent._parallel;
+      let {groups: parentGroups = [], matches: parentMatches = []} =
+        parent._parallel;
 
       let parentGroupSet = new Set(parentGroups);
       let parentMatchSet = new Set(parentMatches);

@@ -42,13 +42,10 @@ interface RouteSchemaChildrenSection<TRouteSchemaDict> {
   $children: TRouteSchemaDict;
 }
 
-type NestedRouteSchemaDictType<
-  TRouteSchema
-> = TRouteSchema extends RouteSchemaChildrenSection<
-  infer TNestedRouteSchemaDict
->
-  ? TNestedRouteSchemaDict
-  : {};
+type NestedRouteSchemaDictType<TRouteSchema> =
+  TRouteSchema extends RouteSchemaChildrenSection<infer TNestedRouteSchemaDict>
+    ? TNestedRouteSchemaDict
+    : {};
 
 interface RouteSchemaExtensionSection<TRouteMatchExtension> {
   $extension: TRouteMatchExtension;
@@ -58,18 +55,15 @@ interface RouteSchemaMetadataSection<TMetadata> {
   $metadata: TMetadata;
 }
 
-type RouteMatchMetadataType<
-  TRouteSchema,
-  TUpperMetadata
-> = TRouteSchema extends RouteSchemaMetadataSection<infer TMetadata>
-  ? TMetadata & TUpperMetadata
-  : TUpperMetadata;
+type RouteMatchMetadataType<TRouteSchema, TUpperMetadata> =
+  TRouteSchema extends RouteSchemaMetadataSection<infer TMetadata>
+    ? TMetadata & TUpperMetadata
+    : TUpperMetadata;
 
-type RouteMatchExtensionType<
-  TRouteSchema
-> = TRouteSchema extends RouteSchemaExtensionSection<infer TRouteMatchExtension>
-  ? TRouteMatchExtension
-  : {};
+type RouteMatchExtensionType<TRouteSchema> =
+  TRouteSchema extends RouteSchemaExtensionSection<infer TRouteMatchExtension>
+    ? TRouteMatchExtension
+    : {};
 
 type RouteMatchSegmentType<
   TRouteSchemaDict,
@@ -77,7 +71,7 @@ type RouteMatchSegmentType<
   TQueryKey extends string,
   TSpecificGroupName extends string | undefined,
   TGroupName extends string,
-  TMetadata extends object
+  TMetadata extends object,
 > = {
   [K in Extract<keyof TRouteSchemaDict, string>]: RouteMatchType<
     TRouteSchemaDict[K],
@@ -97,7 +91,7 @@ type __RouteMatchType<
   TSpecificGroupName extends string | undefined,
   TGroupName extends string,
   TParamDict extends Dict<string | undefined>,
-  TMetadata extends object
+  TMetadata extends object,
 > = RouteMatch<
   TParamDict,
   __NextRouteMatchType<
@@ -128,7 +122,7 @@ export type RouteMatchType<
   TQueryKey extends string,
   TSpecificGroupName extends string | undefined,
   TGroupName extends string,
-  TMetadata extends object
+  TMetadata extends object,
 > = __RouteMatchType<
   TRouteSchema,
   TSegmentKey,
@@ -144,7 +138,7 @@ type NextRouteMatchSegmentType<
   TSegmentKey extends string,
   TQueryKey extends string,
   TSpecificGroupName extends string | undefined,
-  TGroupName extends string
+  TGroupName extends string,
 > = {
   [K in Extract<keyof TRouteSchemaDict, string>]: NextRouteMatchType<
     TRouteSchemaDict[K],
@@ -162,7 +156,7 @@ type __NextRouteMatchType<
   TQueryKey extends string,
   TSpecificGroupName extends string | undefined,
   TGroupName extends string,
-  TParamDict extends Dict<string | undefined>
+  TParamDict extends Dict<string | undefined>,
 > = NextRouteMatch<TParamDict, TSpecificGroupName, TGroupName> &
   NextRouteMatchSegmentType<
     NestedRouteSchemaDictType<TRouteSchema>,
@@ -177,7 +171,7 @@ type NextRouteMatchType<
   TSegmentKey extends string,
   TQueryKey extends string,
   TSpecificGroupName extends string | undefined,
-  TGroupName extends string
+  TGroupName extends string,
 > = __NextRouteMatchType<
   TRouteSchema,
   TSegmentKey,
@@ -191,7 +185,7 @@ export type RootRouteMatchType<
   TRouteSchema,
   TSpecificGroupName extends string | undefined,
   TGroupName extends string,
-  TMetadata extends object = {}
+  TMetadata extends object = {},
 > = RouteMatchType<
   TRouteSchema,
   never,
@@ -307,7 +301,7 @@ export class Router<TGroupName extends string = string> {
   ): RootRouteMatchType<TPrimaryRouteSchema, undefined, TGroupName>;
   $route<
     TRouteSchema extends RootRouteSchema,
-    TSpecificGroupName extends TGroupName
+    TSpecificGroupName extends TGroupName,
   >(
     group: TSpecificGroupName,
     schema: TRouteSchema,
@@ -522,7 +516,8 @@ export class Router<TGroupName extends string = string> {
     let matchingSource = this._matchingSource;
 
     runInAction(() => {
-      matchingSource.groupToMatchToMatchEntryMapMap = groupToMatchToMatchEntryMapMap;
+      matchingSource.groupToMatchToMatchEntryMapMap =
+        groupToMatchToMatchEntryMapMap;
       matchingSource.pathMap = pathMap;
 
       let matchingQueryKeyToIdMap = new Map(
@@ -534,12 +529,11 @@ export class Router<TGroupName extends string = string> {
 
       matchingSource.queryMap = new Map(
         _.compact(
-          Array.from(queryMap).map(([key, value]):
-            | [string, RouteSourceQuery]
-            | undefined =>
-            matchingQueryKeyToIdMap.has(key)
-              ? [key, {id: matchingQueryKeyToIdMap.get(key)!, value}]
-              : undefined,
+          Array.from(queryMap).map(
+            ([key, value]): [string, RouteSourceQuery] | undefined =>
+              matchingQueryKeyToIdMap.has(key)
+                ? [key, {id: matchingQueryKeyToIdMap.get(key)!, value}]
+                : undefined,
           ),
         ),
       );
@@ -590,9 +584,8 @@ export class Router<TGroupName extends string = string> {
 
     // Prepare previous/next match set
 
-    let previousMatchToMatchEntryMap = this._source.groupToMatchToMatchEntryMapMap.get(
-      group,
-    );
+    let previousMatchToMatchEntryMap =
+      this._source.groupToMatchToMatchEntryMapMap.get(group);
 
     if (!previousMatchToMatchEntryMap) {
       previousMatchToMatchEntryMap = new Map();
@@ -724,9 +717,8 @@ export class Router<TGroupName extends string = string> {
         source.pathMap.delete(group);
       }
 
-      let matchToMatchEntryMap = matchingSource.groupToMatchToMatchEntryMapMap.get(
-        group,
-      )!;
+      let matchToMatchEntryMap =
+        matchingSource.groupToMatchToMatchEntryMapMap.get(group)!;
 
       source.groupToMatchToMatchEntryMapMap.set(group, matchToMatchEntryMap);
     }
@@ -776,9 +768,8 @@ export class Router<TGroupName extends string = string> {
     upperRest: string,
   ): RouteMatchEntry[] | undefined {
     for (let routeMatch of routeMatches) {
-      let {matched, exactlyMatched, segment, rest} = routeMatch._match(
-        upperRest,
-      );
+      let {matched, exactlyMatched, segment, rest} =
+        routeMatch._match(upperRest);
 
       if (!matched) {
         continue;

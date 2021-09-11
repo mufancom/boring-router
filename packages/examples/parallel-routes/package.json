@@ -3,14 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "main": "index.html",
-  "browserslist": ["last 5 Chrome versions"],
+  "browserslist": [
+    "last 5 Chrome versions"
+  ],
   "devDependencies": {
     "@mufan/code": "^0.2.9",
-    "@types/react": "^16.9.41",
-    "@types/react-dom": "^16.9.8",
     "typescript": "^3.9.5"
   },
   "dependencies": {
+    "@types/react": "^16.9.41",
+    "@types/react-dom": "^16.9.8",
     "boring-router": "^0.4.3",
     "boring-router-react": "^0.4.0",
     "mobx": "^5.15.4",

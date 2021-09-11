@@ -32,6 +32,7 @@ export const NavLink = observer(
 
               return builderRoute;
             } else {
+              // eslint-disable-next-line @mufan/no-unnecessary-type-assertion
               return to as RouteMatch;
             }
           },

@@ -149,10 +149,9 @@ export class RouteBuilder<TGroupName extends string = string> {
 
         if (route) {
           buildingPartQueryMap = new Map([
-            ...Array.from(route._source.queryMap).map(([key, {value}]): [
-              string,
-              string,
-            ] => [key, value]),
+            ...Array.from(route._source.queryMap).map(
+              ([key, {value}]): [string, string] => [key, value],
+            ),
             ...buildingPartQueryMap,
           ]);
         }

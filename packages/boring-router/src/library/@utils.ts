@@ -95,11 +95,10 @@ export function testPathPrefix(path: string, prefix: string): boolean {
   );
 }
 
-export type ToleratedReturnType<
-  TOriginalReturnType
-> = TOriginalReturnType extends Promise<infer T>
-  ? Promise<T | undefined> | undefined
-  : TOriginalReturnType | undefined;
+export type ToleratedReturnType<TOriginalReturnType> =
+  TOriginalReturnType extends Promise<infer T>
+    ? Promise<T | undefined> | undefined
+    : TOriginalReturnType | undefined;
 
 export function tolerate<T extends (...args: any[]) => any>(
   fn: T,

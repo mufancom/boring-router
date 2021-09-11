@@ -11,9 +11,10 @@ const debug = Debug('boring-router:react:browser-history');
 
 export type BrowserHistoryNavigateAwayHandler = (href: string) => void;
 
-const NAVIGATE_AWAY_HANDLER_DEFAULT: BrowserHistoryNavigateAwayHandler = href => {
-  location.href = href;
-};
+const NAVIGATE_AWAY_HANDLER_DEFAULT: BrowserHistoryNavigateAwayHandler =
+  href => {
+    location.href = href;
+  };
 
 type BrowserHistoryEntry<TData> = HistoryEntry<number, TData>;
 

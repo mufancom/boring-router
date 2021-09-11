@@ -6,5 +6,10 @@
     "experimentalDecorators": true,
     "jsx": "react",
     "outDir": "../../bld/library"
-  }
+  },
+  "references": [
+    {
+      "path": "../../../boring-router/src/library"
+    }
+  ]
 }
