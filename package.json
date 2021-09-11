@@ -1,0 +1,28 @@
+{
+  "name": "boring-router-packages",
+  "private": true,
+  "license": "MIT",
+  "author": "Chengdu Mufan Technology Co., Ltd.",
+  "scripts": {
+    "build": "tsc --build",
+    "lint": "eslint .",
+    "lint-prettier": "prettier --check .",
+    "test": "yarn lint-prettier && yarn build && yarn lint"
+  },
+  "workspaces": [
+    "packages/boring-router",
+    "packages/boring-router-react",
+    "packages/examples/basic",
+    "packages/examples/lifecycle-hooks",
+    "packages/examples/parallel-routes",
+    "packages/examples/route-content"
+  ],
+  "devDependencies": {
+    "@mufan/code": "^0.2.9",
+    "@mufan/eslint-plugin": "^0.1.41",
+    "eslint": "^7.32.0",
+    "prettier": "^2.4.0",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.4.3"
+  }
+}

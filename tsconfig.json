@@ -1,0 +1,26 @@
+{
+  "references": [
+    {
+      "path": "packages/boring-router/src/library"
+    },
+    {
+      "path": "packages/boring-router/test"
+    },
+    {
+      "path": "packages/boring-router-react/src/library"
+    },
+    {
+      "path": "packages/examples/basic"
+    },
+    {
+      "path": "packages/examples/lifecycle-hooks"
+    },
+    {
+      "path": "packages/examples/parallel-routes"
+    },
+    {
+      "path": "packages/examples/route-content"
+    }
+  ],
+  "files": []
+}

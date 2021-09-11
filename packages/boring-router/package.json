@@ -1,0 +1,11 @@
+{
+  "name": "boring-router",
+  "version": "0.0.0",
+  "license": "MIT",
+  "author": "Chengdu Mufan Technology Co., Ltd.",
+  "main": "bld/library/index.js",
+  "types": "bld/library/index.d.ts",
+  "dependencies": {
+    "tslib": "^2.3.1"
+  }
+}

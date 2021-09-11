@@ -1,0 +1,9 @@
+{
+  "name": "@boring-router-examples/route-content",
+  "version": "0.0.0",
+  "license": "MIT",
+  "author": "Chengdu Mufan Technology Co., Ltd.",
+  "dependencies": {
+    "tslib": "^2.3.1"
+  }
+}
