@@ -5,3 +5,5 @@ bld/
 dist/
 .cache/
 .docz/
+# Maintained JSON Files
+lerna.json
