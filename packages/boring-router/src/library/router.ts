@@ -1,6 +1,6 @@
 import hyphenate from 'hyphenate';
 import _ from 'lodash';
-import {action, observable, runInAction} from 'mobx';
+import {action, makeObservable, observable, runInAction} from 'mobx';
 import {Dict, EmptyObjectPatch} from 'tslang';
 
 import {parseRef, parseSearch} from './@utils';
@@ -271,6 +271,8 @@ export class Router<TGroupName extends string = string> {
   private _beforeLeaveHookCalledMatchSet = new Set<RouteMatch | undefined>();
 
   constructor(history: RouterHistory, {segmentMatcher}: RouterOptions = {}) {
+    makeObservable(this);
+
     this._history = history;
 
     this._segmentMatcher = segmentMatcher || DEFAULT_SEGMENT_MATCHER_CALLBACK;

@@ -1,5 +1,5 @@
 import {RouteMatch} from 'boring-router';
-import {observer} from 'mobx-react';
+import {observer} from 'mobx-react-lite';
 import React, {ComponentType, ReactElement, ReactNode} from 'react';
 
 export interface RouteComponentProps<TRouteMatch extends RouteMatch> {

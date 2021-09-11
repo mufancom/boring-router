@@ -27,7 +27,7 @@ yarn add boring-router boring-router-react
 ```tsx
 import {Router} from 'boring-router';
 import {BrowserHistory, Link, Route} from 'boring-router-react';
-import {observer} from 'mobx-react';
+import {observer} from 'mobx-react-lite';
 import React from 'react';
 import ReactDOM from 'react-dom';
 

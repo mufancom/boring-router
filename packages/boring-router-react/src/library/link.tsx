@@ -3,7 +3,7 @@ import {
   RouteMatch,
   RouteMatchSharedToParamDict,
 } from 'boring-router';
-import {observer, useLocalStore} from 'mobx-react';
+import {observer} from 'mobx-react-lite';
 import React, {HTMLAttributes, MouseEvent, ReactNode} from 'react';
 
 import {composeEventHandler} from './@utils';
@@ -32,69 +32,53 @@ export const Link = observer(
       ...restProps
     } = props;
 
-    let store = useLocalStore(
-      props => {
-        return {
-          get href() {
-            let {to, params} = props;
+    let href = (() => {
+      try {
+        if (to instanceof RouteMatch) {
+          return to.$router.$(to, params).$href();
+        } else {
+          return to.$href();
+        }
+      } catch (error) {
+        return '#';
+      }
+    })();
 
-            try {
-              if (to instanceof RouteMatch) {
-                return to.$router
-                  .$(to as unknown as RouteMatch, params)
-                  .$href();
-              } else {
-                return to.$href();
-              }
-            } catch (error) {
-              return '#';
+    let composedOnClick = composeEventHandler(
+      [
+        onClick,
+        (event: MouseEvent) => {
+          if (
+            event.ctrlKey ||
+            event.metaKey ||
+            event.button === 1 /* middle button */
+          ) {
+            return;
+          }
+
+          event.preventDefault();
+
+          if (to instanceof RouteMatch) {
+            let leaveOption =
+              leave === undefined ? toggle && to.$matched : leave;
+
+            if (replace) {
+              to.$replace(params, {leave: leaveOption});
+            } else {
+              to.$push(params, {leave: leaveOption});
             }
-          },
-          get composedOnClick() {
-            let {to, params, leave, toggle, replace, onClick} = props;
-
-            return composeEventHandler(
-              [
-                onClick,
-                (event: MouseEvent) => {
-                  if (
-                    event.ctrlKey ||
-                    event.metaKey ||
-                    event.button === 1 /* middle button */
-                  ) {
-                    return;
-                  }
-
-                  event.preventDefault();
-
-                  if (to instanceof RouteMatch) {
-                    let leaveOption =
-                      leave === undefined ? toggle && to.$matched : leave;
-
-                    if (replace) {
-                      to.$replace(params, {leave: leaveOption});
-                    } else {
-                      to.$push(params, {leave: leaveOption});
-                    }
-                  } else {
-                    if (replace) {
-                      to.$replace();
-                    } else {
-                      to.$push();
-                    }
-                  }
-                },
-              ],
-              true,
-            );
-          },
-        };
-      },
-      {to, params, leave, toggle, replace, onClick},
+          } else {
+            if (replace) {
+              to.$replace();
+            } else {
+              to.$push();
+            }
+          }
+        },
+      ],
+      true,
     );
 
-    return (
-      <a {...restProps} href={store.href} onClick={store.composedOnClick} />
-    );
+    return <a {...restProps} href={href} onClick={composedOnClick} />;
   },
 );

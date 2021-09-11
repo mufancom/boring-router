@@ -1,4 +1,4 @@
-import {computed} from 'mobx';
+import {computed, makeObservable} from 'mobx';
 import {Dict, EmptyObjectPatch} from 'tslang';
 
 import {isQueryIdsMatched} from '../@utils';
@@ -84,6 +84,8 @@ export abstract class RouteMatchShared<
     history: IHistory,
     {match, query, group}: RouteMatchSharedOptions,
   ) {
+    makeObservable(this);
+
     this.$name = name;
     this.$group = group as TSpecificGroupName;
     this.$parent = parent;

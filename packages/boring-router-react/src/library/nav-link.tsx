@@ -1,6 +1,6 @@
 import {RouteBuilder, RouteMatch} from 'boring-router';
 import classNames from 'classnames';
-import {observer, useLocalStore} from 'mobx-react';
+import {observer} from 'mobx-react-lite';
 import React from 'react';
 
 import {Link, LinkProps} from './link';
@@ -15,38 +15,24 @@ export const NavLink = observer(
   <T extends RouteMatch | RouteBuilder>(props: NavLinkProps<T>) => {
     let {to, exact = false} = props;
 
-    let store = useLocalStore(
-      props => {
-        return {
-          get route() {
-            let {to} = props;
+    let route = (() => {
+      if (to instanceof RouteBuilder) {
+        let builderRoute = to.$route;
 
-            if (to instanceof RouteBuilder) {
-              let builderRoute = to.$route;
+        if (!(builderRoute instanceof RouteMatch)) {
+          throw new Error(
+            '`RouteBuilder` for `NavLink` component must have first building part as a `Route`',
+          );
+        }
 
-              if (!(builderRoute instanceof RouteMatch)) {
-                throw new Error(
-                  '`RouteBuilder` for `NavLink` component must have first building part as a `Route`',
-                );
-              }
+        return builderRoute;
+      } else {
+        // eslint-disable-next-line @mufan/no-unnecessary-type-assertion
+        return to as RouteMatch;
+      }
+    })();
 
-              return builderRoute;
-            } else {
-              // eslint-disable-next-line @mufan/no-unnecessary-type-assertion
-              return to as RouteMatch;
-            }
-          },
-          get matched() {
-            let {exact = false} = props;
-
-            let route = this.route;
-
-            return exact ? route.$exact : route.$matched;
-          },
-        };
-      },
-      {to, exact},
-    );
+    let matched = exact ? route.$exact : route.$matched;
 
     let {
       className,
@@ -57,7 +43,7 @@ export const NavLink = observer(
 
     return (
       <Link
-        className={classNames(className, store.matched && activeClassName)}
+        className={classNames(className, matched && activeClassName)}
         {...restProps}
       />
     );
