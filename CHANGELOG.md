@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.6] - 2021-1-5
+
+### Changes
+
+- Keep matched rest segment building referring route.
+
+## [0.4.4] - 2020-11-30
+
+### Changes
+
+- Added prefix for `MemoryHistory`.
+
 ## [0.4.0] - 2020-7-7
 
 ### Breaking changes
