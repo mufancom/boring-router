@@ -138,7 +138,7 @@ export abstract class RouteMatchShared<
    */
   @computed
   get $rest(): this {
-    if (!this.$matched || this.$exact) {
+    if (!this.$matched) {
       return this;
     }
 

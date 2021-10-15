@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.1] - 2021-10-15
+
+### Changes
+
+- Fixed `$rest` with parent route match returning the parent route match instead of the deepest descendant.
+
 ## [0.5.0] - 2021-9-12
 
 ### Breaking changes
