@@ -181,11 +181,15 @@ export class RouteBuilder<TGroupName extends string = string> {
           ),
         );
 
-        pathMap.set(group, buildPath(segmentDict, paramDict));
+        let queryKeyToIdMap = route._queryKeyToIdMap;
+        let queryKeys = Array.from(queryKeyToIdMap.keys());
+
+        pathMap.set(
+          group,
+          buildPath(segmentDict, _.omit(paramDict, queryKeys)),
+        );
 
         let {queryMap: sourceQueryMap} = route._source;
-
-        let queryKeyToIdMap = route._queryKeyToIdMap;
 
         for (let [key, {id, value}] of sourceQueryMap) {
           let routeQueryId = queryKeyToIdMap.get(key);
@@ -203,7 +207,7 @@ export class RouteBuilder<TGroupName extends string = string> {
 
         let restParamKeys = _.difference(
           Object.keys(paramDict),
-          Object.keys(segmentDict),
+          _.difference(Object.keys(segmentDict), queryKeys),
         );
 
         for (let key of restParamKeys) {
