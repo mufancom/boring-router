@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.4] - 2021-10-30
+
+### Changes
+
+- Upgrade mobx version to 6.3.5.
+
 ## [0.5.2] - 2021-10-15
 
 ### Changes

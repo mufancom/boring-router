@@ -155,13 +155,19 @@ export type RouteReactionEffect<T> = (
   reaction: IReactionPublic,
 ) => void;
 
-export type RouteReactionOptions<T> = IReactionOptions<T> | undefined;
+export type RouteReactionOptions<
+  T,
+  FireImmediately extends boolean = boolean,
+> = IReactionOptions<T, FireImmediately> | undefined;
 
-interface RouteReactionEntry<T = unknown> {
+interface RouteReactionEntry<
+  T = unknown,
+  FireImmediately extends boolean = boolean,
+> {
   type: 'reaction';
   expression: RouteReactionExpression<T>;
   effect: RouteReactionEffect<T>;
-  options: RouteReactionOptions<T> | undefined;
+  options: RouteReactionOptions<T, FireImmediately> | undefined;
   disposer: RouteReactiveDisposer | undefined;
 }
 

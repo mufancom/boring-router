@@ -25,7 +25,7 @@
     "@types/jest": "^27.0.1",
     "@types/lodash": "^4.14.172",
     "jest": "^27.1.1",
-    "mobx": "^6.3.3",
+    "mobx": "^6.3.5",
     "ts-jest": "^27.0.5"
   },
   "dependencies": {
