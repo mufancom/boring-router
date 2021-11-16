@@ -561,7 +561,7 @@ export class Router<TGroupName extends string = string> {
       interUpdateDataArray.map(data => this._willUpdate(data!)),
     );
 
-    this._update(generalGroups);
+    this._update(generalGroups, interUpdateDataArray as InterUpdateData[]);
 
     this._snapshot = nextSnapshot;
 
@@ -704,7 +704,10 @@ export class Router<TGroupName extends string = string> {
 
   /** @internal */
   @action
-  private _update(generalGroups: (string | undefined)[]): void {
+  private _update(
+    generalGroups: (string | undefined)[],
+    dataArray: InterUpdateData[],
+  ): void {
     let source = this._source;
     let matchingSource = this._matchingSource;
 
@@ -723,6 +726,27 @@ export class Router<TGroupName extends string = string> {
         matchingSource.groupToMatchToMatchEntryMapMap.get(group)!;
 
       source.groupToMatchToMatchEntryMapMap.set(group, matchToMatchEntryMap);
+    }
+
+    for (let {
+      reversedLeavingMatches,
+      enteringAndUpdatingMatchSet,
+      previousMatchSet,
+      descendantUpdatingMatchSet,
+    } of dataArray) {
+      for (let match of reversedLeavingMatches) {
+        match._leave();
+      }
+
+      for (let match of enteringAndUpdatingMatchSet) {
+        let update = previousMatchSet.has(match);
+
+        if (update) {
+          match._update(descendantUpdatingMatchSet.has(match));
+        } else {
+          match._enter();
+        }
+      }
     }
   }
 

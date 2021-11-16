@@ -39,15 +39,18 @@ let primaryRoute = router.$route({
 
 let beforeUpdate = jest.fn();
 let beforeEnter = jest.fn();
+let beforeLeave = jest.fn();
 
 let willUpdate = jest.fn();
 let willEnter = jest.fn();
+let willLeave = jest.fn();
+
+let update = jest.fn();
+let enter = jest.fn();
+let leave = jest.fn();
 
 let afterUpdate = jest.fn();
 let afterEnter = jest.fn();
-
-let beforeLeave = jest.fn();
-let willLeave = jest.fn();
 let afterLeave = jest.fn();
 
 type AccountIdRouteMatch = typeof primaryRoute.account.accountId;
@@ -77,6 +80,10 @@ class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
     this.account = new Account(next.$params.accountId);
   }
 
+  enter(): void {
+    enter();
+  }
+
   afterEnter(): void {
     afterEnter();
   }
@@ -103,6 +110,10 @@ class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
     this.willEnter(match);
   }
 
+  update(): void {
+    update();
+  }
+
   afterUpdate(data: RouteUpdateCallbackData): void {
     afterUpdate();
 
@@ -115,6 +126,10 @@ class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
 
   willLeave(): void {
     willLeave();
+  }
+
+  leave(): void {
+    leave();
   }
 
   afterLeave(): void {
@@ -144,10 +159,13 @@ test('should navigate from `default` to `account` and triggers `$beforeEnter`', 
   expect(primaryRoute.account.accountId.account.id).toBe(id);
   expect(primaryRoute.account.accountId.name).toBe(`[${id}]`);
 
+  expect(beforeEnter).toHaveBeenCalled();
   expect(willEnter).toHaveBeenCalled();
+  expect(enter).toHaveBeenCalled();
   expect(afterEnter).toHaveBeenCalled();
   expect(beforeUpdate).not.toHaveBeenCalled();
   expect(willUpdate).not.toHaveBeenCalled();
+  expect(update).not.toHaveBeenCalled();
   expect(afterUpdate).not.toHaveBeenCalled();
 });
 
@@ -168,6 +186,7 @@ test('should navigate from `default` to `account` and triggers `$beforeUpdate`',
   expect(afterEnter).not.toHaveBeenCalled();
   expect(beforeUpdate).toHaveBeenCalled();
   expect(willUpdate).toHaveBeenCalled();
+  expect(update).toHaveBeenCalled();
   expect(afterUpdate).toHaveBeenCalled();
 });
 
@@ -182,5 +201,6 @@ test('should navigate from `account` to `default`', async () => {
 
   expect(beforeLeave).toHaveBeenCalled();
   expect(willLeave).toHaveBeenCalled();
+  expect(leave).toHaveBeenCalled();
   expect(afterLeave).toHaveBeenCalled();
 });

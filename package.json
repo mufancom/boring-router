@@ -16,7 +16,7 @@
     "build": "tsc --build",
     "lint": "eslint .",
     "lint-prettier": "prettier --check .",
-    "test": "yarn lint-prettier && yarn build && yarn lint"
+    "test": "yarn lint-prettier && yarn build && yarn lint && yarn workspace boring-router test"
   },
   "devDependencies": {
     "@mufan/code": "^0.2.9",

@@ -108,6 +108,27 @@ export interface RouteWillUpdateEntry<
 
 export type RouteWillLeaveCallback = () => Promise<void> | void;
 
+// enter //
+
+export type RouteEnterCallback = () => void;
+
+// update //
+
+export type RouteUpdateCallback = (data: RouteUpdateCallbackData) => void;
+
+export interface RouteUpdateOptions {
+  traceDescendants: boolean;
+}
+
+export interface RouteUpdateEntry {
+  callback: RouteUpdateCallback;
+  options?: RouteUpdateOptions;
+}
+
+// leave //
+
+export type RouteLeaveCallback = () => void;
+
 // after enter //
 
 export type RouteAfterEnterCallback = () => void;
@@ -196,12 +217,15 @@ export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
 export type IRouteService<TRouteMatch extends RouteMatch = RouteMatch> = {
   beforeEnter?: RouteBeforeEnterCallback<TRouteMatch>;
   willEnter?: RouteWillEnterCallback;
+  enter?: RouteEnterCallback;
   afterEnter?: RouteAfterEnterCallback;
   beforeUpdate?: RouteBeforeUpdateCallback<TRouteMatch>;
   willUpdate?: RouteWillUpdateCallback<TRouteMatch>;
+  update?: RouteUpdateCallback;
   afterUpdate?: RouteAfterUpdateCallback;
   beforeLeave?: RouteBeforeLeaveCallback;
   willLeave?: RouteWillLeaveCallback;
+  leave?: RouteLeaveCallback;
   afterLeave?: RouteAfterLeaveCallback;
 } & RouteServiceExtension<TRouteMatch>;
 
@@ -290,6 +314,15 @@ export class RouteMatch<
   private _willLeaveCallbackSet = new Set<RouteWillLeaveCallback>();
 
   /** @internal */
+  private _enterCallbackSet = new Set<RouteEnterCallback>();
+
+  /** @internal */
+  private _updateEntrySet = new Set<RouteUpdateEntry>();
+
+  /** @internal */
+  private _leaveCallbackSet = new Set<RouteLeaveCallback>();
+
+  /** @internal */
   private _afterEnterCallbackSet = new Set<RouteAfterEnterCallback>();
 
   /** @internal */
@@ -334,9 +367,17 @@ export class RouteMatch<
           get(this: RouteMatch) {
             let service = this.$matched ? this._service : undefined;
 
-            return service && key in (service as any)
-              ? (service as any)[key]
-              : (extension as any)[key];
+            if (service && key in service) {
+              let value = (service as any)[key];
+
+              if (typeof value === 'function') {
+                value = value.bind(service);
+              }
+
+              return value;
+            } else {
+              return (extension as any)[key];
+            }
           },
         });
       }
@@ -413,6 +454,38 @@ export class RouteMatch<
 
     return () => {
       this._willLeaveCallbackSet.delete(callback);
+    };
+  }
+
+  $enter(callback: RouteEnterCallback): RouteHookRemovalCallback {
+    this._enterCallbackSet.add(callback);
+
+    return () => {
+      this._enterCallbackSet.delete(callback);
+    };
+  }
+
+  $update(
+    callback: RouteUpdateCallback,
+    options?: RouteUpdateOptions,
+  ): RouteHookRemovalCallback {
+    let updateEntry: RouteUpdateEntry = {
+      callback,
+      options,
+    };
+
+    this._updateEntrySet.add(updateEntry);
+
+    return () => {
+      this._updateEntrySet.delete(updateEntry);
+    };
+  }
+
+  $leave(callback: RouteLeaveCallback): RouteHookRemovalCallback {
+    this._leaveCallbackSet.add(callback);
+
+    return () => {
+      this._leaveCallbackSet.delete(callback);
     };
   }
 
@@ -843,6 +916,51 @@ export class RouteMatch<
   }
 
   /** @internal */
+  _enter(): void {
+    for (let callback of this._enterCallbackSet) {
+      tolerate(callback);
+    }
+
+    let service = this._getServiceSync();
+
+    if (service && service.enter) {
+      return tolerate(() => service!.enter!());
+    }
+  }
+
+  /** @internal */
+  _update(triggeredByDescendants: boolean): void {
+    for (let {options, callback} of this._updateEntrySet) {
+      if (triggeredByDescendants && !(options?.traceDescendants ?? false)) {
+        continue;
+      }
+
+      tolerate(callback, {descendants: triggeredByDescendants});
+    }
+
+    let service = this._getServiceSync();
+
+    if (service && service.update) {
+      return tolerate(() =>
+        service!.update!({descendants: triggeredByDescendants}),
+      );
+    }
+  }
+
+  /** @internal */
+  _leave(): void {
+    for (let callback of this._leaveCallbackSet) {
+      tolerate(callback);
+    }
+
+    let service = this._getServiceSync();
+
+    if (service && service.leave) {
+      tolerate(() => service!.leave!());
+    }
+  }
+
+  /** @internal */
   async _afterLeave(): Promise<void> {
     for (let callback of this._afterLeaveCallbackSet) {
       tolerate(callback);
@@ -945,6 +1063,43 @@ export class RouteMatch<
         this._service = service;
         return service;
       }));
+    } else {
+      this._service = output;
+      return output;
+    }
+  }
+
+  /** @internal */
+  private _getServiceSync(): IRouteService | undefined {
+    let service = this._service;
+
+    if (service) {
+      return service;
+    }
+
+    if (this._servicePromise) {
+      throw new Error(
+        `Service of route ${this.$name} is not ready: either use synchronous service factory or make sure the service is ready earlier`,
+      );
+    }
+
+    let factory = this._serviceFactory;
+
+    if (!factory) {
+      return undefined;
+    }
+
+    let output = tolerate(factory, this);
+
+    if (output instanceof Promise) {
+      this._servicePromise = output.then(service => {
+        this._service = service;
+        return service;
+      });
+
+      throw new Error(
+        `Service of route ${this.$name} is not ready: either use synchronous service factory or make sure the service is ready earlier`,
+      );
     } else {
       this._service = output;
       return output;

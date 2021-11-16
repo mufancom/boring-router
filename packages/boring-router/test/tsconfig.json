@@ -6,5 +6,10 @@
     "types": ["jest"],
     "experimentalDecorators": true,
     "outDir": "../.bld-cache/test"
-  }
+  },
+  "references": [
+    {
+      "path": "../src/library"
+    }
+  ]
 }

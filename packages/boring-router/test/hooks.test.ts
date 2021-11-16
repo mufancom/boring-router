@@ -31,20 +31,24 @@ let redirectBeforeEnter = jest.fn(() => {
   primaryRoute.about.$push();
 });
 let redirectWillEnter = jest.fn();
+let redirectEnter = jest.fn();
 let redirectAfterEnter = jest.fn();
 let redirectAutorun = jest.fn();
 let redirectReaction = jest.fn();
 
 primaryRoute.redirect.$beforeEnter(redirectBeforeEnter);
 primaryRoute.redirect.$willEnter(redirectWillEnter);
+primaryRoute.redirect.$enter(redirectEnter);
 primaryRoute.redirect.$afterEnter(redirectAfterEnter);
 primaryRoute.redirect.$autorun(redirectAutorun);
 primaryRoute.redirect.$reaction(() => {}, redirectReaction);
 
 let revertBeforeEnter = jest.fn(() => false);
+let revertEnter = jest.fn();
 let revertAfterEnter = jest.fn();
 
 primaryRoute.revert.$beforeEnter(revertBeforeEnter);
+primaryRoute.revert.$enter(revertEnter);
 primaryRoute.revert.$afterEnter(revertAfterEnter);
 
 let persistBeforeLeave = jest.fn(() => false);
@@ -54,16 +58,20 @@ primaryRoute.persist.$beforeLeave(persistBeforeLeave);
 let parentBeforeEnter = jest.fn();
 let parentBeforeUpdate = jest.fn();
 let parentWillUpdate = jest.fn();
+let parentUpdate = jest.fn();
 
 primaryRoute.parent.$beforeEnter(parentBeforeEnter);
 primaryRoute.parent.$beforeUpdate(parentBeforeUpdate);
 primaryRoute.parent.$willUpdate(parentWillUpdate);
+primaryRoute.parent.$willUpdate(parentUpdate);
 
 let aboutBeforeEnter = jest.fn();
 let aboutWillEnter = jest.fn();
+let aboutEnter = jest.fn();
 let aboutAfterEnter = jest.fn();
 let aboutBeforeLeave = jest.fn();
 let aboutWillLeave = jest.fn();
+let aboutLeave = jest.fn();
 let aboutAfterLeave = jest.fn(() => {
   increaseAboutObserveChangeTestNumber();
 });
@@ -91,9 +99,11 @@ primaryRoute.about.$reaction(aboutReactionExpression, aboutReactionEffect);
 
 primaryRoute.about.$beforeEnter(aboutBeforeEnter);
 primaryRoute.about.$willEnter(aboutWillEnter);
+primaryRoute.about.$enter(aboutEnter);
 primaryRoute.about.$afterEnter(aboutAfterEnter);
 primaryRoute.about.$beforeLeave(aboutBeforeLeave);
 primaryRoute.about.$willLeave(aboutWillLeave);
+primaryRoute.about.$leave(aboutLeave);
 primaryRoute.about.$afterLeave(aboutAfterLeave);
 
 let routingBeforeEnter = jest.fn();
@@ -117,12 +127,14 @@ test('should navigate from `redirect` to `about`', async () => {
 
   expect(redirectBeforeEnter).toHaveBeenCalled();
   expect(redirectWillEnter).not.toHaveBeenCalled();
+  expect(redirectEnter).not.toHaveBeenCalled();
   expect(redirectAfterEnter).not.toHaveBeenCalled();
   expect(redirectAutorun).not.toHaveBeenCalled();
   expect(redirectReaction).not.toHaveBeenCalled();
 
   expect(aboutBeforeEnter).toHaveBeenCalled();
   expect(aboutWillEnter).toHaveBeenCalled();
+  expect(aboutEnter).toHaveBeenCalled();
   expect(aboutAfterEnter).toHaveBeenCalled();
   expect(aboutAutorun).toHaveBeenCalled();
   expect(aboutReactionExpression).toHaveBeenCalled();
@@ -173,11 +185,14 @@ test('should revert navigation from `about` to `revert` by `revert.$beforeEnter`
   expect(primaryRoute.revert.$matched).toBe(false);
 
   expect(revertBeforeEnter).toHaveBeenCalled();
+  expect(revertEnter).not.toHaveBeenCalled();
   expect(revertAfterEnter).not.toHaveBeenCalled();
 
   expect(aboutBeforeEnter).not.toHaveBeenCalled();
   expect(aboutAfterEnter).not.toHaveBeenCalled();
   expect(aboutBeforeLeave).toHaveBeenCalled();
+  expect(aboutWillLeave).not.toHaveBeenCalled();
+  expect(aboutLeave).not.toHaveBeenCalled();
   expect(aboutAfterLeave).not.toHaveBeenCalled();
 });
 
@@ -189,6 +204,7 @@ test('should trigger `parent.$beforeUpdate` on `$exact` change', async () => {
   expect(parentBeforeEnter).toHaveBeenCalled();
   expect(parentBeforeUpdate).not.toHaveBeenCalled();
   expect(parentWillUpdate).not.toHaveBeenCalled();
+  expect(parentUpdate).not.toHaveBeenCalled();
 
   await history.push('/parent');
 
@@ -196,6 +212,7 @@ test('should trigger `parent.$beforeUpdate` on `$exact` change', async () => {
 
   expect(parentBeforeUpdate).toHaveBeenCalled();
   expect(parentWillUpdate).toHaveBeenCalled();
+  expect(parentUpdate).toHaveBeenCalled();
 });
 
 test('should not call hooks that have been removed.', async () => {
