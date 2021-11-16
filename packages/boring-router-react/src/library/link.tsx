@@ -17,6 +17,7 @@ export interface LinkProps<T extends RouteMatch | RouteBuilder>
   children: ReactNode;
   toggle?: T extends RouteMatch ? boolean : undefined;
   leave?: T extends RouteMatch ? boolean : undefined;
+  stopPropagation?: boolean;
 }
 
 export const Link = observer(
@@ -28,6 +29,7 @@ export const Link = observer(
       toggle = false,
       // Do not provide `leave` option default value, check out its references.
       leave,
+      stopPropagation: toStopPropagation = false,
       onClick,
       ...restProps
     } = props;
@@ -57,6 +59,10 @@ export const Link = observer(
           }
 
           event.preventDefault();
+
+          if (toStopPropagation) {
+            event.stopPropagation();
+          }
 
           if (to instanceof RouteMatch) {
             let leaveOption =

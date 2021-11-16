@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.5] - 2021-11-16
+
+### Changes
+
+- Add `stopPropagation` flag for `Link` (and consequently `NavLink`).
+
 ## [0.5.4] - 2021-10-30
 
 ### Changes
