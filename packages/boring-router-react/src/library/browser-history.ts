@@ -43,7 +43,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
   number,
   TData
 > {
-  protected snapshot: BrowserHistorySnapshot<TData>;
+  private _snapshot: BrowserHistorySnapshot<TData>;
 
   private tracked: BrowserHistorySnapshot<TData>;
 
@@ -89,10 +89,14 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       },
     ];
 
-    this.snapshot = this.tracked = {
+    this._snapshot = this.tracked = {
       entries,
       active: id,
     };
+  }
+
+  get snapshot(): HistorySnapshot<number, TData> {
+    return this._snapshot;
   }
 
   get url(): string {
@@ -152,7 +156,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     debug('replace', snapshot);
 
-    this.snapshot = snapshot;
+    this._snapshot = snapshot;
 
     this.emitChange(snapshot);
   }
@@ -160,7 +164,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
   async restore(snapshot: BrowserHistorySnapshot<TData>): Promise<void> {
     debug('restore', snapshot);
 
-    this.snapshot = snapshot;
+    this._snapshot = snapshot;
 
     if (this.restoring) {
       return;
@@ -257,7 +261,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       return;
     }
 
-    this.snapshot = snapshot;
+    this._snapshot = snapshot;
 
     debug('pop', snapshot);
 
@@ -266,14 +270,10 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
   private stepRestoration(): void {
     debug('step restoration');
-    debug('expected', this.snapshot);
+    debug('expected', this._snapshot);
     debug('tracked', this.tracked);
 
-    this.restoreEntries();
-  }
-
-  private restoreEntries(): void {
-    let expected = this.snapshot;
+    let expected = this._snapshot;
     let tracked = this.tracked;
 
     let {entries: expectedEntries} = expected;
@@ -359,7 +359,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
   }
 
   private restoreActive(): void {
-    let expectedActiveIndex = getActiveHistoryEntryIndex(this.snapshot);
+    let expectedActiveIndex = getActiveHistoryEntryIndex(this._snapshot);
     let trackedActiveIndex = getActiveHistoryEntryIndex(this.tracked);
 
     if (trackedActiveIndex < expectedActiveIndex) {
@@ -381,7 +381,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     this.restoringPromiseResolver = undefined;
 
     debug('restore end');
-    debug('expected', this.snapshot);
+    debug('expected', this._snapshot);
     debug('tracked', this.tracked);
   }
 
@@ -407,7 +407,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     debug('push', snapshot);
 
-    this.snapshot = snapshot;
+    this._snapshot = snapshot;
 
     this.emitChange(snapshot);
   }

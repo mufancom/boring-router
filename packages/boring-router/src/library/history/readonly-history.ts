@@ -11,7 +11,7 @@ export class ReadOnlyHistory<TData = any> extends AbstractHistory<
   number,
   TData
 > {
-  protected snapshot: HistorySnapshot<number, TData>;
+  readonly snapshot: HistorySnapshot<number, TData>;
 
   private prefix: string;
 

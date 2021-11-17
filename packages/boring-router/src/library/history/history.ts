@@ -18,7 +18,7 @@ export type HistoryChangeCallback<TEntryId, TData> = (
 abstract class History<TEntryId, TData> {
   private changeCallbackSet = new Set<HistoryChangeCallback<TEntryId, TData>>();
 
-  protected abstract get snapshot(): HistorySnapshot<TEntryId, TData>;
+  abstract get snapshot(): HistorySnapshot<TEntryId, TData>;
 
   listen(
     callback: HistoryChangeCallback<TEntryId, TData>,

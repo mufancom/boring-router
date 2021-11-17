@@ -19,7 +19,7 @@ export interface MemoryHistoryOptions {
 }
 
 export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
-  protected snapshot: HistorySnapshot<number, TData>;
+  private _snapshot: HistorySnapshot<number, TData>;
 
   private lastId: number;
   private prefix: string;
@@ -44,12 +44,16 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
       },
     ];
 
-    this.snapshot = {
+    this._snapshot = {
       entries,
       active: id,
     };
 
     this.lastId = id;
+  }
+
+  get snapshot(): HistorySnapshot<number, TData> {
+    return this._snapshot;
   }
 
   getHRefByRef(ref: string): string {
@@ -65,7 +69,7 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
   async back(): Promise<void> {
     await SNAP_PROMISE;
 
-    let snapshot = this.snapshot;
+    let snapshot = this._snapshot;
 
     let {entries} = snapshot;
 
@@ -80,7 +84,7 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
       active: entries[index - 1].id,
     };
 
-    this.snapshot = snapshot;
+    this._snapshot = snapshot;
 
     this.emitChange(snapshot);
   }
@@ -88,7 +92,7 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
   async forward(): Promise<void> {
     await SNAP_PROMISE;
 
-    let snapshot = this.snapshot;
+    let snapshot = this._snapshot;
 
     let {entries} = snapshot;
 
@@ -103,7 +107,7 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
       active: entries[index + 1].id,
     };
 
-    this.snapshot = snapshot;
+    this._snapshot = snapshot;
 
     this.emitChange(snapshot);
   }
@@ -111,7 +115,7 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
   async push(ref: string, data?: TData): Promise<void> {
     let id = ++this.lastId;
 
-    let snapshot = this.snapshot;
+    let snapshot = this._snapshot;
 
     let {entries} = snapshot;
 
@@ -122,13 +126,13 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
       active: id,
     };
 
-    this.snapshot = snapshot;
+    this._snapshot = snapshot;
 
     this.emitChange(snapshot);
   }
 
   async replace(ref: string, data?: TData): Promise<void> {
-    let snapshot = this.snapshot;
+    let snapshot = this._snapshot;
 
     let {entries, active: activeId} = snapshot;
 
@@ -143,12 +147,12 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
       active: activeId,
     };
 
-    this.snapshot = snapshot;
+    this._snapshot = snapshot;
 
     this.emitChange(snapshot);
   }
 
   async restore(snapshot: HistorySnapshot<number, TData>): Promise<void> {
-    this.snapshot = snapshot;
+    this._snapshot = snapshot;
   }
 }
