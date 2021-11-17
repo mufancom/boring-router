@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.7] - 2021-11-17
+
+### Changes
+
+- Exposed `snapshot` getter in `History` objects.
+
 ## [0.5.6] - 2021-11-17
 
 ### Changes
