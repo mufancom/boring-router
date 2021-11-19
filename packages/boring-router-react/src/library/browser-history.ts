@@ -161,7 +161,10 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     this.emitChange(snapshot);
   }
 
-  async restore(snapshot: BrowserHistorySnapshot<TData>): Promise<void> {
+  async restore(
+    snapshot: BrowserHistorySnapshot<TData>,
+    toEmitChange = false,
+  ): Promise<void> {
     debug('restore', snapshot);
 
     this._snapshot = snapshot;
@@ -183,6 +186,10 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     this.stepRestoration();
 
     await promise;
+
+    if (toEmitChange) {
+      this.emitChange(this._snapshot);
+    }
   }
 
   async navigate(

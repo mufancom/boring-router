@@ -56,7 +56,10 @@ abstract class History<TEntryId, TData> {
 
   abstract replace(ref: string, data?: unknown): Promise<void>;
 
-  abstract restore(snapshot: HistorySnapshot<TEntryId, TData>): Promise<void>;
+  abstract restore(
+    snapshot: HistorySnapshot<TEntryId, TData>,
+    toEmitChange?: boolean,
+  ): Promise<void>;
 
   protected emitChange(snapshot: HistorySnapshot<TEntryId, TData>): void {
     for (let callback of this.changeCallbackSet) {

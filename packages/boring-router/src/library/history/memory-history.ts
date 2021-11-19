@@ -152,7 +152,14 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
     this.emitChange(snapshot);
   }
 
-  async restore(snapshot: HistorySnapshot<number, TData>): Promise<void> {
+  async restore(
+    snapshot: HistorySnapshot<number, TData>,
+    toEmitChange = false,
+  ): Promise<void> {
     this._snapshot = snapshot;
+
+    if (toEmitChange) {
+      this.emitChange(this._snapshot);
+    }
   }
 }
