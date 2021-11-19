@@ -926,6 +926,31 @@ export class RouteMatch<
     if (service && service.enter) {
       return tolerate(() => service!.enter!());
     }
+
+    for (let reactiveEntry of this._reactiveEntrySet) {
+      if (reactiveEntry.disposer) {
+        reactiveEntry.disposer();
+        console.warn('Unexpected disposer during enter phase.');
+      }
+
+      tolerate(() => {
+        switch (reactiveEntry.type) {
+          case 'autorun':
+            reactiveEntry.disposer = autorun(
+              reactiveEntry.view,
+              reactiveEntry.options,
+            );
+            break;
+          case 'reaction':
+            reactiveEntry.disposer = reaction(
+              reactiveEntry.expression,
+              reactiveEntry.effect,
+              reactiveEntry.options,
+            );
+            break;
+        }
+      });
+    }
   }
 
   /** @internal */
@@ -983,31 +1008,6 @@ export class RouteMatch<
 
     if (service && service.afterEnter) {
       tolerate(() => service!.afterEnter!());
-    }
-
-    for (let reactiveEntry of this._reactiveEntrySet) {
-      if (reactiveEntry.disposer) {
-        reactiveEntry.disposer();
-        console.warn('Unexpected disposer during afterEnter phase.');
-      }
-
-      tolerate(() => {
-        switch (reactiveEntry.type) {
-          case 'autorun':
-            reactiveEntry.disposer = autorun(
-              reactiveEntry.view,
-              reactiveEntry.options,
-            );
-            break;
-          case 'reaction':
-            reactiveEntry.disposer = reaction(
-              reactiveEntry.expression,
-              reactiveEntry.effect,
-              reactiveEntry.options,
-            );
-            break;
-        }
-      });
     }
   }
 
