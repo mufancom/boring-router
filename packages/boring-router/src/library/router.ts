@@ -220,7 +220,10 @@ export interface RouterNavigateOptions {
 
 export type RouterHistory = IHistory<unknown, RouterHistoryEntryData>;
 
-type RouterHistorySnapshot = HistorySnapshot<unknown, RouterHistoryEntryData>;
+export type RouterHistorySnapshot = HistorySnapshot<
+  unknown,
+  RouterHistoryEntryData
+>;
 
 interface InterUpdateData {
   reversedLeavingMatches: RouteMatch[];
@@ -282,6 +285,14 @@ export class Router<TGroupName extends string = string> {
 
   get $routing(): boolean {
     return this._routing > 0;
+  }
+
+  get $snapshot(): RouterHistorySnapshot | undefined {
+    return this._snapshot;
+  }
+
+  get $nextSnapshot(): RouterHistorySnapshot | undefined {
+    return this._nextSnapshot;
   }
 
   get $current(): RouteBuilder<TGroupName> {
