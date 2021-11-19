@@ -572,9 +572,8 @@ export class Router<TGroupName extends string = string> {
       interUpdateDataArray.map(data => this._willUpdate(data!)),
     );
 
-    this._update(generalGroups, interUpdateDataArray as InterUpdateData[]);
-
     this._snapshot = nextSnapshot;
+    this._update(generalGroups, interUpdateDataArray as InterUpdateData[]);
 
     await Promise.all(
       interUpdateDataArray.map(data => this._afterUpdate(data!)),
