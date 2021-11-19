@@ -4,7 +4,7 @@ import {
   RouteMatchSharedToParamDict,
 } from 'boring-router';
 import {observer} from 'mobx-react-lite';
-import React, {HTMLAttributes, MouseEvent, ReactNode} from 'react';
+import React, {HTMLAttributes, MouseEvent, ReactNode, RefObject} from 'react';
 
 import {composeEventHandler} from './@utils';
 
@@ -21,7 +21,10 @@ export interface LinkProps<T extends RouteMatch | RouteBuilder>
 }
 
 export const Link = observer(
-  <T extends RouteMatch | RouteBuilder>(props: LinkProps<T>) => {
+  <T extends RouteMatch | RouteBuilder>(
+    props: LinkProps<T>,
+    ref: RefObject<HTMLAnchorElement>,
+  ) => {
     let {
       to,
       params,
@@ -85,6 +88,7 @@ export const Link = observer(
       true,
     );
 
-    return <a {...restProps} href={href} onClick={composedOnClick} />;
+    return <a ref={ref} {...restProps} href={href} onClick={composedOnClick} />;
   },
+  {forwardRef: true},
 );

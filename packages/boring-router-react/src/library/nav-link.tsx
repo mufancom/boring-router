@@ -1,7 +1,7 @@
 import {RouteBuilder, RouteMatch} from 'boring-router';
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
-import React from 'react';
+import React, {RefObject} from 'react';
 
 import {Link, LinkProps} from './link';
 
@@ -12,7 +12,10 @@ export interface NavLinkProps<T extends RouteMatch | RouteBuilder>
 }
 
 export const NavLink = observer(
-  <T extends RouteMatch | RouteBuilder>(props: NavLinkProps<T>) => {
+  <T extends RouteMatch | RouteBuilder>(
+    props: NavLinkProps<T>,
+    ref: RefObject<HTMLAnchorElement>,
+  ) => {
     let {to, exact = false} = props;
 
     let route = (() => {
@@ -43,9 +46,11 @@ export const NavLink = observer(
 
     return (
       <Link
+        ref={ref}
         className={classNames(className, matched && activeClassName)}
         {...restProps}
       />
     );
   },
+  {forwardRef: true},
 );
