@@ -223,7 +223,7 @@ test('should match `account.id`', async () => {
 
 test('metadata should be merged', async () => {
   let accountMetadata = primaryRoute.account.$metadata;
-  let accountIdMetadata = primaryRoute.account.id.$metadata;
+  let accountIdMetadata = primaryRoute.account.id.$next.$metadata;
 
   // @ts-ignore
   type __Assertion =

@@ -161,14 +161,19 @@ type __NextRouteMatchType<
   TGroupName extends string,
   TParamDict extends Dict<string | undefined>,
   TMetadata extends object,
-> = NextRouteMatch<TParamDict, TSpecificGroupName, TGroupName, TMetadata> &
+> = NextRouteMatch<
+  TParamDict,
+  TSpecificGroupName,
+  TGroupName,
+  RouteMatchMetadataType<TRouteSchema, TMetadata>
+> &
   NextRouteMatchSegmentType<
     NestedRouteSchemaDictType<TRouteSchema>,
     TSegmentKey,
     TQueryKey,
     TSpecificGroupName,
     TGroupName,
-    TMetadata
+    RouteMatchMetadataType<TRouteSchema, TMetadata>
   >;
 
 type NextRouteMatchType<
