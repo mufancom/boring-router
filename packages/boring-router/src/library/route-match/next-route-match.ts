@@ -13,7 +13,13 @@ export class NextRouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict,
   TSpecificGroupName extends string | undefined = string | undefined,
   TGroupName extends string = string,
-> extends RouteMatchShared<TParamDict, TSpecificGroupName, TGroupName> {
+  TMetadata extends object = object,
+> extends RouteMatchShared<
+  TParamDict,
+  TSpecificGroupName,
+  TGroupName,
+  TMetadata
+> {
   declare readonly $parent: NextRouteMatch | undefined;
 
   /** @internal */

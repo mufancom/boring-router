@@ -36,12 +36,14 @@ export interface RouteMatchSharedOptions {
   match: string | RegExp;
   query: Map<string, string | symbol | true>;
   group: string | undefined;
+  metadata: object | undefined;
 }
 
 export abstract class RouteMatchShared<
   TParamDict extends GeneralParamDict = GeneralParamDict,
   TSpecificGroupName extends string | undefined = string | undefined,
   TGroupName extends string = string,
+  TMetadata extends object = object,
 > {
   /**
    * Name of this `RouteMatch`, correspondent to the field name of route
@@ -53,6 +55,8 @@ export abstract class RouteMatchShared<
    * Group of this `RouteMatch`, specified in the root route.
    */
   readonly $group: TSpecificGroupName | undefined;
+
+  readonly $metadata: TMetadata;
 
   /**
    * Parent of this route match.
@@ -82,7 +86,7 @@ export abstract class RouteMatchShared<
     source: RouteSource,
     parent: RouteMatchShared | undefined,
     history: IHistory,
-    {match, query, group}: RouteMatchSharedOptions,
+    {match, query, group, metadata}: RouteMatchSharedOptions,
   ) {
     makeObservable(this);
 
@@ -105,6 +109,11 @@ export abstract class RouteMatchShared<
       ...(parent?._queryKeyToIdMap ?? []),
       ...query,
     ]);
+
+    this.$metadata = {
+      ...parent?.$metadata,
+      ...metadata,
+    } as TMetadata;
   }
 
   /**
