@@ -1,6 +1,5 @@
 import {
   AbstractHistory,
-  HistoryEntry,
   HistorySnapshot,
   getActiveHistoryEntryIndex,
 } from './history';
@@ -34,18 +33,15 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
     }
 
     let id = 0;
-    let data: TData | undefined;
-
-    let entries: HistoryEntry<number, TData>[] = [
-      {
-        id,
-        ref: initialRef,
-        data,
-      },
-    ];
 
     this._snapshot = {
-      entries,
+      entries: [
+        {
+          id,
+          ref: initialRef,
+          data: undefined,
+        },
+      ],
       active: id,
     };
 

@@ -2,6 +2,10 @@ import {AbstractHistory, HistorySnapshot} from './history';
 
 export interface ReadOnlyHistoryOptions {
   /**
+   * Initial ref, defaults to '/'.
+   */
+  initialRef?: string;
+  /**
    * URL prefix.
    */
   prefix?: string;
@@ -15,10 +19,14 @@ export class ReadOnlyHistory<TData = any> extends AbstractHistory<
 
   private prefix: string;
 
-  constructor({prefix = ''}: ReadOnlyHistoryOptions = {}) {
+  constructor({initialRef = '/', prefix = ''}: ReadOnlyHistoryOptions = {}) {
     super();
 
     this.prefix = prefix;
+
+    if (!initialRef.startsWith('/')) {
+      initialRef = `/${initialRef}`;
+    }
 
     let id = 0;
 
@@ -26,7 +34,7 @@ export class ReadOnlyHistory<TData = any> extends AbstractHistory<
       entries: [
         {
           id,
-          ref: '/',
+          ref: initialRef,
           data: undefined,
         },
       ],
