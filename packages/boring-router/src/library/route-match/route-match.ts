@@ -245,6 +245,12 @@ interface RouteMatchInternalResult {
   rest: string;
 }
 
+export interface RouteMatchResult {
+  matched: boolean;
+  exactlyMatched: boolean;
+  rest: string;
+}
+
 export interface RouteMatchParallelOptions<TGroupName extends string> {
   groups?: TGroupName[];
   matches?: RouteMatch[];
@@ -712,6 +718,32 @@ export class RouteMatch<
 
       child.$parallel(options);
     }
+  }
+
+  $match(path: string): RouteMatchResult {
+    let parent = this.$parent;
+
+    let upperRest: string;
+
+    if (parent) {
+      let {matched, rest} = parent.$match(path);
+
+      if (!matched) {
+        return {
+          matched: false,
+          exactlyMatched: false,
+          rest: '',
+        };
+      }
+
+      upperRest = rest;
+    } else {
+      upperRest = path;
+    }
+
+    let {matched, exactlyMatched, rest} = this._match(upperRest);
+
+    return {matched, exactlyMatched, rest};
   }
 
   /** @internal */

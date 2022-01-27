@@ -142,6 +142,31 @@ primaryRoute.onlyFriends.onlyTransfer.$parallel({
 
 primaryRoute.onlyPopup.$parallel({groups: ['popup']});
 
+test('$match() should work', () => {
+  expect(primaryRoute.$match('/')).toEqual({
+    matched: true,
+    exactlyMatched: true,
+    rest: '',
+  });
+  expect(primaryRoute.notFound.$match('/boring')).toEqual({
+    matched: true,
+    exactlyMatched: true,
+    rest: '',
+  });
+  expect(
+    primaryRoute.account.id.billings.$match('/account/123/billings/test'),
+  ).toEqual({
+    matched: true,
+    exactlyMatched: false,
+    rest: 'test',
+  });
+  expect(primaryRoute.account.id.billings.$match('/abc/123')).toEqual({
+    matched: false,
+    exactlyMatched: false,
+    rest: '',
+  });
+});
+
 test('should match `default`', async () => {
   await nap();
 
