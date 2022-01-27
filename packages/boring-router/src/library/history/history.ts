@@ -20,18 +20,6 @@ abstract class History<TEntryId, TData> {
 
   abstract get snapshot(): HistorySnapshot<TEntryId, TData>;
 
-  listen(
-    callback: HistoryChangeCallback<TEntryId, TData>,
-  ): HistoryChangeCallbackRemovalHandler {
-    callback(this.snapshot);
-
-    this.changeCallbackSet.add(callback);
-
-    return () => {
-      this.changeCallbackSet.delete(callback);
-    };
-  }
-
   get ref(): string {
     return getActiveHistoryEntry(this.snapshot).ref;
   }
@@ -42,6 +30,18 @@ abstract class History<TEntryId, TData> {
 
   get length(): number {
     return this.snapshot.entries.length;
+  }
+
+  listen(
+    callback: HistoryChangeCallback<TEntryId, TData>,
+  ): HistoryChangeCallbackRemovalHandler {
+    callback(this.snapshot);
+
+    this.changeCallbackSet.add(callback);
+
+    return () => {
+      this.changeCallbackSet.delete(callback);
+    };
   }
 
   abstract getHRefByRef(ref: string): string;
