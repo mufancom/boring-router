@@ -255,11 +255,11 @@ export class Router<TGroupName extends string = string> {
   private _segmentMatcher: SegmentMatcherCallback;
 
   /** @internal */
-  @observable
+  @observable.ref
   private _snapshot: RouterHistorySnapshot | undefined;
 
   /** @internal */
-  @observable
+  @observable.ref
   private _nextSnapshot: RouterHistorySnapshot | undefined;
 
   /** @internal */
