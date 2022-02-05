@@ -1,6 +1,6 @@
 import hyphenate from 'hyphenate';
 import _ from 'lodash';
-import {action, makeObservable, observable, runInAction} from 'mobx';
+import {makeObservable, observable, runInAction} from 'mobx';
 import {Dict, EmptyObjectPatch} from 'tslang';
 
 import {parseRef, parseSearch} from './@utils';
@@ -255,9 +255,11 @@ export class Router<TGroupName extends string = string> {
   private _segmentMatcher: SegmentMatcherCallback;
 
   /** @internal */
+  @observable
   private _snapshot: RouterHistorySnapshot | undefined;
 
   /** @internal */
+  @observable
   private _nextSnapshot: RouterHistorySnapshot | undefined;
 
   /** @internal */
@@ -268,7 +270,6 @@ export class Router<TGroupName extends string = string> {
   });
 
   /** @internal */
-  @observable
   private _matchingSource: RouteSource = observable({
     groupToMatchToMatchEntryMapMap: new Map(),
     queryMap: new Map(),
@@ -411,13 +412,12 @@ export class Router<TGroupName extends string = string> {
 
   /** @internal */
   private _onHistoryChange = (snapshot: RouterHistorySnapshot): void => {
-    this._nextSnapshot = snapshot;
-
     if (!this.$routing) {
       this._beforeLeaveHookCalledMatchSet.clear();
     }
 
     runInAction(() => {
+      this._nextSnapshot = snapshot;
       this._routing++;
     });
 
@@ -584,8 +584,10 @@ export class Router<TGroupName extends string = string> {
       interUpdateDataArray.map(data => this._willUpdate(data!)),
     );
 
-    this._snapshot = nextSnapshot;
-    this._update(generalGroups, interUpdateDataArray as InterUpdateData[]);
+    runInAction(() => {
+      this._snapshot = nextSnapshot;
+      this._update(generalGroups, interUpdateDataArray as InterUpdateData[]);
+    });
 
     await Promise.all(
       interUpdateDataArray.map(data => this._afterUpdate(data!)),
@@ -725,7 +727,6 @@ export class Router<TGroupName extends string = string> {
   }
 
   /** @internal */
-  @action
   private _update(
     generalGroups: (string | undefined)[],
     dataArray: InterUpdateData[],
