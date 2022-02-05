@@ -283,9 +283,6 @@ export class Router<TGroupName extends string = string> {
   @observable
   private _routing = 0;
 
-  /** @internal */
-  private _beforeLeaveHookCalledMatchSet = new Set<RouteMatch | undefined>();
-
   constructor(history: RouterHistory, {segmentMatcher}: RouterOptions = {}) {
     makeObservable(this);
 
@@ -412,10 +409,6 @@ export class Router<TGroupName extends string = string> {
 
   /** @internal */
   private _onHistoryChange = (snapshot: RouterHistorySnapshot): void => {
-    if (!this.$routing) {
-      this._beforeLeaveHookCalledMatchSet.clear();
-    }
-
     runInAction(() => {
       this._nextSnapshot = snapshot;
       this._routing++;
@@ -658,13 +651,7 @@ export class Router<TGroupName extends string = string> {
       }
     }
 
-    let beforeLeaveHookCalledMatchSet = this._beforeLeaveHookCalledMatchSet;
-
     for (let match of reversedLeavingMatches) {
-      if (beforeLeaveHookCalledMatchSet.has(match)) {
-        continue;
-      }
-
       let result = await match._beforeLeave();
 
       if (this._isNextSnapshotOutDated(nextSnapshot)) {
@@ -675,8 +662,6 @@ export class Router<TGroupName extends string = string> {
         this._revert();
         return undefined;
       }
-
-      beforeLeaveHookCalledMatchSet.add(match);
     }
 
     for (let match of enteringAndUpdatingMatchSet) {
