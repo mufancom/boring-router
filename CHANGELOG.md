@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.5.15] - 2022-2-6
+
+### Changes
+
+- Make `$snapshot` and `$nextSnapshot` on `Router` observable.
+- Allow triggering `beforeLeave` multiple times during continuous navigation.
+
+## [0.5.14] - 2022-1-27
+
+### Changes
+
+- Add `RouteMatch#$match()` helper to match against ref string.
+
+## [0.5.12-13] - 2021-11-22
+
+### Changes
+
+- Move `$metadata` property from `RouteMatch` to `RouteMatchShared`.
+
+## [0.5.8-11] - 2021-11-19
+
+### Changes
+
+- Move autorun/reaction initialization into `enter` phase.
+- Expose `$snapshot` and `$nextSnapshot` from `Router`.
+- Add `toEmitChange` flag to `History#restore()`.
+- Forward ref for `Link` and `NavLink` components.
+
 ## [0.5.7] - 2021-11-17
 
 ### Changes
