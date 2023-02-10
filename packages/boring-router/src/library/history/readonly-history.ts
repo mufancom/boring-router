@@ -1,4 +1,5 @@
-import {AbstractHistory, HistorySnapshot} from './history';
+import type {HistorySnapshot} from './history';
+import {AbstractHistory} from './history';
 
 export interface ReadOnlyHistoryOptions {
   /**
@@ -28,7 +29,7 @@ export class ReadOnlyHistory<TData = any> extends AbstractHistory<
       initialRef = `/${initialRef}`;
     }
 
-    let id = 0;
+    const id = 0;
 
     this.snapshot = {
       entries: [
@@ -47,7 +48,7 @@ export class ReadOnlyHistory<TData = any> extends AbstractHistory<
   }
 
   getRefByHRef(href: string): string {
-    let prefix = this.prefix;
+    const prefix = this.prefix;
 
     return href.startsWith(prefix) ? href.slice(prefix.length) : href;
   }

@@ -62,7 +62,7 @@ abstract class History<TEntryId, TData> {
   ): Promise<void>;
 
   protected emitChange(snapshot: HistorySnapshot<TEntryId, TData>): void {
-    for (let callback of this.changeCallbackSet) {
+    for (const callback of this.changeCallbackSet) {
       try {
         callback(snapshot);
       } catch (error) {

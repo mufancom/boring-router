@@ -1,8 +1,5 @@
-import {
-  AbstractHistory,
-  HistorySnapshot,
-  getActiveHistoryEntryIndex,
-} from './history';
+import type {HistorySnapshot} from './history';
+import {AbstractHistory, getActiveHistoryEntryIndex} from './history';
 
 const SNAP_PROMISE = Promise.resolve();
 
@@ -32,7 +29,7 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
       initialRef = `/${initialRef}`;
     }
 
-    let id = 0;
+    const id = 0;
 
     this._snapshot = {
       entries: [
@@ -57,7 +54,7 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
   }
 
   getRefByHRef(href: string): string {
-    let prefix = this.prefix;
+    const prefix = this.prefix;
 
     return href.startsWith(prefix) ? href.slice(prefix.length) : href;
   }
@@ -67,9 +64,9 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
 
     let snapshot = this._snapshot;
 
-    let {entries} = snapshot;
+    const {entries} = snapshot;
 
-    let index = getActiveHistoryEntryIndex(snapshot);
+    const index = getActiveHistoryEntryIndex(snapshot);
 
     if (index <= 0) {
       return;
@@ -90,9 +87,9 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
 
     let snapshot = this._snapshot;
 
-    let {entries} = snapshot;
+    const {entries} = snapshot;
 
-    let index = getActiveHistoryEntryIndex(snapshot);
+    const index = getActiveHistoryEntryIndex(snapshot);
 
     if (index >= entries.length - 1) {
       return;
@@ -109,13 +106,13 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
   }
 
   async push(ref: string, data?: TData): Promise<void> {
-    let id = ++this.lastId;
+    const id = ++this.lastId;
 
     let snapshot = this._snapshot;
 
-    let {entries} = snapshot;
+    const {entries} = snapshot;
 
-    let index = getActiveHistoryEntryIndex(snapshot);
+    const index = getActiveHistoryEntryIndex(snapshot);
 
     snapshot = {
       entries: [...entries.slice(0, index + 1), {id, ref, data}],
@@ -130,9 +127,9 @@ export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
   async replace(ref: string, data?: TData): Promise<void> {
     let snapshot = this._snapshot;
 
-    let {entries, active: activeId} = snapshot;
+    const {entries, active: activeId} = snapshot;
 
-    let index = getActiveHistoryEntryIndex(snapshot);
+    const index = getActiveHistoryEntryIndex(snapshot);
 
     snapshot = {
       entries: [

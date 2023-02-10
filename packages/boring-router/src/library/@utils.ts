@@ -1,4 +1,4 @@
-import {GeneralParamDict, GeneralSegmentDict} from './route-match';
+import type {GeneralParamDict, GeneralSegmentDict} from './route-match';
 
 export function isQueryIdsMatched(
   a: string | symbol | true,
@@ -14,8 +14,8 @@ export function buildPath(
   return (
     Object.entries(segmentDict)
       .map(([key, defaultSegment]) => {
-        let param = paramDict[key];
-        let segment = typeof param === 'string' ? param : defaultSegment;
+        const param = paramDict[key];
+        const segment = typeof param === 'string' ? param : defaultSegment;
 
         if (typeof segment !== 'string') {
           throw new Error(`Parameter "${key}" is required`);
@@ -31,16 +31,16 @@ export function buildRef(
   pathMap: Map<string | undefined, string>,
   queryMap: Map<string, string | undefined> | undefined,
 ): string {
-  let primaryPath = pathMap.get(undefined) ?? '';
+  const primaryPath = pathMap.get(undefined) ?? '';
 
-  let pathQuery = encodeURI(
+  const pathQuery = encodeURI(
     Array.from(pathMap)
       .filter(([group]) => group !== undefined)
       .map(([group, path]) => `_${group}=${path}`)
       .join('&'),
   );
 
-  let normalQuery =
+  const normalQuery =
     queryMap &&
     new URLSearchParams(
       Array.from(queryMap).filter(
@@ -48,7 +48,7 @@ export function buildRef(
       ),
     ).toString();
 
-  let query = pathQuery
+  const query = pathQuery
     ? normalQuery
       ? `${pathQuery}&${normalQuery}`
       : pathQuery
@@ -68,11 +68,18 @@ export function parseRef(ref: string): ParseRefResult {
   let search = '';
   let hash = '';
 
-  let searchIndex = pathname.indexOf('?');
+  const hashIndex = pathname.indexOf('#');
 
-  if (searchIndex !== -1) {
-    search = pathname.substr(searchIndex);
-    pathname = pathname.substr(0, searchIndex);
+  if (hashIndex >= 0) {
+    hash = pathname.slice(hashIndex);
+    pathname = pathname.slice(0, hashIndex);
+  }
+
+  const searchIndex = pathname.indexOf('?');
+
+  if (searchIndex >= 0) {
+    search = pathname.slice(searchIndex);
+    pathname = pathname.slice(0, searchIndex);
   }
 
   return {
@@ -83,7 +90,7 @@ export function parseRef(ref: string): ParseRefResult {
 }
 
 export function parseSearch(search: string): Map<string, string> {
-  let searchParams = new URLSearchParams(search);
+  const searchParams = new URLSearchParams(search);
 
   return new Map(searchParams);
 }

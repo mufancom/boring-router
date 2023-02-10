@@ -5,7 +5,7 @@
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["jest"],
     "experimentalDecorators": true,
-    "outDir": "../.bld-cache/test"
+    "noEmit": true
   },
   "references": [
     {

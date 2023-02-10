@@ -1,26 +1,24 @@
-import {
+import type {
   IAutorunOptions,
   IReactionDisposer,
   IReactionOptions,
   IReactionPublic,
-  autorun,
-  observable,
-  reaction,
 } from 'mobx';
-import {OmitValueOfKey, OmitValueWithType} from 'tslang';
+import {autorun, observable, reaction} from 'mobx';
+import type {OmitValueOfKey, OmitValueWithType} from 'tslang';
 
 import {testPathPrefix, tolerate} from '../@utils';
-import {IHistory} from '../history';
-import {RouteBuilder} from '../route-builder';
-import {Router} from '../router';
+import type {IHistory} from '../history';
+import type {RouteBuilder} from '../route-builder';
+import type {Router} from '../router';
 
-import {NextRouteMatch} from './next-route-match';
-import {
+import type {NextRouteMatch} from './next-route-match';
+import type {
   GeneralParamDict,
   GeneralSegmentDict,
-  RouteMatchShared,
   RouteMatchSharedOptions,
 } from './route-match-shared';
+import {RouteMatchShared} from './route-match-shared';
 
 /////////////////////
 // lifecycle hooks //
@@ -370,10 +368,10 @@ export class RouteMatch<
     super(name, router, source, parent, history, sharedOptions);
 
     if (extension) {
-      for (let key of Object.keys(extension)) {
+      for (const key of Object.keys(extension)) {
         Object.defineProperty(this, key, {
           get(this: RouteMatch) {
-            let service = this.$matched ? this._service : undefined;
+            const service = this.$matched ? this._service : undefined;
 
             if (service && key in service) {
               let value = (service as any)[key];
@@ -408,7 +406,7 @@ export class RouteMatch<
     callback: RouteBeforeUpdateCallback<this>,
     options?: RouteBeforeUpdateOptions,
   ): RouteHookRemovalCallback {
-    let entry: RouteBeforeUpdateEntry<this> = {
+    const entry: RouteBeforeUpdateEntry<this> = {
       callback,
       options,
     };
@@ -440,7 +438,7 @@ export class RouteMatch<
     callback: RouteWillUpdateCallback,
     options?: RouteWillUpdateOptions,
   ): RouteHookRemovalCallback {
-    let willUpdateEntry: RouteWillUpdateEntry = {
+    const willUpdateEntry: RouteWillUpdateEntry = {
       callback,
       options,
     };
@@ -472,7 +470,7 @@ export class RouteMatch<
     callback: RouteUpdateCallback,
     options?: RouteUpdateOptions,
   ): RouteHookRemovalCallback {
-    let updateEntry: RouteUpdateEntry = {
+    const updateEntry: RouteUpdateEntry = {
       callback,
       options,
     };
@@ -504,7 +502,7 @@ export class RouteMatch<
     callback: RouteAfterUpdateCallback,
     options?: RouteAfterUpdateOptions,
   ): RouteHookRemovalCallback {
-    let afterUpdateEntry: RouteAfterUpdateEntry = {
+    const afterUpdateEntry: RouteAfterUpdateEntry = {
       callback,
       options,
     };
@@ -528,7 +526,7 @@ export class RouteMatch<
     view: RouteAutorunView,
     options?: RouteAutorunOptions,
   ): RouteHookRemovalCallback {
-    let autorunEntry: RouteAutorunEntry = {
+    const autorunEntry: RouteAutorunEntry = {
       type: 'autorun',
       view,
       options,
@@ -558,7 +556,7 @@ export class RouteMatch<
     effect: RouteReactionEffect<T>,
     options?: RouteReactionOptions<T>,
   ): RouteHookRemovalCallback {
-    let reactionEntry: RouteReactionEntry = {
+    const reactionEntry: RouteReactionEntry = {
       type: 'reaction',
       expression,
       effect,
@@ -588,7 +586,7 @@ export class RouteMatch<
     callback: RouteBeforeEnterOrUpdateCallback<this>,
     beforeUpdateOptions?: RouteBeforeUpdateOptions,
   ): RouteHookRemovalCallback {
-    let beforeUpdateEntry: RouteBeforeUpdateEntry<this> = {
+    const beforeUpdateEntry: RouteBeforeUpdateEntry<this> = {
       callback,
       options: beforeUpdateOptions,
     };
@@ -606,7 +604,7 @@ export class RouteMatch<
     callback: RouteWillEnterOrUpdateCallback<this>,
     willUpdateOptions?: RouteWillUpdateOptions,
   ): RouteHookRemovalCallback {
-    let willUpdateEntry: RouteWillUpdateEntry<this> = {
+    const willUpdateEntry: RouteWillUpdateEntry<this> = {
       callback,
       options: willUpdateOptions,
     };
@@ -624,7 +622,7 @@ export class RouteMatch<
     callback: RouteAfterEnterOrUpdateCallback,
     afterUpdateOptions?: RouteAfterUpdateOptions,
   ): RouteHookRemovalCallback {
-    let afterUpdateEntry: RouteAfterUpdateEntry = {
+    const afterUpdateEntry: RouteAfterUpdateEntry = {
       callback,
       options: afterUpdateOptions,
     };
@@ -653,18 +651,18 @@ export class RouteMatch<
       throw new Error('Parallel whitelist can only be set on primary routes');
     }
 
-    let {groups = [], matches = []} = options;
+    const {groups = [], matches = []} = options;
 
-    let parent = this.$parent;
+    const parent = this.$parent;
 
     if (parent instanceof RouteMatch && parent._parallel) {
-      let {groups: parentGroups = [], matches: parentMatches = []} =
+      const {groups: parentGroups = [], matches: parentMatches = []} =
         parent._parallel;
 
-      let parentGroupSet = new Set(parentGroups);
-      let parentMatchSet = new Set(parentMatches);
+      const parentGroupSet = new Set(parentGroups);
+      const parentMatchSet = new Set(parentMatches);
 
-      let groupsBeingSubsetOfParents = groups.every(group =>
+      const groupsBeingSubsetOfParents = groups.every(group =>
         parentGroupSet.has(group),
       );
 
@@ -674,7 +672,7 @@ export class RouteMatch<
         );
       }
 
-      let matchesBeingSubsetOfParents = matches.every(match => {
+      const matchesBeingSubsetOfParents = matches.every(match => {
         if (
           typeof match.$group === 'string' &&
           parentGroupSet.has(match.$group)
@@ -704,9 +702,9 @@ export class RouteMatch<
 
     this._parallel = options;
 
-    let children = this._children || [];
+    const children = this._children || [];
 
-    for (let child of children) {
+    for (const child of children) {
       if (
         child._parallel &&
         (!parent || parent._parallel !== child._parallel)
@@ -721,12 +719,12 @@ export class RouteMatch<
   }
 
   $match(path: string): RouteMatchResult {
-    let parent = this.$parent;
+    const parent = this.$parent;
 
     let upperRest: string;
 
     if (parent) {
-      let {matched, rest} = parent.$match(path);
+      const {matched, rest} = parent.$match(path);
 
       if (!matched) {
         return {
@@ -741,14 +739,14 @@ export class RouteMatch<
       upperRest = path;
     }
 
-    let {matched, exactlyMatched, rest} = this._match(upperRest);
+    const {matched, exactlyMatched, rest} = this._match(upperRest);
 
     return {matched, exactlyMatched, rest};
   }
 
   /** @internal */
   _match(upperRest: string): RouteMatchInternalResult {
-    let pattern = this._matchPattern;
+    const pattern = this._matchPattern;
 
     let segment: string | undefined;
     let rest: string;
@@ -766,10 +764,10 @@ export class RouteMatch<
         rest = '';
       }
     } else {
-      let groups = pattern.exec(upperRest);
+      const groups = pattern.exec(upperRest);
 
       if (groups) {
-        let matched = groups[0];
+        const matched = groups[0];
 
         if (testPathPrefix(upperRest, matched)) {
           segment = matched;
@@ -792,7 +790,7 @@ export class RouteMatch<
     let exactlyMatched = matched && rest === '';
 
     if (exactlyMatched) {
-      let allowExact = this._allowExact;
+      const allowExact = this._allowExact;
 
       if (typeof allowExact === 'string') {
         // Specify a default rest path on an exact match.
@@ -815,12 +813,12 @@ export class RouteMatch<
 
   /** @internal */
   async _beforeLeave(): Promise<boolean> {
-    let results = await Promise.all([
+    const results = await Promise.all([
       ...Array.from(this._beforeLeaveCallbackSet).map(callback =>
         tolerate(callback),
       ),
       (async () => {
-        let service = await this._getService();
+        const service = await this._getService();
 
         if (service && service.beforeLeave) {
           return tolerate(() => service!.beforeLeave!());
@@ -833,14 +831,14 @@ export class RouteMatch<
 
   /** @internal */
   async _beforeEnter(): Promise<boolean> {
-    let next = this.$next;
+    const next = this.$next;
 
-    let results = await Promise.all([
+    const results = await Promise.all([
       ...Array.from(this._beforeEnterCallbackSet).map(callback =>
         tolerate(callback, next),
       ),
       (async () => {
-        let service = await this._getService();
+        const service = await this._getService();
 
         if (service && service.beforeEnter) {
           return tolerate(() => service!.beforeEnter!(next));
@@ -855,9 +853,9 @@ export class RouteMatch<
   async _beforeUpdate(
     triggeredByDescendants: boolean,
   ): Promise<boolean | RouteMatch> {
-    let next = this.$next;
+    const next = this.$next;
 
-    let results = await Promise.all([
+    const results = await Promise.all([
       ...Array.from(this._beforeUpdateEntrySet)
         .filter(({options}) =>
           triggeredByDescendants ? options && options.traceDescendants : true,
@@ -866,7 +864,7 @@ export class RouteMatch<
           tolerate(callback, next, {descendants: triggeredByDescendants}),
         ),
       (async () => {
-        let service = await this._getService();
+        const service = await this._getService();
 
         if (service && service.beforeUpdate) {
           return tolerate(() =>
@@ -881,7 +879,7 @@ export class RouteMatch<
 
   /** @internal */
   async _willLeave(): Promise<void> {
-    for (let reactiveEntry of this._reactiveEntrySet) {
+    for (const reactiveEntry of this._reactiveEntrySet) {
       if (reactiveEntry.disposer) {
         reactiveEntry.disposer();
         reactiveEntry.disposer = undefined;
@@ -893,7 +891,7 @@ export class RouteMatch<
         tolerate(callback),
       ),
       (async () => {
-        let service = await this._getService();
+        const service = await this._getService();
 
         if (service && service.willLeave) {
           return tolerate(() => service!.willLeave!());
@@ -904,14 +902,14 @@ export class RouteMatch<
 
   /** @internal */
   async _willEnter(): Promise<void> {
-    let next = this.$next;
+    const next = this.$next;
 
     await Promise.all([
       ...Array.from(this._willEnterCallbackSet).map(callback =>
         tolerate(callback, next),
       ),
       (async () => {
-        let service = await this._getService();
+        const service = await this._getService();
 
         if (service && service.willEnter) {
           return tolerate(() => service!.willEnter!(next));
@@ -922,7 +920,7 @@ export class RouteMatch<
 
   /** @internal */
   async _willUpdate(triggeredByDescendants: boolean): Promise<void> {
-    let next = this.$next;
+    const next = this.$next;
 
     await Promise.all([
       ...Array.from(this._willUpdateEntrySet)
@@ -933,7 +931,7 @@ export class RouteMatch<
           tolerate(callback, next, {descendants: triggeredByDescendants}),
         ),
       (async () => {
-        let service = await this._getService();
+        const service = await this._getService();
 
         if (service && service.willUpdate) {
           return tolerate(() =>
@@ -946,17 +944,17 @@ export class RouteMatch<
 
   /** @internal */
   _enter(): void {
-    for (let callback of this._enterCallbackSet) {
+    for (const callback of this._enterCallbackSet) {
       tolerate(callback);
     }
 
-    let service = this._getServiceSync();
+    const service = this._getServiceSync();
 
     if (service && service.enter) {
       return tolerate(() => service!.enter!());
     }
 
-    for (let reactiveEntry of this._reactiveEntrySet) {
+    for (const reactiveEntry of this._reactiveEntrySet) {
       if (reactiveEntry.disposer) {
         reactiveEntry.disposer();
         console.warn('Unexpected disposer during enter phase.');
@@ -984,7 +982,7 @@ export class RouteMatch<
 
   /** @internal */
   _update(triggeredByDescendants: boolean): void {
-    for (let {options, callback} of this._updateEntrySet) {
+    for (const {options, callback} of this._updateEntrySet) {
       if (triggeredByDescendants && !(options?.traceDescendants ?? false)) {
         continue;
       }
@@ -992,7 +990,7 @@ export class RouteMatch<
       tolerate(callback, {descendants: triggeredByDescendants});
     }
 
-    let service = this._getServiceSync();
+    const service = this._getServiceSync();
 
     if (service && service.update) {
       return tolerate(() =>
@@ -1003,11 +1001,11 @@ export class RouteMatch<
 
   /** @internal */
   _leave(): void {
-    for (let callback of this._leaveCallbackSet) {
+    for (const callback of this._leaveCallbackSet) {
       tolerate(callback);
     }
 
-    let service = this._getServiceSync();
+    const service = this._getServiceSync();
 
     if (service && service.leave) {
       tolerate(() => service!.leave!());
@@ -1016,11 +1014,11 @@ export class RouteMatch<
 
   /** @internal */
   async _afterLeave(): Promise<void> {
-    for (let callback of this._afterLeaveCallbackSet) {
+    for (const callback of this._afterLeaveCallbackSet) {
       tolerate(callback);
     }
 
-    let service = await this._getService();
+    const service = await this._getService();
 
     if (service && service.afterLeave) {
       tolerate(() => service!.afterLeave!());
@@ -1029,11 +1027,11 @@ export class RouteMatch<
 
   /** @internal */
   async _afterEnter(): Promise<void> {
-    for (let callback of this._afterEnterCallbackSet) {
+    for (const callback of this._afterEnterCallbackSet) {
       tolerate(callback);
     }
 
-    let service = await this._getService();
+    const service = await this._getService();
 
     if (service && service.afterEnter) {
       tolerate(() => service!.afterEnter!());
@@ -1042,13 +1040,13 @@ export class RouteMatch<
 
   /** @internal */
   async _afterUpdate(triggeredByDescendants: boolean): Promise<void> {
-    for (let {callback, options} of this._afterUpdateEntrySet) {
+    for (const {callback, options} of this._afterUpdateEntrySet) {
       if (triggeredByDescendants ? options && options.traceDescendants : true) {
         tolerate(callback, {descendants: triggeredByDescendants});
       }
     }
 
-    let service = await this._getService();
+    const service = await this._getService();
 
     if (service && service.afterUpdate) {
       tolerate(() =>
@@ -1059,7 +1057,7 @@ export class RouteMatch<
 
   /** @internal */
   _getMatchEntry(source: RouteSource): RouteMatchEntry | undefined {
-    let matchToMatchEntryMap = source.groupToMatchToMatchEntryMapMap.get(
+    const matchToMatchEntryMap = source.groupToMatchToMatchEntryMapMap.get(
       this.$group,
     );
 
@@ -1073,19 +1071,19 @@ export class RouteMatch<
 
   /** @internal */
   private async _getService(): Promise<IRouteService | undefined> {
-    let serviceOrServicePromise = this._service || this._servicePromise;
+    const serviceOrServicePromise = this._service || this._servicePromise;
 
     if (serviceOrServicePromise) {
       return serviceOrServicePromise;
     }
 
-    let factory = this._serviceFactory;
+    const factory = this._serviceFactory;
 
     if (!factory) {
       return undefined;
     }
 
-    let output = tolerate(factory, this);
+    const output = tolerate(factory, this);
 
     if (output instanceof Promise) {
       return (this._servicePromise = output.then(service => {
@@ -1100,7 +1098,7 @@ export class RouteMatch<
 
   /** @internal */
   private _getServiceSync(): IRouteService | undefined {
-    let service = this._service;
+    const service = this._service;
 
     if (service) {
       return service;
@@ -1112,13 +1110,13 @@ export class RouteMatch<
       );
     }
 
-    let factory = this._serviceFactory;
+    const factory = this._serviceFactory;
 
     if (!factory) {
       return undefined;
     }
 
-    let output = tolerate(factory, this);
+    const output = tolerate(factory, this);
 
     if (output instanceof Promise) {
       this._servicePromise = output.then(service => {

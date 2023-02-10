@@ -1,6 +1,16 @@
 {
   "root": true,
-  "ignorePatterns": ["bld", ".bld-cache", "dist"],
+  "ignorePatterns": [
+    "/packages/boring-router/src/",
+    "/packages/boring-router/bld/",
+    "/packages/boring-router/",
+    "/packages/boring-router-react/src/",
+    "/packages/boring-router-react/bld/",
+    "/packages/examples/basic/",
+    "/packages/examples/lifecycle-hooks/",
+    "/packages/examples/parallel-routes/",
+    "/packages/examples/route-content/"
+  ],
   "extends": ["eslint:recommended"],
   "env": {
     "node": true,

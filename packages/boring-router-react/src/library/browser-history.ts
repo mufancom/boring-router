@@ -1,7 +1,6 @@
+import type {HistoryEntry, HistorySnapshot} from 'boring-router';
 import {
   AbstractHistory,
-  HistoryEntry,
-  HistorySnapshot,
   getActiveHistoryEntryIndex,
   isHistoryEntryEqual,
 } from 'boring-router';
@@ -65,7 +64,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     window.addEventListener('popstate', this.onPopState);
 
-    let state = history.state as BrowserHistoryState<TData> | undefined;
+    const state = history.state as BrowserHistoryState<TData> | undefined;
 
     let id: number;
     let data: TData | undefined;
@@ -81,7 +80,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       history.replaceState({id}, '');
     }
 
-    let entries: HistoryEntry<number, TData>[] = [
+    const entries: HistoryEntry<number, TData>[] = [
       {
         id,
         ref: this.getRefByHRef(this.url),
@@ -117,11 +116,11 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
   getRefByHRef(href: string): string {
     if (this.hash) {
-      let index = href.indexOf('#');
+      const index = href.indexOf('#');
 
       return (index >= 0 && href.slice(index + 1)) || '/';
     } else {
-      let prefix = this.prefix;
+      const prefix = this.prefix;
 
       return href.startsWith(prefix) ? href.slice(prefix.length) : href;
     }
@@ -146,9 +145,9 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
   async replace(ref: string, data?: TData): Promise<void> {
     await this.restoringPromise;
 
-    let {active: id} = this.tracked;
+    const {active: id} = this.tracked;
 
-    let snapshot = this.replaceEntry({
+    const snapshot = this.replaceEntry({
       id,
       ref,
       data,
@@ -177,7 +176,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     this.restoring = true;
 
-    let promise = new Promise<void>(resolve => {
+    const promise = new Promise<void>(resolve => {
       this.restoringPromiseResolver = resolve;
     });
 
@@ -196,12 +195,12 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     href: string,
     navigateAwayHandler = NAVIGATE_AWAY_HANDLER_DEFAULT,
   ): Promise<void> {
-    let originalHRef = href;
+    const originalHRef = href;
 
-    let groups = /^([\w\d]+:)?\/\/([^/?]+)(.*)/.exec(href);
+    const groups = /^([\w\d]+:)?\/\/([^/?]+)(.*)/.exec(href);
 
     if (groups) {
-      let [, protocol, host, rest] = groups;
+      const [, protocol, host, rest] = groups;
 
       if (
         (protocol && protocol !== location.protocol) ||
@@ -214,22 +213,22 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       href = rest.startsWith('/') ? rest : `/${rest}`;
     }
 
-    let prefix = this.prefix;
+    const prefix = this.prefix;
 
     if (!href.startsWith(prefix)) {
       navigateAwayHandler(originalHRef);
       return;
     }
 
-    let ref = href.slice(prefix.length);
+    const ref = href.slice(prefix.length);
 
     await this.push(ref);
   }
 
   private onPopState = (event: PopStateEvent): void => {
-    let {entries: trackedEntries} = this.tracked;
+    const {entries: trackedEntries} = this.tracked;
 
-    let state = event.state as BrowserHistoryState<TData> | null;
+    const state = event.state as BrowserHistoryState<TData> | null;
 
     // When using hash mode, entering a new hash directly in the browser will
     // also trigger popstate. And in that case state is null.
@@ -238,15 +237,15 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       return;
     }
 
-    let {id, data} = state;
+    const {id, data} = state;
 
     if (id > this.lastUsedId) {
       this.lastUsedId = id;
     }
 
-    let entries = [...trackedEntries];
+    const entries = [...trackedEntries];
 
-    let index = entries.findIndex(entry => entry.id >= id);
+    const index = entries.findIndex(entry => entry.id >= id);
 
     if (index < 0 || entries[index].id > id) {
       entries.splice(index < 0 ? entries.length : index, 0, {
@@ -256,7 +255,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       });
     }
 
-    let snapshot: BrowserHistorySnapshot<TData> = {
+    const snapshot: BrowserHistorySnapshot<TData> = {
       entries,
       active: id,
     };
@@ -280,18 +279,18 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     debug('expected', this._snapshot);
     debug('tracked', this.tracked);
 
-    let expected = this._snapshot;
-    let tracked = this.tracked;
+    const expected = this._snapshot;
+    const tracked = this.tracked;
 
-    let {entries: expectedEntries} = expected;
-    let {entries: trackedEntries} = tracked;
+    const {entries: expectedEntries} = expected;
+    const {entries: trackedEntries} = tracked;
 
-    let lastExpectedIndex = expectedEntries.length - 1;
-    let lastTrackedIndex = trackedEntries.length - 1;
+    const lastExpectedIndex = expectedEntries.length - 1;
+    const lastTrackedIndex = trackedEntries.length - 1;
 
-    let trackedActiveIndex = getActiveHistoryEntryIndex(tracked);
+    const trackedActiveIndex = getActiveHistoryEntryIndex(tracked);
 
-    let minLength = Math.min(expectedEntries.length, trackedEntries.length);
+    const minLength = Math.min(expectedEntries.length, trackedEntries.length);
 
     let firstMismatchedIndex = 0;
 
@@ -300,8 +299,8 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       firstMismatchedIndex < minLength;
       firstMismatchedIndex++
     ) {
-      let expectedEntry = expectedEntries[firstMismatchedIndex];
-      let trackedEntry = trackedEntries[firstMismatchedIndex];
+      const expectedEntry = expectedEntries[firstMismatchedIndex];
+      const trackedEntry = trackedEntries[firstMismatchedIndex];
 
       if (!isHistoryEntryEqual(expectedEntry, trackedEntry)) {
         break;
@@ -358,7 +357,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       );
     }
 
-    for (let entry of expectedEntries.slice(trackedActiveIndex + 1)) {
+    for (const entry of expectedEntries.slice(trackedActiveIndex + 1)) {
       this.pushEntry(entry, true);
     }
 
@@ -366,8 +365,8 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
   }
 
   private restoreActive(): void {
-    let expectedActiveIndex = getActiveHistoryEntryIndex(this._snapshot);
-    let trackedActiveIndex = getActiveHistoryEntryIndex(this.tracked);
+    const expectedActiveIndex = getActiveHistoryEntryIndex(this._snapshot);
+    const trackedActiveIndex = getActiveHistoryEntryIndex(this.tracked);
 
     if (trackedActiveIndex < expectedActiveIndex) {
       history.forward();
@@ -403,7 +402,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     await this.restoringPromise;
 
-    let snapshot = this.pushEntry(
+    const snapshot = this.pushEntry(
       {
         id: this.getNextId(),
         ref,
@@ -423,13 +422,13 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     {id, ref, data}: BrowserHistoryEntry<TData>,
     toPushState: boolean,
   ): BrowserHistorySnapshot<TData> {
-    let tracked = this.tracked;
+    const tracked = this.tracked;
 
-    let {entries} = tracked;
+    const {entries} = tracked;
 
-    let activeIndex = getActiveHistoryEntryIndex(tracked);
+    const activeIndex = getActiveHistoryEntryIndex(tracked);
 
-    let snapshot: BrowserHistorySnapshot<TData> = {
+    const snapshot: BrowserHistorySnapshot<TData> = {
       entries: [...entries.slice(0, activeIndex + 1), {id, ref, data}],
       active: id,
     };
@@ -437,7 +436,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     this.tracked = snapshot;
 
     if (toPushState) {
-      let href = this.getHRefByRef(ref);
+      const href = this.getHRefByRef(ref);
 
       try {
         history.pushState({id, data}, '', href);
@@ -453,7 +452,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     {id, ref, data}: BrowserHistoryEntry<TData>,
     index?: number,
   ): BrowserHistorySnapshot<TData> {
-    let {entries} = this.tracked;
+    const {entries} = this.tracked;
 
     if (index === undefined) {
       index = entries.findIndex(entry => entry.id === id);
@@ -463,7 +462,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
       }
     }
 
-    let snapshot: BrowserHistorySnapshot<TData> = {
+    const snapshot: BrowserHistorySnapshot<TData> = {
       entries: [
         ...entries.slice(0, index),
         {id, ref, data},
@@ -474,7 +473,7 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
 
     this.tracked = snapshot;
 
-    let href = this.getHRefByRef(ref);
+    const href = this.getHRefByRef(ref);
 
     try {
       history.replaceState({id, data}, '', href);

@@ -1,10 +1,8 @@
-import {
-  RouteBuilder,
-  RouteMatch,
-  RouteMatchSharedToParamDict,
-} from 'boring-router';
+import type {RouteBuilder, RouteMatchSharedToParamDict} from 'boring-router';
+import {RouteMatch} from 'boring-router';
 import {observer} from 'mobx-react-lite';
-import React, {HTMLAttributes, MouseEvent, ReactNode, RefObject} from 'react';
+import type {HTMLAttributes, MouseEvent, ReactNode, RefObject} from 'react';
+import React from 'react';
 
 import {composeEventHandler} from './@utils';
 
@@ -25,7 +23,7 @@ export const Link = observer(
     props: LinkProps<T>,
     ref: RefObject<HTMLAnchorElement>,
   ) => {
-    let {
+    const {
       to,
       params,
       replace = false,
@@ -37,7 +35,7 @@ export const Link = observer(
       ...restProps
     } = props;
 
-    let href = (() => {
+    const href = (() => {
       try {
         if (to instanceof RouteMatch) {
           return to.$router.$(to, params).$href();
@@ -49,7 +47,7 @@ export const Link = observer(
       }
     })();
 
-    let composedOnClick = composeEventHandler(
+    const composedOnClick = composeEventHandler(
       [
         onClick,
         (event: MouseEvent) => {
@@ -68,7 +66,7 @@ export const Link = observer(
           }
 
           if (to instanceof RouteMatch) {
-            let leaveOption =
+            const leaveOption =
               leave === undefined ? toggle && to.$matched : leave;
 
             if (replace) {

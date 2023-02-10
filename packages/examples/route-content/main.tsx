@@ -1,12 +1,9 @@
 import {Router} from 'boring-router';
-import {
-  BrowserHistory,
-  Link,
-  Route,
-  RouteComponentProps,
-} from 'boring-router-react';
+import type {RouteComponentProps} from 'boring-router-react';
+import {BrowserHistory, Link, Route} from 'boring-router-react';
 import {observer} from 'mobx-react-lite';
-import React, {FunctionComponent} from 'react';
+import type {FunctionComponent} from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 
 const history = new BrowserHistory();

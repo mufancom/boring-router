@@ -1,11 +1,18 @@
+/** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
   preset: 'ts-jest',
-  globals: {
-    'ts-jest': {
-      tsconfig: 'test/tsconfig.json',
-    },
-  },
   testEnvironment: 'node',
-  testMatch: ['**/test/*.test.ts'],
+  roots: ['test'],
+  transform: {
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: 'test/tsconfig.json',
+        diagnostics: {
+          ignoreCodes: ['TS151001'],
+        },
+      },
+    ],
+  },
   clearMocks: true,
 };

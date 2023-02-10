@@ -11,27 +11,24 @@
   "scripts": {
     "test": "jest"
   },
-  "main": "bld/library/index.js",
-  "types": "bld/library/index.d.ts",
-  "files": [
-    "src/library/**/*.ts",
-    "bld/library",
-    "!*.tsbuildinfo"
-  ],
+  "exports": {
+    "types": "./bld/library/index.d.ts",
+    "require": "./bld/library/index.js"
+  },
   "peerDependencies": {
     "mobx": "6"
   },
   "devDependencies": {
-    "@types/jest": "^27.0.1",
-    "@types/lodash": "^4.14.172",
-    "jest": "^27.1.1",
-    "mobx": "^6.3.5",
-    "ts-jest": "^27.0.5"
+    "@types/jest": "^29.4.0",
+    "@types/lodash": "^4.14.191",
+    "jest": "^29.4.2",
+    "mobx": "^6.8.0",
+    "ts-jest": "^29.0.5"
   },
   "dependencies": {
     "hyphenate": "^0.2.5",
     "lodash": "^4.17.21",
-    "tslang": "^0.1.23",
-    "tslib": "^2.3.1"
+    "tslang": "^0.1.27",
+    "tslib": "^2.5.0"
   }
 }

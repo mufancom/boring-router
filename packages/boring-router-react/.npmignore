@@ -1,0 +1,4 @@
+*
+!/src/library/**/*.{ts,tsx}
+!/bld/library/**
+*.tsbuildinfo

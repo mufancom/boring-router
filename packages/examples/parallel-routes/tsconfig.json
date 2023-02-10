@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "ES2018",
     "module": "CommonJS",
+    "moduleResolution": "nodenext",
     "lib": ["ESNext", "DOM"],
     "types": [],
     "importHelpers": true,
@@ -15,6 +16,6 @@
     "noFallthroughCasesInSwitch": true,
     "useDefineForClassFields": true,
     "newLine": "LF",
-    "outDir": ".bld-cache"
+    "noEmit": true
   }
 }

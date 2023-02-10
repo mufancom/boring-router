@@ -1,6 +1,7 @@
-import {RouteMatch} from 'boring-router';
+import type {RouteMatch} from 'boring-router';
 import {observer} from 'mobx-react-lite';
-import React, {ComponentType, ReactElement, ReactNode} from 'react';
+import type {ComponentType, ReactElement, ReactNode} from 'react';
+import React from 'react';
 
 export interface RouteComponentProps<TRouteMatch extends RouteMatch> {
   match: TRouteMatch;
@@ -27,10 +28,10 @@ export const Route = observer(
     exact,
     component: RouteComponent,
     children,
-  }: RouteProps<TRouteMatch>) => {
-    let matches = Array.isArray(match) ? match : [match];
+  }: RouteProps<TRouteMatch>): ReactElement => {
+    const matches = Array.isArray(match) ? match : [match];
 
-    let firstMatch = matches.find(match =>
+    const firstMatch = matches.find(match =>
       exact ? match.$exact : match.$matched,
     );
 
@@ -46,7 +47,7 @@ export const Route = observer(
         if (typeof children === 'function') {
           return children(firstMatch);
         } else {
-          return children;
+          return <>{children}</>;
         }
       } else {
         if (RouteComponent) {

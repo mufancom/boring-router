@@ -1,9 +1,11 @@
 import {RouteBuilder, RouteMatch} from 'boring-router';
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
-import React, {RefObject} from 'react';
+import type {RefObject} from 'react';
+import React from 'react';
 
-import {Link, LinkProps} from './link';
+import type {LinkProps} from './link';
+import {Link} from './link';
 
 export interface NavLinkProps<T extends RouteMatch | RouteBuilder>
   extends LinkProps<T> {
@@ -16,11 +18,11 @@ export const NavLink = observer(
     props: NavLinkProps<T>,
     ref: RefObject<HTMLAnchorElement>,
   ) => {
-    let {to, exact = false} = props;
+    const {to, exact = false} = props;
 
-    let route = (() => {
+    const route = (() => {
       if (to instanceof RouteBuilder) {
-        let builderRoute = to.$route;
+        const builderRoute = to.$route;
 
         if (!(builderRoute instanceof RouteMatch)) {
           throw new Error(
@@ -30,14 +32,13 @@ export const NavLink = observer(
 
         return builderRoute;
       } else {
-        // eslint-disable-next-line @mufan/no-unnecessary-type-assertion
         return to as RouteMatch;
       }
     })();
 
-    let matched = exact ? route.$exact : route.$matched;
+    const matched = exact ? route.$exact : route.$matched;
 
-    let {
+    const {
       className,
       activeClassName = 'active',
       exact: _exact,

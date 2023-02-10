@@ -8,13 +8,13 @@ configure({
 });
 
 test('should preserve query with id `true` for sibling routes', async () => {
-  let idsArray = [
+  const idsArray = [
     {foo: true, bar: true},
     {foo: true, bar: 'bar'},
     {foo: 'bar', bar: true},
   ] as const;
 
-  for (let {foo: fooQueryId, bar: barQueryId} of idsArray) {
+  for (const {foo: fooQueryId, bar: barQueryId} of idsArray) {
     const history = new MemoryHistory({initialRef: '/foo?a=1'});
 
     const router = new Router(history);

@@ -7,19 +7,20 @@
     "last 5 Chrome versions"
   ],
   "devDependencies": {
-    "@mufan/code": "^0.2.9",
-    "typescript": "^4.4.3"
+    "@mufan/code": "^0.2.15",
+    "@mufan/eslint-plugin": "^0.1.77",
+    "typescript": "^4.9.5"
   },
   "dependencies": {
-    "@types/react": "^17.0.20",
-    "@types/react-dom": "^17.0.9",
-    "boring-router": "^0.5.1",
-    "boring-router-react": "^0.5.1",
-    "mobx": "^6.3.5",
-    "mobx-react-lite": "^3.2.1",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "tslang": "^0.1.23",
-    "tslib": "^2.3.1"
+    "@types/react": "^18.0.27",
+    "@types/react-dom": "^18.0.10",
+    "boring-router": "^0.5.15",
+    "boring-router-react": "^0.5.11",
+    "mobx": "^6.8.0",
+    "mobx-react-lite": "^3.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tslang": "^0.1.27",
+    "tslib": "^2.5.0"
   }
 }

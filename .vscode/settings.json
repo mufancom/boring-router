@@ -11,6 +11,16 @@
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
   "typescript.tsdk": "node_modules/typescript/lib",
+  "eslint.workingDirectories": [
+    ".",
+    "packages/boring-router/src/library",
+    "packages/boring-router/test",
+    "packages/boring-router-react/src/library",
+    "packages/examples/basic",
+    "packages/examples/lifecycle-hooks",
+    "packages/examples/parallel-routes",
+    "packages/examples/route-content"
+  ],
   "eslint.validate": [
     "javascript",
     "javascriptreact",

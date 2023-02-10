@@ -1,15 +1,14 @@
 import hyphenate from 'hyphenate';
 import _ from 'lodash';
 import {makeObservable, observable, runInAction} from 'mobx';
-import {Dict, EmptyObjectPatch} from 'tslang';
+import type {Dict, EmptyObjectPatch} from 'tslang';
 
 import {parseRef, parseSearch} from './@utils';
-import {HistorySnapshot, IHistory, getActiveHistoryEntry} from './history';
+import type {HistorySnapshot, IHistory} from './history';
+import {getActiveHistoryEntry} from './history';
 import {RouteBuilder} from './route-builder';
-import {
+import type {
   GeneralParamDict,
-  NextRouteMatch,
-  RouteMatch,
   RouteMatchEntry,
   RouteMatchOptions,
   RouteMatchShared,
@@ -17,7 +16,8 @@ import {
   RouteSource,
   RouteSourceQuery,
 } from './route-match';
-import {RootRouteSchema, RouteSchema, RouteSchemaDict} from './schema';
+import {NextRouteMatch, RouteMatch} from './route-match';
+import type {RootRouteSchema, RouteSchema, RouteSchemaDict} from './schema';
 
 export type SegmentMatcherCallback = (key: string) => string;
 
@@ -344,11 +344,17 @@ export class Router<TGroupName extends string = string> {
       schema = groupOrSchema;
     }
 
-    let [routeMatch] = this._buildRouteMatch(group, '', undefined, undefined, {
-      $exact: true,
-      $match: '',
-      ...schema,
-    });
+    const [routeMatch] = this._buildRouteMatch(
+      group,
+      '',
+      undefined,
+      undefined,
+      {
+        $exact: true,
+        $match: '',
+        ...schema,
+      },
+    );
 
     this._groupToRouteMatchMap.set(group, routeMatch);
 
@@ -370,7 +376,7 @@ export class Router<TGroupName extends string = string> {
   ): RouteBuilder<TGroupName>;
   $(part: string): RouteBuilder<TGroupName>;
   $(route: RouteMatchShared | string, params?: GeneralParamDict): RouteBuilder {
-    let buildingPart =
+    const buildingPart =
       typeof route === 'string'
         ? route
         : {
@@ -432,35 +438,35 @@ export class Router<TGroupName extends string = string> {
       return;
     }
 
-    let {ref, data} = getActiveHistoryEntry(nextSnapshot);
+    const {ref, data} = getActiveHistoryEntry(nextSnapshot);
 
-    let navigateCompleteListener = data && data.navigateCompleteListener;
+    const navigateCompleteListener = data && data.navigateCompleteListener;
 
-    let {pathname, search} = parseRef(ref);
+    const {pathname, search} = parseRef(ref);
 
-    let snapshot = this._snapshot;
+    const snapshot = this._snapshot;
 
     if (snapshot && _.isEqual(snapshot, nextSnapshot)) {
       return;
     }
 
-    let queryMap = parseSearch(search);
+    const queryMap = parseSearch(search);
 
-    let pathMap = new Map<string | undefined, string>();
+    const pathMap = new Map<string | undefined, string>();
 
     pathMap.set(undefined, pathname || '/');
 
-    let groups = this.$groups;
+    const groups = this.$groups;
 
     // Extract group route paths in query
-    for (let group of groups) {
-      let key = `_${group}`;
+    for (const group of groups) {
+      const key = `_${group}`;
 
       if (!queryMap.has(key)) {
         continue;
       }
 
-      let path = queryMap.get(key);
+      const path = queryMap.get(key);
 
       if (path) {
         pathMap.set(group, path);
@@ -470,23 +476,23 @@ export class Router<TGroupName extends string = string> {
     }
 
     // Match parallel routes
-    let groupToMatchEntriesMap = new Map<
+    const groupToMatchEntriesMap = new Map<
       string | undefined,
       RouteMatchEntry[]
     >();
 
-    let groupToRouteMatchMap = this._groupToRouteMatchMap;
+    const groupToRouteMatchMap = this._groupToRouteMatchMap;
 
-    for (let [group, path] of pathMap) {
-      let routeMatch = groupToRouteMatchMap.get(group)!;
+    for (const [group, path] of pathMap) {
+      const routeMatch = groupToRouteMatchMap.get(group)!;
 
-      let routeMatchEntries = this._match([routeMatch], path) || [];
+      const routeMatchEntries = this._match([routeMatch], path) || [];
 
       if (!routeMatchEntries.length) {
         continue;
       }
 
-      let [{match}] = routeMatchEntries;
+      const [{match}] = routeMatchEntries;
 
       if (match.$group !== group) {
         continue;
@@ -496,22 +502,22 @@ export class Router<TGroupName extends string = string> {
     }
 
     // Check primary match parallel options
-    let groupToMatchToMatchEntryMapMap = new Map<
+    const groupToMatchToMatchEntryMapMap = new Map<
       string | undefined,
       Map<RouteMatch, RouteMatchEntry>
     >();
 
-    let primaryMatchEntries = groupToMatchEntriesMap.get(undefined);
+    const primaryMatchEntries = groupToMatchEntriesMap.get(undefined);
 
     {
-      let primaryMatch =
+      const primaryMatch =
         primaryMatchEntries?.[primaryMatchEntries.length - 1].match;
 
-      let options = primaryMatch?._parallel;
+      const options = primaryMatch?._parallel;
 
-      let {groups = [], matches = []} = options || {};
+      const {groups = [], matches = []} = options || {};
 
-      for (let [group, entries] of groupToMatchEntriesMap) {
+      for (const [group, entries] of groupToMatchEntriesMap) {
         if (
           !group ||
           !options ||
@@ -531,14 +537,14 @@ export class Router<TGroupName extends string = string> {
       }
     }
 
-    let matchingSource = this._matchingSource;
+    const matchingSource = this._matchingSource;
 
     runInAction(() => {
       matchingSource.groupToMatchToMatchEntryMapMap =
         groupToMatchToMatchEntryMapMap;
       matchingSource.pathMap = pathMap;
 
-      let matchingQueryKeyToIdMap = new Map(
+      const matchingQueryKeyToIdMap = new Map(
         _.flatMap(
           Array.from(groupToRouteMatchMap.values()).reverse(),
           route => [...route.$next.$rest._queryKeyToIdMap],
@@ -557,9 +563,9 @@ export class Router<TGroupName extends string = string> {
       );
     });
 
-    let generalGroups = [undefined, ...groups];
+    const generalGroups = [undefined, ...groups];
 
-    let interUpdateDataArray = await Promise.all(
+    const interUpdateDataArray = await Promise.all(
       generalGroups.map(async group =>
         this._beforeUpdate(
           nextSnapshot,
@@ -617,27 +623,27 @@ export class Router<TGroupName extends string = string> {
       });
     }
 
-    let previousMatchSet = new Set(previousMatchToMatchEntryMap.keys());
-    let matchSet = new Set(matchToMatchEntryMap.keys());
+    const previousMatchSet = new Set(previousMatchToMatchEntryMap.keys());
+    const matchSet = new Set(matchToMatchEntryMap.keys());
 
-    let leavingMatchSet = new Set(previousMatchSet);
+    const leavingMatchSet = new Set(previousMatchSet);
 
-    for (let match of matchSet) {
+    for (const match of matchSet) {
       leavingMatchSet.delete(match);
     }
 
-    let reversedLeavingMatches = Array.from(leavingMatchSet).reverse();
+    const reversedLeavingMatches = Array.from(leavingMatchSet).reverse();
 
-    let enteringAndUpdatingMatchSet = new Set(matchSet);
+    const enteringAndUpdatingMatchSet = new Set(matchSet);
 
-    let descendantUpdatingMatchSet = new Set<RouteMatch>();
+    const descendantUpdatingMatchSet = new Set<RouteMatch>();
 
-    for (let match of previousMatchSet) {
+    for (const match of previousMatchSet) {
       if (!enteringAndUpdatingMatchSet.has(match)) {
         continue;
       }
 
-      let nextMatch = match.$next;
+      const nextMatch = match.$next;
 
       if (
         _.isEqual(match._pathSegments, nextMatch._pathSegments) &&
@@ -651,8 +657,8 @@ export class Router<TGroupName extends string = string> {
       }
     }
 
-    for (let match of reversedLeavingMatches) {
-      let result = await match._beforeLeave();
+    for (const match of reversedLeavingMatches) {
+      const result = await match._beforeLeave();
 
       if (this._isNextSnapshotOutDated(nextSnapshot)) {
         return undefined;
@@ -664,10 +670,10 @@ export class Router<TGroupName extends string = string> {
       }
     }
 
-    for (let match of enteringAndUpdatingMatchSet) {
-      let update = previousMatchSet.has(match);
+    for (const match of enteringAndUpdatingMatchSet) {
+      const update = previousMatchSet.has(match);
 
-      let result = update
+      const result = update
         ? await match._beforeUpdate(descendantUpdatingMatchSet.has(match))
         : await match._beforeEnter();
 
@@ -696,12 +702,12 @@ export class Router<TGroupName extends string = string> {
     previousMatchSet,
     descendantUpdatingMatchSet,
   }: InterUpdateData): Promise<void> {
-    for (let match of reversedLeavingMatches) {
+    for (const match of reversedLeavingMatches) {
       await match._willLeave();
     }
 
-    for (let match of enteringAndUpdatingMatchSet) {
-      let update = previousMatchSet.has(match);
+    for (const match of enteringAndUpdatingMatchSet) {
+      const update = previousMatchSet.has(match);
 
       if (update) {
         await match._willUpdate(descendantUpdatingMatchSet.has(match));
@@ -716,13 +722,13 @@ export class Router<TGroupName extends string = string> {
     generalGroups: (string | undefined)[],
     dataArray: InterUpdateData[],
   ): void {
-    let source = this._source;
-    let matchingSource = this._matchingSource;
+    const source = this._source;
+    const matchingSource = this._matchingSource;
 
     source.queryMap = matchingSource.queryMap;
 
-    for (let group of generalGroups) {
-      let path = matchingSource.pathMap.get(group)!;
+    for (const group of generalGroups) {
+      const path = matchingSource.pathMap.get(group)!;
 
       if (path) {
         source.pathMap.set(group, path);
@@ -730,24 +736,24 @@ export class Router<TGroupName extends string = string> {
         source.pathMap.delete(group);
       }
 
-      let matchToMatchEntryMap =
+      const matchToMatchEntryMap =
         matchingSource.groupToMatchToMatchEntryMapMap.get(group)!;
 
       source.groupToMatchToMatchEntryMapMap.set(group, matchToMatchEntryMap);
     }
 
-    for (let {
+    for (const {
       reversedLeavingMatches,
       enteringAndUpdatingMatchSet,
       previousMatchSet,
       descendantUpdatingMatchSet,
     } of dataArray) {
-      for (let match of reversedLeavingMatches) {
+      for (const match of reversedLeavingMatches) {
         match._leave();
       }
 
-      for (let match of enteringAndUpdatingMatchSet) {
-        let update = previousMatchSet.has(match);
+      for (const match of enteringAndUpdatingMatchSet) {
+        const update = previousMatchSet.has(match);
 
         if (update) {
           match._update(descendantUpdatingMatchSet.has(match));
@@ -765,12 +771,12 @@ export class Router<TGroupName extends string = string> {
     previousMatchSet,
     descendantUpdatingMatchSet,
   }: InterUpdateData): Promise<void> {
-    for (let match of reversedLeavingMatches) {
+    for (const match of reversedLeavingMatches) {
       await match._afterLeave();
     }
 
-    for (let match of enteringAndUpdatingMatchSet) {
-      let update = previousMatchSet.has(match);
+    for (const match of enteringAndUpdatingMatchSet) {
+      const update = previousMatchSet.has(match);
 
       if (update) {
         await match._afterUpdate(descendantUpdatingMatchSet.has(match));
@@ -787,7 +793,7 @@ export class Router<TGroupName extends string = string> {
 
   /** @internal */
   private _revert(): void {
-    let snapshot = this._snapshot;
+    const snapshot = this._snapshot;
 
     if (snapshot) {
       this._history.restore(snapshot).catch(console.error);
@@ -801,8 +807,8 @@ export class Router<TGroupName extends string = string> {
     routeMatches: RouteMatch[],
     upperRest: string,
   ): RouteMatchEntry[] | undefined {
-    for (let routeMatch of routeMatches) {
-      let {matched, exactlyMatched, segment, rest} =
+    for (const routeMatch of routeMatches) {
+      const {matched, exactlyMatched, segment, rest} =
         routeMatch._match(upperRest);
 
       if (!matched) {
@@ -820,7 +826,7 @@ export class Router<TGroupName extends string = string> {
         ];
       }
 
-      let result = this._match(routeMatch._children || [], rest);
+      const result = this._match(routeMatch._children || [], rest);
 
       if (!result) {
         continue;
@@ -853,7 +859,7 @@ export class Router<TGroupName extends string = string> {
           schema = {};
         }
 
-        let [routeMatch, nextRouteMatch] = this._buildRouteMatch(
+        const [routeMatch, nextRouteMatch] = this._buildRouteMatch(
           group,
           routeName,
           parent,
@@ -888,13 +894,13 @@ export class Router<TGroupName extends string = string> {
       $metadata: metadata,
     }: RouteSchema,
   ): [RouteMatch, NextRouteMatch] {
-    let source = this._source;
-    let matchingSource = this._matchingSource;
-    let history = this._history;
+    const source = this._source;
+    const matchingSource = this._matchingSource;
+    const history = this._history;
 
-    let query = new Map(Object.entries(queryDict ?? {}));
+    const query = new Map(Object.entries(queryDict ?? {}));
 
-    let options: RouteMatchOptions = {
+    const options: RouteMatchOptions = {
       match,
       query,
       exact,
@@ -902,7 +908,7 @@ export class Router<TGroupName extends string = string> {
       metadata,
     };
 
-    let routeMatch = new RouteMatch(
+    const routeMatch = new RouteMatch(
       routeName,
       this as Router,
       source,
@@ -912,7 +918,7 @@ export class Router<TGroupName extends string = string> {
       options,
     );
 
-    let nextRouteMatch = new NextRouteMatch(
+    const nextRouteMatch = new NextRouteMatch(
       routeName,
       this as Router,
       matchingSource,
@@ -925,12 +931,8 @@ export class Router<TGroupName extends string = string> {
     (routeMatch as any).$next = nextRouteMatch;
 
     if (children) {
-      let [childRouteMatches, childNextRouteMatches] = this._buildRouteMatches(
-        group,
-        children,
-        routeMatch,
-        nextRouteMatch,
-      );
+      const [childRouteMatches, childNextRouteMatches] =
+        this._buildRouteMatches(group, children, routeMatch, nextRouteMatch);
 
       routeMatch._children = childRouteMatches;
       nextRouteMatch._children = childNextRouteMatches;

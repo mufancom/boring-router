@@ -1,10 +1,5 @@
-import {
-  IRouteService,
-  MemoryHistory,
-  RouteMatch,
-  RouteUpdateCallbackData,
-  Router,
-} from 'boring-router';
+import type {IRouteService, RouteUpdateCallbackData} from 'boring-router';
+import {MemoryHistory, RouteMatch, Router} from 'boring-router';
 import {computed, configure, observable} from 'mobx';
 
 import {nap} from './@utils';
@@ -13,15 +8,15 @@ configure({
   enforceActions: 'observed',
 });
 
-let history = new MemoryHistory();
+const history = new MemoryHistory();
 
 class Account {
   constructor(readonly id: string) {}
 }
 
-let router = new Router(history);
+const router = new Router(history);
 
-let primaryRoute = router.$route({
+const primaryRoute = router.$route({
   $children: {
     account: {
       $children: {
@@ -37,21 +32,21 @@ let primaryRoute = router.$route({
   },
 });
 
-let beforeUpdate = jest.fn();
-let beforeEnter = jest.fn();
-let beforeLeave = jest.fn();
+const beforeUpdate = jest.fn();
+const beforeEnter = jest.fn();
+const beforeLeave = jest.fn();
 
-let willUpdate = jest.fn();
-let willEnter = jest.fn();
-let willLeave = jest.fn();
+const willUpdate = jest.fn();
+const willEnter = jest.fn();
+const willLeave = jest.fn();
 
-let update = jest.fn();
-let enter = jest.fn();
-let leave = jest.fn();
+const update = jest.fn();
+const enter = jest.fn();
+const leave = jest.fn();
 
-let afterUpdate = jest.fn();
-let afterEnter = jest.fn();
-let afterLeave = jest.fn();
+const afterUpdate = jest.fn();
+const afterEnter = jest.fn();
+const afterLeave = jest.fn();
 
 type AccountIdRouteMatch = typeof primaryRoute.account.accountId;
 
@@ -148,8 +143,8 @@ test('should navigate from `default` to `account` and triggers `$beforeEnter`', 
 
   expect(primaryRoute.account.accountId.account).toBeUndefined();
 
-  let id = 'abc';
-  let path = `/account/${encodeURIComponent(id)}`;
+  const id = 'abc';
+  const path = `/account/${encodeURIComponent(id)}`;
 
   await history.push(path);
 
@@ -172,8 +167,8 @@ test('should navigate from `default` to `account` and triggers `$beforeEnter`', 
 test('should navigate from `default` to `account` and triggers `$beforeUpdate`', async () => {
   await nap();
 
-  let id = 'def';
-  let path = `/account/${encodeURIComponent(id)}`;
+  const id = 'def';
+  const path = `/account/${encodeURIComponent(id)}`;
 
   await history.push(path);
 

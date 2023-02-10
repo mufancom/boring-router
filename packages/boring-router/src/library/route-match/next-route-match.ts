@@ -1,13 +1,13 @@
-import {IHistory} from '../history';
-import {RouteBuilder} from '../route-builder';
-import {Router} from '../router';
+import type {IHistory} from '../history';
+import type {RouteBuilder} from '../route-builder';
+import type {Router} from '../router';
 
-import {RouteMatch, RouteMatchEntry, RouteSource} from './route-match';
-import {
+import type {RouteMatch, RouteMatchEntry, RouteSource} from './route-match';
+import type {
   GeneralParamDict,
-  RouteMatchShared,
   RouteMatchSharedOptions,
 } from './route-match-shared';
+import {RouteMatchShared} from './route-match-shared';
 
 export class NextRouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict,

@@ -1,4 +1,4 @@
-import {Dict} from 'tslang';
+import type {Dict} from 'tslang';
 
 export interface RootRouteSchema {
   $query?: Dict<string | symbol | true>;

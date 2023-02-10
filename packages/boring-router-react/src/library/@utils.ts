@@ -1,4 +1,4 @@
-import {EventHandler, SyntheticEvent} from 'react';
+import type {EventHandler, SyntheticEvent} from 'react';
 
 const FULFILLED_PROMISE = Promise.resolve();
 
@@ -11,7 +11,7 @@ export function composeEventHandler<T extends SyntheticEvent>(
   breakOnDefaultPrevented = false,
 ): EventHandler<T> {
   return event => {
-    for (let handler of handlers) {
+    for (const handler of handlers) {
       if (handler) {
         handler(event);
 

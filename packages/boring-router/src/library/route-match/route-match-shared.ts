@@ -1,12 +1,12 @@
 import {computed, makeObservable} from 'mobx';
-import {Dict, EmptyObjectPatch} from 'tslang';
+import type {Dict, EmptyObjectPatch} from 'tslang';
 
 import {isQueryIdsMatched} from '../@utils';
-import {IHistory} from '../history';
+import type {IHistory} from '../history';
 import {RouteBuilder} from '../route-builder';
-import {Router, RouterNavigateOptions} from '../router';
+import type {Router, RouterNavigateOptions} from '../router';
 
-import {RouteMatchEntry, RouteSource} from './route-match';
+import type {RouteMatchEntry, RouteSource} from './route-match';
 
 export type GeneralSegmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
@@ -110,6 +110,7 @@ export abstract class RouteMatchShared<
       ...query,
     ]);
 
+    // eslint-disable-next-line @mufan/no-object-literal-type-assertion
     this.$metadata = {
       ...parent?.$metadata,
       ...metadata,
@@ -121,6 +122,7 @@ export abstract class RouteMatchShared<
    */
   @computed
   get $params(): TParamDict {
+    // eslint-disable-next-line @mufan/no-object-literal-type-assertion
     return {
       ...this._paramSegments,
       ...this._query,
@@ -131,7 +133,7 @@ export abstract class RouteMatchShared<
    * A reactive value indicates whether this route is exactly matched.
    */
   get $exact(): boolean {
-    let entry = this._matchEntry;
+    const entry = this._matchEntry;
     return !!entry && entry.exact;
   }
 
@@ -151,9 +153,9 @@ export abstract class RouteMatchShared<
       return this;
     }
 
-    let children = this._children;
+    const children = this._children;
 
-    let matchingChild = children && children.find(match => match.$matched);
+    const matchingChild = children && children.find(match => match.$matched);
 
     return matchingChild ? matchingChild.$rest : this;
   }
@@ -167,18 +169,18 @@ export abstract class RouteMatchShared<
   /** @internal */
   @computed
   protected get _segment(): string | undefined {
-    let entry = this._matchEntry;
+    const entry = this._matchEntry;
     return entry && entry.segment;
   }
 
   /** @internal */
   @computed
   protected get _paramSegments(): GeneralSegmentDict {
-    let parent = this.$parent;
-    let upperSegmentDict = parent && parent._paramSegments;
+    const parent = this.$parent;
+    const upperSegmentDict = parent && parent._paramSegments;
 
-    let matchPattern = this._matchPattern;
-    let segment = this._segment;
+    const matchPattern = this._matchPattern;
+    const segment = this._segment;
 
     if (!(matchPattern instanceof RegExp)) {
       return {
@@ -195,13 +197,13 @@ export abstract class RouteMatchShared<
   /** @internal */
   @computed
   get _pathSegments(): GeneralSegmentDict {
-    let parent = this.$parent;
-    let upperSegmentDict = parent && parent._pathSegments;
+    const parent = this.$parent;
+    const upperSegmentDict = parent && parent._pathSegments;
 
-    let name = this.$name;
+    const name = this.$name;
 
-    let matchPattern = this._matchPattern;
-    let segment = this._segment;
+    const matchPattern = this._matchPattern;
+    const segment = this._segment;
 
     return {
       ...upperSegmentDict,
@@ -214,17 +216,17 @@ export abstract class RouteMatchShared<
   /** @internal */
   @computed
   get _rest(): string {
-    let entry = this._matchEntry;
+    const entry = this._matchEntry;
     return entry ? entry.rest : '';
   }
 
   /** @internal */
   @computed
   protected get _query(): GeneralQueryDict | undefined {
-    let sourceQueryMap = this._source.queryMap;
+    const sourceQueryMap = this._source.queryMap;
 
     return Array.from(this._queryKeyToIdMap).reduce((dict, [key, id]) => {
-      let sourceQuery = sourceQueryMap.get(key);
+      const sourceQuery = sourceQueryMap.get(key);
 
       if (!sourceQuery || !isQueryIdsMatched(sourceQuery.id, id)) {
         return dict;
@@ -233,6 +235,8 @@ export abstract class RouteMatchShared<
       dict[key] = sourceQuery.value;
 
       return dict;
+
+      // eslint-disable-next-line @mufan/no-object-literal-type-assertion
     }, {} as GeneralQueryDict);
   }
 
@@ -280,13 +284,12 @@ export abstract class RouteMatchShared<
     }
 
     if (leave) {
-      let group = this.$group;
+      const group = this.$group;
 
       if (group === undefined) {
         throw new Error('Cannot leave primary route');
       }
 
-      // eslint-disable-next-line @mufan/no-unnecessary-type-assertion
       leaves.push(group as string as TGroupName);
     }
 

@@ -13,28 +13,29 @@
     "link-global": "yarn workspace boring-router link && yarn workspace boring-router-react link",
     "unlink-global": "yarn workspace boring-router unlink && yarn workspace boring-router-react unlink",
     "lerna:publish": "lerna publish patch --registry=https://registry.npmjs.org",
-    "build": "tsc --build",
-    "lint": "eslint .",
+    "build": "rimraf packages/*/bld && tsc --build",
+    "lint": "run-in-every eslint-project --parallel --echo -- eslint --config {configFileName} --no-error-on-unmatched-pattern .",
     "lint-prettier": "prettier --check .",
     "test": "yarn lint-prettier && yarn build && yarn lint && yarn workspace boring-router test"
   },
   "devDependencies": {
-    "@mufan/code": "^0.2.9",
-    "@mufan/eslint-plugin": "^0.1.41",
-    "docz": "^2.3.1",
-    "eslint": "^7.32.0",
-    "gatsby-plugin-catch-links": "^2.10.0",
-    "gh-pages": "^3.2.3",
-    "lerna": "^4.0.0",
-    "prettier": "^2.4.0",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "rimraf": "^3.0.2",
-    "typescript": "^4.4.3"
+    "@mufan/code": "^0.2.15",
+    "@mufan/eslint-plugin": "^0.1.77",
+    "docz": "^2.4.0",
+    "eslint": "^8.34.0",
+    "gatsby-plugin-catch-links": "^5.6.0",
+    "gh-pages": "^5.0.0",
+    "lerna": "^6.4.1",
+    "prettier": "^2.8.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rimraf": "^4.1.2",
+    "run-in-every": "^0.2.0",
+    "typescript": "^4.9.5"
   },
   "resolutions": {
     "get-pkg-repo": "4.1.1",
-    "@typescript-eslint/eslint-plugin": "4"
+    "@typescript-eslint/eslint-plugin": "5"
   },
   "workspaces": [
     "packages/boring-router",

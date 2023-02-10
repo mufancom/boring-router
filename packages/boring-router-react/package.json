@@ -8,30 +8,26 @@
     "type": "git",
     "url": "https://github.com/makeflow/boring-router.git"
   },
-  "main": "bld/library/index.js",
-  "types": "bld/library/index.d.ts",
-  "files": [
-    "src/library/**/*.ts",
-    "src/library/**/*.tsx",
-    "bld/library",
-    "!*.tsbuildinfo"
-  ],
+  "exports": {
+    "types": "./bld/library/index.d.ts",
+    "require": "./bld/library/index.js"
+  },
   "peerDependencies": {
     "boring-router": "0.5",
     "mobx": "6",
-    "react": "17"
+    "react": "18"
   },
   "devDependencies": {
     "@types/classnames": "^2.3.1",
     "@types/debug": "^4.1.7",
-    "mobx": "^6.3.5",
-    "react": "^17.0.2"
+    "mobx": "^6.8.0",
+    "react": "^18.2.0"
   },
   "dependencies": {
-    "classnames": "^2.3.1",
-    "debug": "^4.3.2",
-    "mobx-react-lite": "^3.2.1",
-    "tslang": "^0.1.23",
-    "tslib": "^2.3.1"
+    "classnames": "^2.3.2",
+    "debug": "^4.3.4",
+    "mobx-react-lite": "^3.4.0",
+    "tslang": "^0.1.27",
+    "tslib": "^2.5.0"
   }
 }

@@ -1,6 +1,6 @@
 import {MemoryHistory, RouteMatch, Router} from 'boring-router';
 import {configure} from 'mobx';
-import {AssertTrue, IsEqual} from 'tslang';
+import type {AssertTrue, IsEqual} from 'tslang';
 
 import {nap} from './@utils';
 
@@ -8,11 +8,11 @@ configure({
   enforceActions: 'observed',
 });
 
-let history = new MemoryHistory();
+const history = new MemoryHistory();
 
-let router = new Router<'popup' | 'sidebar'>(history);
+const router = new Router<'popup' | 'sidebar'>(history);
 
-let primaryRoute = router.$route({
+const primaryRoute = router.$route({
   $children: {
     account: {
       $query: {
@@ -101,7 +101,7 @@ let primaryRoute = router.$route({
   },
 });
 
-let popupRoute = router.$route('popup', {
+const popupRoute = router.$route('popup', {
   $children: {
     invite: {
       $exact: true,
@@ -109,7 +109,7 @@ let popupRoute = router.$route('popup', {
   },
 });
 
-let sidebarRoute = router.$route('sidebar', {
+const sidebarRoute = router.$route('sidebar', {
   $children: {
     groups: {
       $exact: true,
@@ -247,8 +247,8 @@ test('should match `account.id`', async () => {
 });
 
 test('metadata should be merged', async () => {
-  let accountMetadata = primaryRoute.account.$metadata;
-  let accountIdMetadata = primaryRoute.account.id.$next.$metadata;
+  const accountMetadata = primaryRoute.account.$metadata;
+  const accountIdMetadata = primaryRoute.account.id.$next.$metadata;
 
   // @ts-ignore
   type __Assertion =

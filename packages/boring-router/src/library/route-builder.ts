@@ -1,13 +1,13 @@
 import _ from 'lodash';
-import {EmptyObjectPatch} from 'tslang';
+import type {EmptyObjectPatch} from 'tslang';
 
 import {buildPath, buildRef, isQueryIdsMatched, parseSearch} from './@utils';
-import {
+import type {
   GeneralParamDict,
   RouteMatchShared,
   RouteMatchSharedToParamDict,
 } from './route-match';
-import {Router, RouterNavigateOptions} from './router';
+import type {Router, RouterNavigateOptions} from './router';
 
 type BuildingPart = RouteBuilderBuildingPart | StringBuildingPart;
 
@@ -36,7 +36,7 @@ export class RouteBuilder<TGroupName extends string = string> {
    * Route of the first building part if available.
    */
   get $route(): RouteMatchShared | undefined {
-    let [firstPart] = this.buildingParts;
+    const [firstPart] = this.buildingParts;
 
     return typeof firstPart === 'object' ? firstPart.route : undefined;
   }
@@ -48,7 +48,7 @@ export class RouteBuilder<TGroupName extends string = string> {
   ): RouteBuilder<TGroupName>;
   $(part: string): RouteBuilder<TGroupName>;
   $(route: RouteMatchShared | string, params?: GeneralParamDict): RouteBuilder {
-    let buildingPart =
+    const buildingPart =
       typeof route === 'string'
         ? route
         : {
@@ -69,7 +69,7 @@ export class RouteBuilder<TGroupName extends string = string> {
       groups = [groups];
     }
 
-    let leavingGroupSet = new Set([...this.leavingGroupSet, ...groups]);
+    const leavingGroupSet = new Set([...this.leavingGroupSet, ...groups]);
 
     return new RouteBuilder(
       this.router,
@@ -80,20 +80,20 @@ export class RouteBuilder<TGroupName extends string = string> {
   }
 
   $ref(): string {
-    let router = this.router;
-    let sourceType = this.sourceType;
+    const router = this.router;
+    const sourceType = this.sourceType;
 
-    let leavingGroupSet = this.leavingGroupSet;
+    const leavingGroupSet = this.leavingGroupSet;
 
-    let groupToBuildingPartMap = new Map<string | undefined, BuildingPart>();
+    const groupToBuildingPartMap = new Map<string | undefined, BuildingPart>();
 
     if (sourceType !== 'none') {
-      for (let [group, route] of router._groupToRouteMatchMap) {
+      for (const [group, route] of router._groupToRouteMatchMap) {
         if (group && leavingGroupSet.has(group)) {
           continue;
         }
 
-        let sourceRoute = sourceType === 'current' ? route : route.$next;
+        const sourceRoute = sourceType === 'current' ? route : route.$next;
 
         if (!sourceRoute.$matched) {
           continue;
@@ -105,20 +105,20 @@ export class RouteBuilder<TGroupName extends string = string> {
       }
     }
 
-    for (let buildingPart of this.buildingParts) {
+    for (const buildingPart of this.buildingParts) {
       if (typeof buildingPart === 'string') {
-        let {groups, query: buildingPartQueryMap} = parseStringBuildingPart(
+        const {groups, query: buildingPartQueryMap} = parseStringBuildingPart(
           buildingPart,
           router.$groups,
         );
 
-        for (let {name: group, path} of groups) {
+        for (const {name: group, path} of groups) {
           if (group && leavingGroupSet.has(group)) {
             continue;
           }
 
           // Preserve the route information if already exists.
-          let route = groupToBuildingPartMap.get(group)?.route;
+          const route = groupToBuildingPartMap.get(group)?.route;
 
           groupToBuildingPartMap.set(group, {
             path,
@@ -127,7 +127,7 @@ export class RouteBuilder<TGroupName extends string = string> {
           });
         }
       } else {
-        let group = buildingPart.route.$group;
+        const group = buildingPart.route.$group;
 
         if (group && leavingGroupSet.has(group)) {
           continue;
@@ -137,11 +137,11 @@ export class RouteBuilder<TGroupName extends string = string> {
       }
     }
 
-    let pathMap = new Map<string | undefined, string>();
+    const pathMap = new Map<string | undefined, string>();
 
-    let queryMap = new Map<string, string | undefined>();
+    const queryMap = new Map<string, string | undefined>();
 
-    for (let [group, buildingPart] of groupToBuildingPartMap) {
+    for (const [group, buildingPart] of groupToBuildingPartMap) {
       if ('path' in buildingPart) {
         let {path, route, query: buildingPartQueryMap} = buildingPart;
 
@@ -156,7 +156,7 @@ export class RouteBuilder<TGroupName extends string = string> {
           ]);
         }
 
-        for (let [key, value] of buildingPartQueryMap) {
+        for (const [key, value] of buildingPartQueryMap) {
           if (queryMap.has(key)) {
             continue;
           }
@@ -164,35 +164,35 @@ export class RouteBuilder<TGroupName extends string = string> {
           queryMap.set(key, value);
         }
       } else {
-        let {route, params: paramDict = {}} = buildingPart;
+        const {route, params: paramDict = {}} = buildingPart;
 
-        let nextSegmentDict = route._pathSegments;
-        let nextSegmentNames = _.keys(nextSegmentDict);
+        const nextSegmentDict = route._pathSegments;
+        const nextSegmentNames = _.keys(nextSegmentDict);
 
-        let restSegmentDict = _.pick(
+        const restSegmentDict = _.pick(
           router._groupToRouteMatchMap.get(group)?.$rest._pathSegments || {},
           nextSegmentNames,
         );
 
-        let segmentDict = _.fromPairs(
+        const segmentDict = _.fromPairs(
           _.sortBy(
             _.entries(_.merge(restSegmentDict, nextSegmentDict)),
             ([key]) => nextSegmentNames.indexOf(key),
           ),
         );
 
-        let queryKeyToIdMap = route._queryKeyToIdMap;
-        let queryKeys = Array.from(queryKeyToIdMap.keys());
+        const queryKeyToIdMap = route._queryKeyToIdMap;
+        const queryKeys = Array.from(queryKeyToIdMap.keys());
 
         pathMap.set(
           group,
           buildPath(segmentDict, _.omit(paramDict, queryKeys)),
         );
 
-        let {queryMap: sourceQueryMap} = route._source;
+        const {queryMap: sourceQueryMap} = route._source;
 
-        for (let [key, {id, value}] of sourceQueryMap) {
-          let routeQueryId = queryKeyToIdMap.get(key);
+        for (const [key, {id, value}] of sourceQueryMap) {
+          const routeQueryId = queryKeyToIdMap.get(key);
 
           if (
             queryMap.has(key) ||
@@ -205,12 +205,12 @@ export class RouteBuilder<TGroupName extends string = string> {
           queryMap.set(key, value);
         }
 
-        let restParamKeys = _.difference(
+        const restParamKeys = _.difference(
           Object.keys(paramDict),
           _.difference(Object.keys(segmentDict), queryKeys),
         );
 
-        for (let key of restParamKeys) {
+        for (const key of restParamKeys) {
           if (!queryKeyToIdMap.has(key)) {
             throw new Error(
               `Parameter "${key}" is defined as neither segment nor query`,
@@ -242,7 +242,7 @@ export class RouteBuilder<TGroupName extends string = string> {
    * Perform a `history.push()` with `this.$ref()`.
    */
   $push(options?: RouterNavigateOptions): void {
-    let ref = this.$ref();
+    const ref = this.$ref();
     this.router._push(ref, options);
   }
 
@@ -250,7 +250,7 @@ export class RouteBuilder<TGroupName extends string = string> {
    * Perform a `history.replace()` with `this.$ref()`.
    */
   $replace(options?: RouterNavigateOptions): void {
-    let ref = this.$ref();
+    const ref = this.$ref();
     this.router._replace(ref, options);
   }
 }
@@ -269,7 +269,7 @@ function parseStringBuildingPart(
   part: string,
   groups: string[],
 ): ParsedStringBuildingPart {
-  let searchIndex = part.indexOf('?');
+  const searchIndex = part.indexOf('?');
 
   let primaryPath: string | undefined;
   let queryMap: Map<string, string>;
@@ -282,7 +282,7 @@ function parseStringBuildingPart(
     queryMap = new Map();
   }
 
-  let buildingPartGroups: ParsedStringBuildingPartGroup[] = [];
+  const buildingPartGroups: ParsedStringBuildingPartGroup[] = [];
 
   if (primaryPath) {
     buildingPartGroups.push({
@@ -292,8 +292,8 @@ function parseStringBuildingPart(
   }
 
   if (queryMap) {
-    for (let group of groups) {
-      let key = `_${group}`;
+    for (const group of groups) {
+      const key = `_${group}`;
 
       if (queryMap.has(key)) {
         buildingPartGroups.push({
