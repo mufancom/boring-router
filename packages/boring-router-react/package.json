@@ -3,10 +3,12 @@
   "version": "0.0.0",
   "license": "MIT",
   "author": "Chengdu Mufan Technology Co., Ltd.",
-  "main": "bld/library/index.js",
-  "types": "bld/library/index.d.ts",
+  "exports": {
+    "types": "./bld/library/index.d.ts",
+    "require": "./bld/library/index.js"
+  },
   "dependencies": {
     "boring-router": "*",
-    "tslib": "^2.3.1"
+    "tslib": "^2.5.0"
   }
 }

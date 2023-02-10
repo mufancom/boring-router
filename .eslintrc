@@ -1,22 +1,19 @@
 {
   "root": true,
-  "ignorePatterns": ["bld", ".bld-cache"],
+  "ignorePatterns": [
+    "/packages/boring-router/src/",
+    "/packages/boring-router/bld/",
+    "/packages/boring-router/",
+    "/packages/boring-router-react/src/",
+    "/packages/boring-router-react/bld/",
+    "/packages/examples/basic/",
+    "/packages/examples/lifecycle-hooks/",
+    "/packages/examples/parallel-routes/",
+    "/packages/examples/route-content/"
+  ],
   "extends": ["eslint:recommended"],
   "env": {
     "node": true,
     "es2020": true
-  },
-  "overrides": [
-    {
-      "files": ["**/*.{ts,tsx}"],
-      "extends": ["plugin:@mufan/default"],
-      "parserOptions": {
-        "project": "**/tsconfig.json"
-      }
-    },
-    {
-      "files": ["packages/boring-router/test/**/*.{ts,tsx}"],
-      "extends": ["plugin:@mufan/override-dev"]
-    }
-  ]
+  }
 }

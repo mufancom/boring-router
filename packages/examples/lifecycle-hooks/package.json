@@ -6,6 +6,6 @@
   "dependencies": {
     "boring-router": "*",
     "boring-router-react": "*",
-    "tslib": "^2.3.1"
+    "tslib": "^2.5.0"
   }
 }

@@ -1,0 +1,12 @@
+{
+  "root": true,
+  "overrides": [
+    {
+      "files": ["**/*.{ts,tsx}"],
+      "extends": ["plugin:@mufan/default"],
+      "parserOptions": {
+        "project": "tsconfig.json"
+      }
+    }
+  ]
+}

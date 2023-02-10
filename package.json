@@ -4,8 +4,8 @@
   "license": "MIT",
   "author": "Chengdu Mufan Technology Co., Ltd.",
   "scripts": {
-    "build": "tsc --build",
-    "lint": "eslint .",
+    "build": "rimraf packages/*/bld && tsc --build",
+    "lint": "run-in-every eslint-project --parallel --echo -- eslint --config {configFileName} --no-error-on-unmatched-pattern .",
     "lint-prettier": "prettier --check .",
     "test": "yarn lint-prettier && yarn build && yarn lint"
   },
@@ -18,11 +18,12 @@
     "packages/examples/route-content"
   ],
   "devDependencies": {
-    "@mufan/code": "^0.2.9",
-    "@mufan/eslint-plugin": "^0.1.41",
-    "eslint": "^7.32.0",
-    "prettier": "^2.4.0",
+    "@mufan/code": "^0.2.15",
+    "@mufan/eslint-plugin": "^0.1.77",
+    "eslint": "^8.34.0",
+    "prettier": "^2.8.4",
     "rimraf": "^3.0.2",
-    "typescript": "^4.4.3"
+    "run-in-every": "^0.2.0",
+    "typescript": "^4.9.5"
   }
 }
