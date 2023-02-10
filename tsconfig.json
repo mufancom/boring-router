@@ -4,7 +4,7 @@
       "path": "packages/boring-router/src/library"
     },
     {
-      "path": "packages/boring-router/test"
+      "path": "packages/boring-router/src/test"
     },
     {
       "path": "packages/boring-router-react/src/library"

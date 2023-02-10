@@ -5,11 +5,12 @@
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["jest"],
     "experimentalDecorators": true,
-    "noEmit": true
+    "noEmit": true,
+    "outDir": "../../bld/test"
   },
   "references": [
     {
-      "path": "../src/library"
+      "path": "../library"
     }
   ]
 }
