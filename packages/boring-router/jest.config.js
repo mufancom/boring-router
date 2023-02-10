@@ -8,9 +8,6 @@ module.exports = {
       'ts-jest',
       {
         tsconfig: 'test/tsconfig.json',
-        diagnostics: {
-          ignoreCodes: ['TS151001'],
-        },
       },
     ],
   },
