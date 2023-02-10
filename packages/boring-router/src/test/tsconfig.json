@@ -2,7 +2,6 @@
   "extends": "@mufan/code/tsconfig.json",
   "compilerOptions": {
     "composite": true,
-    "noEmit": true,
-    "outDir": ""
+    "outDir": "../../bld/test"
   }
 }

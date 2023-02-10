@@ -14,7 +14,7 @@
   "eslint.workingDirectories": [
     ".",
     "packages/boring-router/src/library",
-    "packages/boring-router/test",
+    "packages/boring-router/src/test",
     "packages/boring-router-react/src/library",
     "packages/examples/basic",
     "packages/examples/lifecycle-hooks",
