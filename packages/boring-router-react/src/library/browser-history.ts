@@ -118,11 +118,27 @@ export class BrowserHistory<TData = any> extends AbstractHistory<
     if (this.hash) {
       const index = href.indexOf('#');
 
-      return (index >= 0 && href.slice(index + 1)) || '/';
+      if (index >= 0) {
+        const ref = href.slice(index + 1);
+
+        if (ref) {
+          return ref;
+        }
+      }
+
+      return '/';
     } else {
       const prefix = this.prefix;
 
-      return href.startsWith(prefix) ? href.slice(prefix.length) : href;
+      let ref = href.startsWith(prefix) ? href.slice(prefix.length) : href;
+
+      const hashIndex = ref.indexOf('#');
+
+      if (hashIndex >= 0) {
+        ref = ref.slice(0, hashIndex);
+      }
+
+      return ref;
     }
   }
 
