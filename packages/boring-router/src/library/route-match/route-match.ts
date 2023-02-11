@@ -47,7 +47,7 @@ export type ServiceBeforeEnterCallback<
   TEnterData extends object | void = object | void,
 > = (
   next: TRouteMatch['$next'],
-) => Promise<boolean | TEnterData> | boolean | TEnterData;
+) => Promise<boolean | TEnterData | void> | boolean | TEnterData | void;
 
 // before update //
 
@@ -69,7 +69,7 @@ export type ServiceBeforeUpdateCallback<
 > = (
   next: TRouteMatch['$next'],
   context: RouteUpdateContext,
-) => Promise<boolean | TUpdateData> | boolean | TUpdateData;
+) => Promise<boolean | TUpdateData | void> | boolean | TUpdateData | void;
 
 export interface RouteBeforeUpdateOptions {
   traceDescendants: boolean;
@@ -256,7 +256,7 @@ export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
 export type IRouteService<
   TRouteMatch extends RouteMatch = RouteMatch,
   TEnterData extends object | void = object | void,
-  TUpdateData extends object | void = object | void,
+  TUpdateData extends object | void = TEnterData,
 > = {
   /** @internal */
   [ROUTE_SERVICE_ENTER_DATA_SYMBOL]?: TEnterData;
