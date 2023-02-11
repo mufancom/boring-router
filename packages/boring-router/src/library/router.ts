@@ -677,6 +677,14 @@ export class Router<TGroupName extends string = string> {
         ? await match._beforeUpdate(descendantUpdatingMatchSet.has(match))
         : await match._beforeEnter();
 
+      if (!result) {
+        if (update) {
+          match._abortUpdate();
+        } else {
+          match._abortEnter();
+        }
+      }
+
       if (this._isNextSnapshotOutDated(nextSnapshot)) {
         return undefined;
       }

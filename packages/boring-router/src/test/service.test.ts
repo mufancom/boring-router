@@ -1,4 +1,4 @@
-import type {IRouteService, RouteUpdateCallbackData} from 'boring-router';
+import type {IRouteService, RouteUpdateContext} from 'boring-router';
 import {MemoryHistory, RouteMatch, Router} from 'boring-router';
 import {computed, configure, observable} from 'mobx';
 
@@ -50,7 +50,22 @@ const afterLeave = jest.fn();
 
 type AccountIdRouteMatch = typeof primaryRoute.account.accountId;
 
-class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
+interface AccountRouteServiceEnterData {
+  foo: string;
+}
+
+interface AccountRouteServiceUpdateData {
+  bar: number;
+}
+
+class AccountRouteService
+  implements
+    IRouteService<
+      AccountIdRouteMatch,
+      AccountRouteServiceEnterData,
+      AccountRouteServiceUpdateData
+    >
+{
   @observable
   account!: Account;
 
@@ -61,21 +76,37 @@ class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
     return `[${this.match.$params.accountId}]`;
   }
 
-  beforeEnter(next: AccountIdRouteMatch['$next']): void {
+  beforeEnter(
+    next: AccountIdRouteMatch['$next'],
+  ): AccountRouteServiceEnterData {
     beforeEnter();
 
     expect(next).toEqual(this.match.$next);
+
+    return {
+      foo: 'abc',
+    };
   }
 
-  willEnter(next: AccountIdRouteMatch['$next']): void {
+  willEnter(
+    next: AccountIdRouteMatch['$next'],
+    data: AccountRouteServiceEnterData,
+  ): void {
     willEnter();
 
     expect(next).toEqual(this.match.$next);
+    expect(data).toEqual({
+      foo: 'abc',
+    });
 
     this.account = new Account(next.$params.accountId);
   }
 
-  enter(): void {
+  enter(data: AccountRouteServiceEnterData): void {
+    expect(data).toEqual({
+      foo: 'abc',
+    });
+
     enter();
   }
 
@@ -85,34 +116,52 @@ class AccountRouteService implements IRouteService<AccountIdRouteMatch> {
 
   beforeUpdate(
     next: AccountIdRouteMatch['$next'],
-    data: RouteUpdateCallbackData,
-  ): void {
+    context: RouteUpdateContext,
+  ): AccountRouteServiceUpdateData {
     beforeUpdate();
 
     expect(next).toEqual(this.match.$next);
-    expect(data).toHaveProperty('descendants');
+    expect(context).toHaveProperty('descendants');
+
+    return {
+      bar: 123,
+    };
   }
 
   willUpdate(
     match: AccountIdRouteMatch['$next'],
-    data: RouteUpdateCallbackData,
+    context: RouteUpdateContext,
+    data: AccountRouteServiceUpdateData,
   ): void {
     willUpdate();
 
     expect(match).toEqual(this.match.$next);
-    expect(data).toHaveProperty('descendants');
+    expect(context).toHaveProperty('descendants');
+    expect(data).toEqual({
+      bar: 123,
+    });
 
-    this.willEnter(match);
+    this.willEnter(match, {
+      foo: 'abc',
+    });
   }
 
-  update(): void {
+  update(
+    context: RouteUpdateContext,
+    data: AccountRouteServiceUpdateData,
+  ): void {
     update();
+
+    expect(context).toHaveProperty('descendants');
+    expect(data).toEqual({
+      bar: 123,
+    });
   }
 
-  afterUpdate(data: RouteUpdateCallbackData): void {
+  afterUpdate(context: RouteUpdateContext): void {
     afterUpdate();
 
-    expect(data).toHaveProperty('descendants');
+    expect(context).toHaveProperty('descendants');
   }
 
   beforeLeave(): void {

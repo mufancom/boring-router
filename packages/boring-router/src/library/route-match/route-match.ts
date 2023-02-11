@@ -20,11 +20,14 @@ import type {
 } from './route-match-shared';
 import {RouteMatchShared} from './route-match-shared';
 
+export const ROUTE_SERVICE_ENTER_DATA_SYMBOL = Symbol('enter data');
+export const ROUTE_SERVICE_UPDATE_DATA_SYMBOL = Symbol('update data');
+
 /////////////////////
 // lifecycle hooks //
 /////////////////////
 
-export interface RouteUpdateCallbackData {
+export interface RouteUpdateContext {
   descendants: boolean;
 }
 
@@ -39,6 +42,13 @@ export type RouteBeforeEnterCallback<
   TRouteMatch extends RouteMatch = RouteMatch,
 > = (next: TRouteMatch['$next']) => Promise<boolean | void> | boolean | void;
 
+export type ServiceBeforeEnterCallback<
+  TRouteMatch extends RouteMatch = RouteMatch,
+  TEnterData extends object | void = object | void,
+> = (
+  next: TRouteMatch['$next'],
+) => Promise<boolean | TEnterData> | boolean | TEnterData;
+
 // before update //
 
 /**
@@ -50,8 +60,16 @@ export type RouteBeforeUpdateCallback<
   TRouteMatch extends RouteMatch = RouteMatch,
 > = (
   next: TRouteMatch['$next'],
-  data: RouteUpdateCallbackData,
+  context: RouteUpdateContext,
 ) => Promise<boolean | void> | boolean | void;
+
+export type ServiceBeforeUpdateCallback<
+  TRouteMatch extends RouteMatch = RouteMatch,
+  TUpdateData extends object | void = object | void,
+> = (
+  next: TRouteMatch['$next'],
+  context: RouteUpdateContext,
+) => Promise<boolean | TUpdateData> | boolean | TUpdateData;
 
 export interface RouteBeforeUpdateOptions {
   traceDescendants: boolean;
@@ -82,13 +100,27 @@ export type RouteWillEnterCallback<
   TRouteMatch extends RouteMatch = RouteMatch,
 > = (next: TRouteMatch['$next']) => Promise<void> | void;
 
+export type ServiceWillEnterCallback<
+  TRouteMatch extends RouteMatch = RouteMatch,
+  TEnterData extends object | void = object | void,
+> = (next: TRouteMatch['$next'], data: TEnterData) => Promise<void> | void;
+
 // will update //
 
 export type RouteWillUpdateCallback<
   TRouteMatch extends RouteMatch = RouteMatch,
 > = (
   next: TRouteMatch['$next'],
-  data: RouteUpdateCallbackData,
+  context: RouteUpdateContext,
+) => Promise<void> | void;
+
+export type ServiceWillUpdateCallback<
+  TRouteMatch extends RouteMatch = RouteMatch,
+  TUpdateData extends object | void = object | void,
+> = (
+  next: TRouteMatch['$next'],
+  context: RouteUpdateContext,
+  data: TUpdateData,
 ) => Promise<void> | void;
 
 export interface RouteWillUpdateOptions {
@@ -110,9 +142,18 @@ export type RouteWillLeaveCallback = () => Promise<void> | void;
 
 export type RouteEnterCallback = () => void;
 
+export type ServiceEnterCallback<
+  TEnterData extends object | void = object | void,
+> = (data: TEnterData) => void;
+
 // update //
 
-export type RouteUpdateCallback = (data: RouteUpdateCallbackData) => void;
+export type RouteUpdateCallback = (context: RouteUpdateContext) => void;
+
+export type ServiceUpdateCallback<TUpdateData extends object | void> = (
+  context: RouteUpdateContext,
+  data: TUpdateData,
+) => void;
 
 export interface RouteUpdateOptions {
   traceDescendants: boolean;
@@ -136,7 +177,7 @@ export type RouteAfterEnterCallback = () => void;
 /**
  * Route after update callback.
  */
-export type RouteAfterUpdateCallback = (data: RouteUpdateCallbackData) => void;
+export type RouteAfterUpdateCallback = (context: RouteUpdateContext) => void;
 
 export interface RouteAfterUpdateOptions {
   traceDescendants: boolean;
@@ -212,14 +253,22 @@ export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
 ) => IRouteService<TRouteMatch> | Promise<IRouteService<TRouteMatch>>;
 
-export type IRouteService<TRouteMatch extends RouteMatch = RouteMatch> = {
-  beforeEnter?: RouteBeforeEnterCallback<TRouteMatch>;
-  willEnter?: RouteWillEnterCallback;
-  enter?: RouteEnterCallback;
+export type IRouteService<
+  TRouteMatch extends RouteMatch = RouteMatch,
+  TEnterData extends object | void = object | void,
+  TUpdateData extends object | void = object | void,
+> = {
+  /** @internal */
+  [ROUTE_SERVICE_ENTER_DATA_SYMBOL]?: TEnterData;
+  /** @internal */
+  [ROUTE_SERVICE_UPDATE_DATA_SYMBOL]?: TUpdateData;
+  beforeEnter?: ServiceBeforeEnterCallback<TRouteMatch, TEnterData>;
+  willEnter?: ServiceWillEnterCallback<TRouteMatch, TEnterData>;
+  enter?: ServiceEnterCallback<TEnterData>;
   afterEnter?: RouteAfterEnterCallback;
-  beforeUpdate?: RouteBeforeUpdateCallback<TRouteMatch>;
-  willUpdate?: RouteWillUpdateCallback<TRouteMatch>;
-  update?: RouteUpdateCallback;
+  beforeUpdate?: ServiceBeforeUpdateCallback<TRouteMatch, TUpdateData>;
+  willUpdate?: ServiceWillUpdateCallback<TRouteMatch, TUpdateData>;
+  update?: ServiceUpdateCallback<TUpdateData>;
   afterUpdate?: RouteAfterUpdateCallback;
   beforeLeave?: RouteBeforeLeaveCallback;
   willLeave?: RouteWillLeaveCallback;
@@ -818,10 +867,10 @@ export class RouteMatch<
         tolerate(callback),
       ),
       (async () => {
-        const service = await this._getService();
+        const service = this._getServiceSync();
 
         if (service && service.beforeLeave) {
-          return tolerate(() => service!.beforeLeave!());
+          return tolerate(() => service.beforeLeave!());
         }
       })(),
     ]);
@@ -841,7 +890,14 @@ export class RouteMatch<
         const service = await this._getService();
 
         if (service && service.beforeEnter) {
-          return tolerate(() => service!.beforeEnter!(next));
+          const ret = await tolerate(() => service.beforeEnter!(next));
+
+          if (typeof ret === 'object') {
+            service[ROUTE_SERVICE_ENTER_DATA_SYMBOL] = ret;
+            return undefined;
+          } else {
+            return ret;
+          }
         }
       })(),
     ]);
@@ -864,12 +920,19 @@ export class RouteMatch<
           tolerate(callback, next, {descendants: triggeredByDescendants}),
         ),
       (async () => {
-        const service = await this._getService();
+        const service = this._getServiceSync();
 
         if (service && service.beforeUpdate) {
-          return tolerate(() =>
-            service!.beforeUpdate!(next, {descendants: triggeredByDescendants}),
+          const ret = await tolerate(() =>
+            service.beforeUpdate!(next, {descendants: triggeredByDescendants}),
           );
+
+          if (typeof ret === 'object') {
+            service[ROUTE_SERVICE_UPDATE_DATA_SYMBOL] = ret;
+            return undefined;
+          } else {
+            return ret;
+          }
         }
       })(),
     ]);
@@ -891,10 +954,10 @@ export class RouteMatch<
         tolerate(callback),
       ),
       (async () => {
-        const service = await this._getService();
+        const service = this._getServiceSync();
 
         if (service && service.willLeave) {
-          return tolerate(() => service!.willLeave!());
+          return tolerate(() => service.willLeave!());
         }
       })(),
     ]);
@@ -909,10 +972,12 @@ export class RouteMatch<
         tolerate(callback, next),
       ),
       (async () => {
-        const service = await this._getService();
+        const service = this._getServiceSync();
 
         if (service && service.willEnter) {
-          return tolerate(() => service!.willEnter!(next));
+          return tolerate(() =>
+            service.willEnter!(next, service[ROUTE_SERVICE_ENTER_DATA_SYMBOL]),
+          );
         }
       })(),
     ]);
@@ -931,15 +996,37 @@ export class RouteMatch<
           tolerate(callback, next, {descendants: triggeredByDescendants}),
         ),
       (async () => {
-        const service = await this._getService();
+        const service = this._getServiceSync();
 
         if (service && service.willUpdate) {
           return tolerate(() =>
-            service!.willUpdate!(next, {descendants: triggeredByDescendants}),
+            service.willUpdate!(
+              next,
+              {descendants: triggeredByDescendants},
+              service[ROUTE_SERVICE_UPDATE_DATA_SYMBOL],
+            ),
           );
         }
       })(),
     ]);
+  }
+
+  /** @internal */
+  _abortEnter(): void {
+    const service = this._getServiceSync();
+
+    if (service) {
+      delete service[ROUTE_SERVICE_ENTER_DATA_SYMBOL];
+    }
+  }
+
+  /** @internal */
+  _abortUpdate(): void {
+    const service = this._getServiceSync();
+
+    if (service) {
+      delete service[ROUTE_SERVICE_UPDATE_DATA_SYMBOL];
+    }
   }
 
   /** @internal */
@@ -950,8 +1037,14 @@ export class RouteMatch<
 
     const service = this._getServiceSync();
 
-    if (service && service.enter) {
-      return tolerate(() => service!.enter!());
+    if (service) {
+      const data = service[ROUTE_SERVICE_ENTER_DATA_SYMBOL];
+
+      delete service[ROUTE_SERVICE_ENTER_DATA_SYMBOL];
+
+      if (service.enter) {
+        return tolerate(() => service.enter!(data));
+      }
     }
 
     for (const reactiveEntry of this._reactiveEntrySet) {
@@ -992,10 +1085,16 @@ export class RouteMatch<
 
     const service = this._getServiceSync();
 
-    if (service && service.update) {
-      return tolerate(() =>
-        service!.update!({descendants: triggeredByDescendants}),
-      );
+    if (service) {
+      const data = service[ROUTE_SERVICE_UPDATE_DATA_SYMBOL];
+
+      delete service[ROUTE_SERVICE_UPDATE_DATA_SYMBOL];
+
+      if (service.update) {
+        return tolerate(() =>
+          service.update!({descendants: triggeredByDescendants}, data),
+        );
+      }
     }
   }
 
@@ -1008,7 +1107,7 @@ export class RouteMatch<
     const service = this._getServiceSync();
 
     if (service && service.leave) {
-      tolerate(() => service!.leave!());
+      tolerate(() => service.leave!());
     }
   }
 
@@ -1018,10 +1117,10 @@ export class RouteMatch<
       tolerate(callback);
     }
 
-    const service = await this._getService();
+    const service = this._getServiceSync();
 
     if (service && service.afterLeave) {
-      tolerate(() => service!.afterLeave!());
+      tolerate(() => service.afterLeave!());
     }
   }
 
@@ -1031,10 +1130,10 @@ export class RouteMatch<
       tolerate(callback);
     }
 
-    const service = await this._getService();
+    const service = this._getServiceSync();
 
     if (service && service.afterEnter) {
-      tolerate(() => service!.afterEnter!());
+      tolerate(() => service.afterEnter!());
     }
   }
 
@@ -1046,11 +1145,11 @@ export class RouteMatch<
       }
     }
 
-    const service = await this._getService();
+    const service = this._getServiceSync();
 
     if (service && service.afterUpdate) {
       tolerate(() =>
-        service!.afterUpdate!({descendants: triggeredByDescendants}),
+        service.afterUpdate!({descendants: triggeredByDescendants}),
       );
     }
   }
