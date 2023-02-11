@@ -678,11 +678,7 @@ export class Router<TGroupName extends string = string> {
         : await match._beforeEnter();
 
       if (!result) {
-        if (update) {
-          match._abortUpdate();
-        } else {
-          match._abortEnter();
-        }
+        match._abortEnterUpdate();
       }
 
       if (this._isNextSnapshotOutDated(nextSnapshot)) {

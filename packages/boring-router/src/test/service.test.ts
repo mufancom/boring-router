@@ -1,6 +1,11 @@
-import type {IRouteService, RouteUpdateContext} from 'boring-router';
+import type {
+  IRouteService,
+  RouteUpdateContext,
+  ServiceWillEnterCallbackReturn,
+  ServiceWillUpdateCallbackReturn,
+} from 'boring-router';
 import {MemoryHistory, RouteMatch, Router} from 'boring-router';
-import {computed, configure, observable} from 'mobx';
+import {computed, configure} from 'mobx';
 
 import {nap} from './@utils';
 
@@ -50,25 +55,22 @@ const afterLeave = jest.fn();
 
 type AccountIdRouteMatch = typeof primaryRoute.account.accountId;
 
-interface AccountRouteServiceEnterData {
+interface AccountRouteServiceEnterUpdateData {
   foo: string;
 }
 
-interface AccountRouteServiceUpdateData {
-  bar: number;
+interface AccountRouteServiceClassExtension {
+  name: string;
 }
 
 class AccountRouteService
   implements
     IRouteService<
       AccountIdRouteMatch,
-      AccountRouteServiceEnterData,
-      AccountRouteServiceUpdateData
+      AccountRouteServiceEnterUpdateData,
+      AccountRouteServiceClassExtension
     >
 {
-  @observable
-  account!: Account;
-
   constructor(private match: AccountIdRouteMatch) {}
 
   @computed
@@ -78,7 +80,7 @@ class AccountRouteService
 
   beforeEnter(
     next: AccountIdRouteMatch['$next'],
-  ): AccountRouteServiceEnterData {
+  ): AccountRouteServiceEnterUpdateData {
     beforeEnter();
 
     expect(next).toEqual(this.match.$next);
@@ -90,8 +92,11 @@ class AccountRouteService
 
   willEnter(
     next: AccountIdRouteMatch['$next'],
-    data: AccountRouteServiceEnterData,
-  ): void {
+    data: AccountRouteServiceEnterUpdateData,
+  ): ServiceWillEnterCallbackReturn<
+    AccountIdRouteMatch,
+    AccountRouteServiceClassExtension
+  > {
     willEnter();
 
     expect(next).toEqual(this.match.$next);
@@ -99,10 +104,12 @@ class AccountRouteService
       foo: 'abc',
     });
 
-    this.account = new Account(next.$params.accountId);
+    return {
+      account: new Account(next.$params.accountId),
+    };
   }
 
-  enter(data: AccountRouteServiceEnterData): void {
+  enter(data: AccountRouteServiceEnterUpdateData): void {
     expect(data).toEqual({
       foo: 'abc',
     });
@@ -117,44 +124,47 @@ class AccountRouteService
   beforeUpdate(
     next: AccountIdRouteMatch['$next'],
     context: RouteUpdateContext,
-  ): AccountRouteServiceUpdateData {
+  ): AccountRouteServiceEnterUpdateData {
     beforeUpdate();
 
     expect(next).toEqual(this.match.$next);
     expect(context).toHaveProperty('descendants');
 
     return {
-      bar: 123,
+      foo: 'def',
     };
   }
 
   willUpdate(
     match: AccountIdRouteMatch['$next'],
     context: RouteUpdateContext,
-    data: AccountRouteServiceUpdateData,
-  ): void {
+    data: AccountRouteServiceEnterUpdateData,
+  ): ServiceWillUpdateCallbackReturn<
+    AccountIdRouteMatch,
+    AccountRouteServiceClassExtension
+  > {
     willUpdate();
 
     expect(match).toEqual(this.match.$next);
     expect(context).toHaveProperty('descendants');
     expect(data).toEqual({
-      bar: 123,
+      foo: 'def',
     });
 
-    this.willEnter(match, {
+    return this.willEnter(match, {
       foo: 'abc',
     });
   }
 
   update(
     context: RouteUpdateContext,
-    data: AccountRouteServiceUpdateData,
+    data: AccountRouteServiceEnterUpdateData,
   ): void {
     update();
 
     expect(context).toHaveProperty('descendants');
     expect(data).toEqual({
-      bar: 123,
+      foo: 'def',
     });
   }
 
@@ -178,8 +188,6 @@ class AccountRouteService
 
   afterLeave(): void {
     afterLeave();
-
-    this.account = undefined!;
   }
 }
 

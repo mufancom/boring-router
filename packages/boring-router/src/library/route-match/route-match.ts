@@ -20,8 +20,10 @@ import type {
 } from './route-match-shared';
 import {RouteMatchShared} from './route-match-shared';
 
-export const ROUTE_SERVICE_ENTER_DATA_SYMBOL = Symbol('enter data');
+export const ROUTE_SERVICE_ENTER_UPDATE_DATA_SYMBOL = Symbol('enter data');
 export const ROUTE_SERVICE_UPDATE_DATA_SYMBOL = Symbol('update data');
+
+export const ROUTE_SERVICE_EXTENSION_SYMBOL = Symbol('extension');
 
 /////////////////////
 // lifecycle hooks //
@@ -103,7 +105,21 @@ export type RouteWillEnterCallback<
 export type ServiceWillEnterCallback<
   TRouteMatch extends RouteMatch = RouteMatch,
   TEnterData extends object | void = object | void,
-> = (next: TRouteMatch['$next'], data: TEnterData) => Promise<void> | void;
+  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
+> = (
+  next: TRouteMatch['$next'],
+  data: TEnterData,
+) => ServiceWillEnterCallbackReturn<TRouteMatch, TClassExtension>;
+
+export type ServiceWillEnterCallbackReturn<
+  TRouteMatch extends RouteMatch,
+  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
+> = Omit<
+  RouteServiceExtension<TRouteMatch>,
+  keyof TClassExtension
+> | void extends infer T
+  ? Promise<T> | T
+  : never;
 
 // will update //
 
@@ -117,11 +133,22 @@ export type RouteWillUpdateCallback<
 export type ServiceWillUpdateCallback<
   TRouteMatch extends RouteMatch = RouteMatch,
   TUpdateData extends object | void = object | void,
+  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
 > = (
   next: TRouteMatch['$next'],
   context: RouteUpdateContext,
   data: TUpdateData,
-) => Promise<void> | void;
+) => ServiceWillUpdateCallbackReturn<TRouteMatch, TClassExtension>;
+
+export type ServiceWillUpdateCallbackReturn<
+  TRouteMatch extends RouteMatch,
+  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
+> = Omit<
+  RouteServiceExtension<TRouteMatch>,
+  keyof TClassExtension
+> | void extends infer T
+  ? Promise<T> | T
+  : never;
 
 export interface RouteWillUpdateOptions {
   traceDescendants: boolean;
@@ -143,17 +170,35 @@ export type RouteWillLeaveCallback = () => Promise<void> | void;
 export type RouteEnterCallback = () => void;
 
 export type ServiceEnterCallback<
+  TRouteMatch extends RouteMatch = RouteMatch,
   TEnterData extends object | void = object | void,
-> = (data: TEnterData) => void;
+  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
+> = (
+  data: TEnterData,
+) => ServiceEnterCallbackReturn<TRouteMatch, TClassExtension>;
+
+export type ServiceEnterCallbackReturn<
+  TRouteMatch extends RouteMatch,
+  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
+> = Omit<RouteServiceExtension<TRouteMatch>, keyof TClassExtension> | void;
 
 // update //
 
 export type RouteUpdateCallback = (context: RouteUpdateContext) => void;
 
-export type ServiceUpdateCallback<TUpdateData extends object | void> = (
+export type ServiceUpdateCallback<
+  TRouteMatch extends RouteMatch = RouteMatch,
+  TUpdateData extends object | void = object | void,
+  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
+> = (
   context: RouteUpdateContext,
   data: TUpdateData,
-) => void;
+) => ServiceUpdateCallbackReturn<TRouteMatch, TClassExtension>;
+
+export type ServiceUpdateCallbackReturn<
+  TRouteMatch extends RouteMatch,
+  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
+> = Omit<RouteServiceExtension<TRouteMatch>, keyof TClassExtension> | void;
 
 export interface RouteUpdateOptions {
   traceDescendants: boolean;
@@ -249,32 +294,56 @@ export type RouteAfterEnterOrUpdateCallback = () => void;
 
 ///
 
-export type RouteServiceFactory<TRouteMatch extends RouteMatch> = (
+export type RouteServiceFactory<
+  TRouteMatch extends RouteMatch,
+  TEnterUpdateData extends object | void,
+  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>>,
+> = (
   match: TRouteMatch,
-) => IRouteService<TRouteMatch> | Promise<IRouteService<TRouteMatch>>;
+) => IRouteService<
+  TRouteMatch,
+  TEnterUpdateData,
+  TClassExtension
+> extends infer T
+  ? Promise<T> | T
+  : never;
 
 export type IRouteService<
   TRouteMatch extends RouteMatch = RouteMatch,
-  TEnterData extends object | void = object | void,
-  TUpdateData extends object | void = TEnterData,
+  TEnterUpdateData extends object | void = object | void,
+  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
 > = {
   /** @internal */
-  [ROUTE_SERVICE_ENTER_DATA_SYMBOL]?: TEnterData;
+  [ROUTE_SERVICE_ENTER_UPDATE_DATA_SYMBOL]?: TEnterUpdateData;
   /** @internal */
-  [ROUTE_SERVICE_UPDATE_DATA_SYMBOL]?: TUpdateData;
-  beforeEnter?: ServiceBeforeEnterCallback<TRouteMatch, TEnterData>;
-  willEnter?: ServiceWillEnterCallback<TRouteMatch, TEnterData>;
-  enter?: ServiceEnterCallback<TEnterData>;
+  [ROUTE_SERVICE_EXTENSION_SYMBOL]?: Partial<
+    RouteServiceExtension<TRouteMatch>
+  >;
+  beforeEnter?: ServiceBeforeEnterCallback<TRouteMatch, TEnterUpdateData>;
+  willEnter?: ServiceWillEnterCallback<
+    TRouteMatch,
+    TEnterUpdateData,
+    TClassExtension
+  >;
+  enter?: ServiceEnterCallback<TRouteMatch, TEnterUpdateData, TClassExtension>;
   afterEnter?: RouteAfterEnterCallback;
-  beforeUpdate?: ServiceBeforeUpdateCallback<TRouteMatch, TUpdateData>;
-  willUpdate?: ServiceWillUpdateCallback<TRouteMatch, TUpdateData>;
-  update?: ServiceUpdateCallback<TUpdateData>;
+  beforeUpdate?: ServiceBeforeUpdateCallback<TRouteMatch, TEnterUpdateData>;
+  willUpdate?: ServiceWillUpdateCallback<
+    TRouteMatch,
+    TEnterUpdateData,
+    TClassExtension
+  >;
+  update?: ServiceUpdateCallback<
+    TRouteMatch,
+    TEnterUpdateData,
+    TClassExtension
+  >;
   afterUpdate?: RouteAfterUpdateCallback;
   beforeLeave?: RouteBeforeLeaveCallback;
   willLeave?: RouteWillLeaveCallback;
   leave?: RouteLeaveCallback;
   afterLeave?: RouteAfterLeaveCallback;
-} & RouteServiceExtension<TRouteMatch>;
+} & TClassExtension;
 
 export type RouteServiceExtension<TRouteMatch extends RouteMatch> =
   OmitValueWithType<
@@ -391,13 +460,15 @@ export class RouteMatch<
 
   /** @internal */
   @observable
-  private _service: IRouteService | undefined;
+  private _service: IRouteService<this> | undefined;
 
   /** @internal */
-  private _servicePromise: Promise<IRouteService | undefined> | undefined;
+  private _servicePromise: Promise<IRouteService<this> | undefined> | undefined;
 
   /** @internal */
-  private _serviceFactory: RouteServiceFactory<any> | undefined;
+  private _serviceFactory:
+    | RouteServiceFactory<this, object | void, object>
+    | undefined;
 
   /** @internal */
   private _allowExact: boolean | string;
@@ -422,17 +493,26 @@ export class RouteMatch<
           get(this: RouteMatch) {
             const service = this.$matched ? this._service : undefined;
 
-            if (service && key in service) {
-              let value = (service as any)[key];
+            if (service) {
+              if (key in service) {
+                let value = (service as any)[key];
 
-              if (typeof value === 'function') {
-                value = value.bind(service);
+                if (typeof value === 'function') {
+                  value = value.bind(service);
+                }
+
+                return value;
+              } else {
+                const serviceExtension =
+                  service[ROUTE_SERVICE_EXTENSION_SYMBOL];
+
+                if (serviceExtension && key in serviceExtension) {
+                  return (serviceExtension as any)[key];
+                }
               }
-
-              return value;
-            } else {
-              return (extension as any)[key];
             }
+
+            return (extension as any)[key];
           },
         });
       }
@@ -685,7 +765,13 @@ export class RouteMatch<
     };
   }
 
-  $service(factory: RouteServiceFactory<this>): this {
+  $service<
+    TEnterUpdateData extends object | void,
+    TClassExtension extends Partial<RouteServiceExtension<this>>,
+  >(
+    factory: RouteServiceFactory<this, TEnterUpdateData, TClassExtension>,
+  ): this;
+  $service(factory: RouteServiceFactory<this, object | void, object>): this {
     if (this._serviceFactory) {
       throw new Error(`Service has already been defined for "${this.$name}"`);
     }
@@ -893,7 +979,7 @@ export class RouteMatch<
           const ret = await tolerate(() => service.beforeEnter!(next));
 
           if (typeof ret === 'object') {
-            service[ROUTE_SERVICE_ENTER_DATA_SYMBOL] = ret;
+            service[ROUTE_SERVICE_ENTER_UPDATE_DATA_SYMBOL] = ret;
             return undefined;
           } else {
             return ret;
@@ -928,7 +1014,7 @@ export class RouteMatch<
           );
 
           if (typeof ret === 'object') {
-            service[ROUTE_SERVICE_UPDATE_DATA_SYMBOL] = ret;
+            service[ROUTE_SERVICE_ENTER_UPDATE_DATA_SYMBOL] = ret;
             return undefined;
           } else {
             return ret;
@@ -975,9 +1061,16 @@ export class RouteMatch<
         const service = this._getServiceSync();
 
         if (service && service.willEnter) {
-          return tolerate(() =>
-            service.willEnter!(next, service[ROUTE_SERVICE_ENTER_DATA_SYMBOL]),
+          const extension = await tolerate(() =>
+            service.willEnter!(
+              next,
+              service[ROUTE_SERVICE_ENTER_UPDATE_DATA_SYMBOL],
+            ),
           );
+
+          if (extension) {
+            service[ROUTE_SERVICE_EXTENSION_SYMBOL] = extension;
+          }
         }
       })(),
     ]);
@@ -999,33 +1092,28 @@ export class RouteMatch<
         const service = this._getServiceSync();
 
         if (service && service.willUpdate) {
-          return tolerate(() =>
+          const extension = await tolerate(() =>
             service.willUpdate!(
               next,
               {descendants: triggeredByDescendants},
-              service[ROUTE_SERVICE_UPDATE_DATA_SYMBOL],
+              service[ROUTE_SERVICE_ENTER_UPDATE_DATA_SYMBOL],
             ),
           );
+
+          if (extension) {
+            service[ROUTE_SERVICE_EXTENSION_SYMBOL] = extension;
+          }
         }
       })(),
     ]);
   }
 
   /** @internal */
-  _abortEnter(): void {
+  _abortEnterUpdate(): void {
     const service = this._getServiceSync();
 
     if (service) {
-      delete service[ROUTE_SERVICE_ENTER_DATA_SYMBOL];
-    }
-  }
-
-  /** @internal */
-  _abortUpdate(): void {
-    const service = this._getServiceSync();
-
-    if (service) {
-      delete service[ROUTE_SERVICE_UPDATE_DATA_SYMBOL];
+      delete service[ROUTE_SERVICE_ENTER_UPDATE_DATA_SYMBOL];
     }
   }
 
@@ -1038,12 +1126,16 @@ export class RouteMatch<
     const service = this._getServiceSync();
 
     if (service) {
-      const data = service[ROUTE_SERVICE_ENTER_DATA_SYMBOL];
+      const data = service[ROUTE_SERVICE_ENTER_UPDATE_DATA_SYMBOL];
 
-      delete service[ROUTE_SERVICE_ENTER_DATA_SYMBOL];
+      delete service[ROUTE_SERVICE_ENTER_UPDATE_DATA_SYMBOL];
 
       if (service.enter) {
-        return tolerate(() => service.enter!(data));
+        const extension = tolerate(() => service.enter!(data));
+
+        if (extension) {
+          service[ROUTE_SERVICE_EXTENSION_SYMBOL] = extension;
+        }
       }
     }
 
@@ -1086,14 +1178,18 @@ export class RouteMatch<
     const service = this._getServiceSync();
 
     if (service) {
-      const data = service[ROUTE_SERVICE_UPDATE_DATA_SYMBOL];
+      const data = service[ROUTE_SERVICE_ENTER_UPDATE_DATA_SYMBOL];
 
-      delete service[ROUTE_SERVICE_UPDATE_DATA_SYMBOL];
+      delete service[ROUTE_SERVICE_ENTER_UPDATE_DATA_SYMBOL];
 
       if (service.update) {
-        return tolerate(() =>
+        const extension = tolerate(() =>
           service.update!({descendants: triggeredByDescendants}, data),
         );
+
+        if (extension) {
+          service[ROUTE_SERVICE_EXTENSION_SYMBOL] = extension;
+        }
       }
     }
   }
@@ -1106,8 +1202,12 @@ export class RouteMatch<
 
     const service = this._getServiceSync();
 
-    if (service && service.leave) {
-      tolerate(() => service.leave!());
+    if (service) {
+      if (service.leave) {
+        tolerate(() => service.leave!());
+      }
+
+      delete service[ROUTE_SERVICE_EXTENSION_SYMBOL];
     }
   }
 
@@ -1169,7 +1269,7 @@ export class RouteMatch<
   }
 
   /** @internal */
-  private async _getService(): Promise<IRouteService | undefined> {
+  private async _getService(): Promise<IRouteService<this> | undefined> {
     const serviceOrServicePromise = this._service || this._servicePromise;
 
     if (serviceOrServicePromise) {
@@ -1196,7 +1296,7 @@ export class RouteMatch<
   }
 
   /** @internal */
-  private _getServiceSync(): IRouteService | undefined {
+  private _getServiceSync(): IRouteService<this> | undefined {
     const service = this._service;
 
     if (service) {
