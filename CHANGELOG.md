@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.16] - 2023-2-11
+
+### Changes
+
+- Support returning a data object by `beforeEnter()` and `beforeUpdate()` hooks of a route service, and passing it to `willEnter()`/`enter()` and `willUpdate()`/`update()` hooks.
+
 ## [0.5.15] - 2022-2-6
 
 ### Changes
