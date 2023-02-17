@@ -6,13 +6,9 @@
     "/packages/boring-router-react/src/",
     "/packages/boring-router-react/bld/",
     "/packages/examples/basic/",
-    "/packages/examples/basic/bld/",
     "/packages/examples/lifecycle-hooks/",
-    "/packages/examples/lifecycle-hooks/bld/",
     "/packages/examples/parallel-routes/",
-    "/packages/examples/parallel-routes/bld/",
-    "/packages/examples/route-content/",
-    "/packages/examples/route-content/bld/"
+    "/packages/examples/route-content/"
   ],
   "extends": ["eslint:recommended"],
   "env": {
