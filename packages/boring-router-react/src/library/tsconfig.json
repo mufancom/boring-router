@@ -5,7 +5,7 @@
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "experimentalDecorators": true,
     "jsx": "react",
-    "outDir": "../../bld/library"
+    "outDir": "../../bld/library/cjs"
   },
   "references": [
     {

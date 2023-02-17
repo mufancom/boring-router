@@ -1,5 +1,5 @@
 {
-  "extends": "@mufan/code-boilerplates/typescript",
+  "boilerplate": "@mufan/code-boilerplates/typescript",
   "options": {
     "name": "boring-router-packages",
     "license": "MIT",
@@ -7,9 +7,10 @@
     "packages": [
       {
         "name": "boring-router",
-        "tsProjects": [
+        "projects": [
           {
-            "name": "library"
+            "name": "library",
+            "module": ["cjs", "esm"]
           },
           {
             "name": "test"
@@ -18,9 +19,10 @@
       },
       {
         "name": "boring-router-react",
-        "tsProjects": [
+        "projects": [
           {
             "name": "library",
+            "module": ["cjs", "esm"],
             "references": [
               {
                 "package": "boring-router",
@@ -33,7 +35,7 @@
       {
         "name": "@boring-router-examples/basic",
         "dir": "examples/basic",
-        "tsProjects": [
+        "projects": [
           {
             "dir": false,
             "src": false,
@@ -53,7 +55,7 @@
       {
         "name": "@boring-router-examples/lifecycle-hooks",
         "dir": "examples/lifecycle-hooks",
-        "tsProjects": [
+        "projects": [
           {
             "dir": false,
             "src": false,
@@ -73,7 +75,7 @@
       {
         "name": "@boring-router-examples/parallel-routes",
         "dir": "examples/parallel-routes",
-        "tsProjects": [
+        "projects": [
           {
             "dir": false,
             "src": false,
@@ -93,7 +95,7 @@
       {
         "name": "@boring-router-examples/route-content",
         "dir": "examples/route-content",
-        "tsProjects": [
+        "projects": [
           {
             "dir": false,
             "src": false,

@@ -9,8 +9,9 @@
     "url": "https://github.com/makeflow/boring-router.git"
   },
   "exports": {
-    "types": "./bld/library/index.d.ts",
-    "require": "./bld/library/index.js"
+    "types": "./bld/library/cjs/index.d.ts",
+    "import": "./bld/library/esm/index.js",
+    "require": "./bld/library/cjs/index.js"
   },
   "peerDependencies": {
     "boring-router": "0.5",
