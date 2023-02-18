@@ -4,7 +4,11 @@ import {makeObservable, observable, runInAction} from 'mobx';
 import type {Dict, EmptyObjectPatch} from 'tslang';
 
 import {parseRef, parseSearch} from './@utils';
-import type {HistorySnapshot, IHistory} from './history';
+import type {
+  HistoryChangeCallbackRemovalHandler,
+  HistorySnapshot,
+  IHistory,
+} from './history';
 import {getActiveHistoryEntry} from './history';
 import {RouteBuilder} from './route-builder';
 import type {
@@ -216,6 +220,11 @@ export interface RouterHistoryEntryData {
 }
 
 export interface RouterOptions {
+  readOnly?: boolean;
+  /**
+   * Start listen automatically, defaults to true unless `readOnly` is true.
+   */
+  listen?: boolean;
   /**
    * A function to perform default schema field name to segment string
    * transformation.
@@ -247,6 +256,8 @@ interface InterUpdateData {
 export class Router<TGroupName extends string = string> {
   /** @internal */
   readonly _history: RouterHistory;
+
+  readonly $readOnly: boolean;
 
   /** @internal */
   readonly _groupToRouteMatchMap = new Map<string | undefined, RouteMatch>();
@@ -283,14 +294,24 @@ export class Router<TGroupName extends string = string> {
   @observable
   private _routing = 0;
 
-  constructor(history: RouterHistory, {segmentMatcher}: RouterOptions = {}) {
+  constructor(
+    history: RouterHistory,
+    {
+      readOnly = false,
+      listen = readOnly ? false : true,
+      segmentMatcher,
+    }: RouterOptions = {},
+  ) {
     makeObservable(this);
 
     this._history = history;
+    this.$readOnly = readOnly;
 
     this._segmentMatcher = segmentMatcher || DEFAULT_SEGMENT_MATCHER_CALLBACK;
 
-    history.listen(this._onHistoryChange);
+    if (listen) {
+      this.$listen();
+    }
   }
 
   get $routing(): boolean {
@@ -317,6 +338,11 @@ export class Router<TGroupName extends string = string> {
     return Array.from(this._groupToRouteMatchMap.keys()).filter(
       (group): group is TGroupName => !!group,
     );
+  }
+
+  /** @internal */
+  get _generalGroups(): (TGroupName | undefined)[] {
+    return [undefined, ...this.$groups];
   }
 
   $route<TPrimaryRouteSchema extends RootRouteSchema>(
@@ -361,6 +387,20 @@ export class Router<TGroupName extends string = string> {
     return routeMatch;
   }
 
+  $listen(): HistoryChangeCallbackRemovalHandler {
+    const history = this._history;
+
+    if (this.$readOnly) {
+      this._snapshot = history.snapshot;
+      this._updateMatchingSource(history.ref);
+      this._update([]);
+
+      return () => {};
+    } else {
+      return history.listen(this._onHistoryChange);
+    }
+  }
+
   $ref(): string {
     return this.$current.$ref();
   }
@@ -401,6 +441,8 @@ export class Router<TGroupName extends string = string> {
 
   /** @internal */
   _push(ref: string, {onComplete}: RouterNavigateOptions = {}): void {
+    this._assertNonReadOnly();
+
     this._history
       .push(ref, {navigateCompleteListener: onComplete})
       .catch(console.error);
@@ -408,6 +450,8 @@ export class Router<TGroupName extends string = string> {
 
   /** @internal */
   _replace(ref: string, {onComplete}: RouterNavigateOptions = {}): void {
+    this._assertNonReadOnly();
+
     this._history
       .replace(ref, {navigateCompleteListener: onComplete})
       .catch(console.error);
@@ -434,6 +478,12 @@ export class Router<TGroupName extends string = string> {
   private _asyncOnHistoryChange = async (
     nextSnapshot: RouterHistorySnapshot,
   ): Promise<void> => {
+    const snapshot = this._snapshot;
+
+    if (snapshot && _.isEqual(snapshot, nextSnapshot)) {
+      return;
+    }
+
     if (this._isNextSnapshotOutDated(nextSnapshot)) {
       return;
     }
@@ -442,13 +492,46 @@ export class Router<TGroupName extends string = string> {
 
     const navigateCompleteListener = data && data.navigateCompleteListener;
 
-    const {pathname, search} = parseRef(ref);
+    this._updateMatchingSource(ref);
 
-    const snapshot = this._snapshot;
+    const groupToMatchToMatchEntryMapMap =
+      this._matchingSource.groupToMatchToMatchEntryMapMap;
 
-    if (snapshot && _.isEqual(snapshot, nextSnapshot)) {
+    const interUpdateDataArray = await Promise.all(
+      this._generalGroups.map(async group =>
+        this._beforeUpdate(
+          nextSnapshot,
+          group,
+          groupToMatchToMatchEntryMapMap.get(group),
+        ),
+      ),
+    );
+
+    if (interUpdateDataArray.some(data => !data)) {
       return;
     }
+
+    await Promise.all(
+      interUpdateDataArray.map(data => this._willUpdate(data!)),
+    );
+
+    runInAction(() => {
+      this._snapshot = nextSnapshot;
+      this._update(interUpdateDataArray as InterUpdateData[]);
+    });
+
+    await Promise.all(
+      interUpdateDataArray.map(data => this._afterUpdate(data!)),
+    );
+
+    if (navigateCompleteListener) {
+      navigateCompleteListener();
+    }
+  };
+
+  /** @internal */
+  private _updateMatchingSource(ref: string): void {
+    const {pathname, search} = parseRef(ref);
 
     const queryMap = parseSearch(search);
 
@@ -562,40 +645,7 @@ export class Router<TGroupName extends string = string> {
         ),
       );
     });
-
-    const generalGroups = [undefined, ...groups];
-
-    const interUpdateDataArray = await Promise.all(
-      generalGroups.map(async group =>
-        this._beforeUpdate(
-          nextSnapshot,
-          group,
-          groupToMatchToMatchEntryMapMap.get(group),
-        ),
-      ),
-    );
-
-    if (interUpdateDataArray.some(data => !data)) {
-      return;
-    }
-
-    await Promise.all(
-      interUpdateDataArray.map(data => this._willUpdate(data!)),
-    );
-
-    runInAction(() => {
-      this._snapshot = nextSnapshot;
-      this._update(generalGroups, interUpdateDataArray as InterUpdateData[]);
-    });
-
-    await Promise.all(
-      interUpdateDataArray.map(data => this._afterUpdate(data!)),
-    );
-
-    if (navigateCompleteListener) {
-      navigateCompleteListener();
-    }
-  };
+  }
 
   /** @internal */
   private async _beforeUpdate(
@@ -722,16 +772,13 @@ export class Router<TGroupName extends string = string> {
   }
 
   /** @internal */
-  private _update(
-    generalGroups: (string | undefined)[],
-    dataArray: InterUpdateData[],
-  ): void {
+  private _update(dataArray: InterUpdateData[]): void {
     const source = this._source;
     const matchingSource = this._matchingSource;
 
     source.queryMap = matchingSource.queryMap;
 
-    for (const group of generalGroups) {
+    for (const group of this._generalGroups) {
       const path = matchingSource.pathMap.get(group)!;
 
       if (path) {
@@ -943,5 +990,12 @@ export class Router<TGroupName extends string = string> {
     }
 
     return [routeMatch, nextRouteMatch];
+  }
+
+  /** @internal */
+  private _assertNonReadOnly(): void {
+    if (this.$readOnly) {
+      throw new Error('Router is read-only');
+    }
   }
 }
