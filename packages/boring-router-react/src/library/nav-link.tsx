@@ -1,7 +1,7 @@
 import {RouteBuilder, RouteMatch} from 'boring-router';
 import classNames from 'classnames';
 import {observer} from 'mobx-react-lite';
-import type {RefObject} from 'react';
+import type {ForwardedRef} from 'react';
 import React, {forwardRef} from 'react';
 
 import type {LinkProps} from './link';
@@ -17,7 +17,7 @@ export const NavLink = observer(
   forwardRef(
     <T extends RouteMatch | RouteBuilder>(
       props: NavLinkProps<T>,
-      ref: RefObject<HTMLAnchorElement>,
+      ref: ForwardedRef<HTMLAnchorElement>,
     ) => {
       const {to, exact = false} = props;
 

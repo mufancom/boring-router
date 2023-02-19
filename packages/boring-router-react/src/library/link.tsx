@@ -1,7 +1,7 @@
 import type {RouteBuilder, RouteMatchSharedToParamDict} from 'boring-router';
 import {RouteMatch} from 'boring-router';
 import {observer} from 'mobx-react-lite';
-import type {HTMLAttributes, MouseEvent, ReactNode, RefObject} from 'react';
+import type {ForwardedRef, HTMLAttributes, MouseEvent, ReactNode} from 'react';
 import React, {forwardRef} from 'react';
 
 import {composeEventHandler} from './@utils';
@@ -22,7 +22,7 @@ export const Link = observer(
   forwardRef(
     <T extends RouteMatch | RouteBuilder>(
       props: LinkProps<T>,
-      ref: RefObject<HTMLAnchorElement>,
+      ref: ForwardedRef<HTMLAnchorElement>,
     ) => {
       const {
         to,

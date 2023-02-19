@@ -47,7 +47,10 @@ export class RouteBuilder<TGroupName extends string = string> {
       EmptyObjectPatch,
   ): RouteBuilder<TGroupName>;
   $(part: string): RouteBuilder<TGroupName>;
-  $(route: RouteMatchShared | string, params?: GeneralParamDict): RouteBuilder {
+  $(
+    route: RouteMatchShared | string,
+    params?: GeneralParamDict,
+  ): RouteBuilder<TGroupName> {
     const buildingPart =
       typeof route === 'string'
         ? route
