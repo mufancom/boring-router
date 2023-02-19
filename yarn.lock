@@ -2597,6 +2597,11 @@
   resolved "https://registry.yarnpkg.com/@mufan/code/-/code-0.2.15.tgz#9c3cda6347d92458c3676fd4ca5e2d37d49237e4"
   integrity sha512-hYeMw/GAMvYCfMTl+zNNEc7HS2LCNckyAub8hIj7AdU8DrMlqKxASURVifa2aRHXOPEs+tYfH0DoLg5zlPDQUQ==
 
+"@mufan/code@^0.2.16":
+  version "0.2.16"
+  resolved "https://registry.yarnpkg.com/@mufan/code/-/code-0.2.16.tgz#aa83f0a1fb6574dcc5904adea76bc6fbb8ac63f5"
+  integrity sha512-tkGIrXGiSgpBO5L30c+XQqwXHWTinTQXqAeynN4Qw8ZKkzYNcKBuDxmdnUdiSL69UrSsHdlpchKJqXfaN2EDww==
+
 "@mufan/eslint-plugin@^0.1.77":
   version "0.1.77"
   resolved "https://registry.yarnpkg.com/@mufan/eslint-plugin/-/eslint-plugin-0.1.77.tgz#56385e131d473707311858c406f1fd0c14c1a400"

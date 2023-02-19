@@ -18,8 +18,16 @@
     "lint-prettier": "prettier --check .",
     "test": "yarn lint-prettier && yarn build && yarn lint && yarn workspace boring-router test"
   },
+  "workspaces": [
+    "packages/boring-router",
+    "packages/boring-router-react",
+    "packages/examples/basic",
+    "packages/examples/lifecycle-hooks",
+    "packages/examples/parallel-routes",
+    "packages/examples/route-content"
+  ],
   "devDependencies": {
-    "@mufan/code": "^0.2.15",
+    "@mufan/code": "^0.2.16",
     "@mufan/eslint-plugin": "^0.1.77",
     "docz": "^2.4.0",
     "eslint": "^8.34.0",
@@ -36,13 +44,5 @@
   "resolutions": {
     "get-pkg-repo": "4.1.1",
     "@typescript-eslint/eslint-plugin": "5"
-  },
-  "workspaces": [
-    "packages/boring-router",
-    "packages/boring-router-react",
-    "packages/examples/basic",
-    "packages/examples/lifecycle-hooks",
-    "packages/examples/parallel-routes",
-    "packages/examples/route-content"
-  ]
+  }
 }
