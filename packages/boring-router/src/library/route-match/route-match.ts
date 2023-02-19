@@ -44,13 +44,6 @@ export type RouteBeforeEnterCallback<
   TRouteMatch extends RouteMatch = RouteMatch,
 > = (next: TRouteMatch['$next']) => Promise<boolean | void> | boolean | void;
 
-export type ServiceBeforeEnterCallback<
-  TRouteMatch extends RouteMatch = RouteMatch,
-  TEnterData extends object | void = object | void,
-> = (
-  next: TRouteMatch['$next'],
-) => Promise<boolean | TEnterData | void> | boolean | TEnterData | void;
-
 // before update //
 
 /**
@@ -64,14 +57,6 @@ export type RouteBeforeUpdateCallback<
   next: TRouteMatch['$next'],
   context: RouteUpdateContext,
 ) => Promise<boolean | void> | boolean | void;
-
-export type ServiceBeforeUpdateCallback<
-  TRouteMatch extends RouteMatch = RouteMatch,
-  TUpdateData extends object | void = object | void,
-> = (
-  next: TRouteMatch['$next'],
-  context: RouteUpdateContext,
-) => Promise<boolean | TUpdateData | void> | boolean | TUpdateData | void;
 
 export interface RouteBeforeUpdateOptions {
   traceDescendants: boolean;
@@ -102,15 +87,6 @@ export type RouteWillEnterCallback<
   TRouteMatch extends RouteMatch = RouteMatch,
 > = (next: TRouteMatch['$next']) => Promise<void> | void;
 
-export type ServiceWillEnterCallback<
-  TRouteMatch extends RouteMatch = RouteMatch,
-  TEnterData extends object | void = object | void,
-  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
-> = (
-  next: TRouteMatch['$next'],
-  data: TEnterData,
-) => ServiceWillEnterCallbackReturn<TRouteMatch, TClassExtension>;
-
 export type ServiceWillEnterCallbackReturn<
   TRouteMatch extends RouteMatch,
   TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
@@ -129,16 +105,6 @@ export type RouteWillUpdateCallback<
   next: TRouteMatch['$next'],
   context: RouteUpdateContext,
 ) => Promise<void> | void;
-
-export type ServiceWillUpdateCallback<
-  TRouteMatch extends RouteMatch = RouteMatch,
-  TUpdateData extends object | void = object | void,
-  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
-> = (
-  next: TRouteMatch['$next'],
-  context: RouteUpdateContext,
-  data: TUpdateData,
-) => ServiceWillUpdateCallbackReturn<TRouteMatch, TClassExtension>;
 
 export type ServiceWillUpdateCallbackReturn<
   TRouteMatch extends RouteMatch,
@@ -169,14 +135,6 @@ export type RouteWillLeaveCallback = () => Promise<void> | void;
 
 export type RouteEnterCallback = () => void;
 
-export type ServiceEnterCallback<
-  TRouteMatch extends RouteMatch = RouteMatch,
-  TEnterData extends object | void = object | void,
-  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
-> = (
-  data: TEnterData,
-) => ServiceEnterCallbackReturn<TRouteMatch, TClassExtension>;
-
 export type ServiceEnterCallbackReturn<
   TRouteMatch extends RouteMatch,
   TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
@@ -185,15 +143,6 @@ export type ServiceEnterCallbackReturn<
 // update //
 
 export type RouteUpdateCallback = (context: RouteUpdateContext) => void;
-
-export type ServiceUpdateCallback<
-  TRouteMatch extends RouteMatch = RouteMatch,
-  TUpdateData extends object | void = object | void,
-  TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
-> = (
-  context: RouteUpdateContext,
-  data: TUpdateData,
-) => ServiceUpdateCallbackReturn<TRouteMatch, TClassExtension>;
 
 export type ServiceUpdateCallbackReturn<
   TRouteMatch extends RouteMatch,
@@ -319,25 +268,38 @@ export type IRouteService<
   [ROUTE_SERVICE_EXTENSION_SYMBOL]?: Partial<
     RouteServiceExtension<TRouteMatch>
   >;
-  beforeEnter?: ServiceBeforeEnterCallback<TRouteMatch, TEnterUpdateData>;
-  willEnter?: ServiceWillEnterCallback<
-    TRouteMatch,
-    TEnterUpdateData,
-    TClassExtension
-  >;
-  enter?: ServiceEnterCallback<TRouteMatch, TEnterUpdateData, TClassExtension>;
+  beforeEnter?(
+    next: TRouteMatch['$next'],
+  ):
+    | Promise<boolean | TEnterUpdateData | void>
+    | boolean
+    | TEnterUpdateData
+    | void;
+  willEnter?(
+    next: TRouteMatch['$next'],
+    data: TEnterUpdateData,
+  ): ServiceWillEnterCallbackReturn<TRouteMatch, TClassExtension>;
+  enter?(
+    data: TEnterUpdateData,
+  ): ServiceEnterCallbackReturn<TRouteMatch, TClassExtension>;
   afterEnter?: RouteAfterEnterCallback;
-  beforeUpdate?: ServiceBeforeUpdateCallback<TRouteMatch, TEnterUpdateData>;
-  willUpdate?: ServiceWillUpdateCallback<
-    TRouteMatch,
-    TEnterUpdateData,
-    TClassExtension
-  >;
-  update?: ServiceUpdateCallback<
-    TRouteMatch,
-    TEnterUpdateData,
-    TClassExtension
-  >;
+  beforeUpdate?(
+    next: TRouteMatch['$next'],
+    context: RouteUpdateContext,
+  ):
+    | Promise<boolean | TEnterUpdateData | void>
+    | boolean
+    | TEnterUpdateData
+    | void;
+  willUpdate?(
+    next: TRouteMatch['$next'],
+    context: RouteUpdateContext,
+    data: TEnterUpdateData,
+  ): ServiceWillUpdateCallbackReturn<TRouteMatch, TClassExtension>;
+  update?(
+    context: RouteUpdateContext,
+    data: TEnterUpdateData,
+  ): ServiceUpdateCallbackReturn<TRouteMatch, TClassExtension>;
   afterUpdate?: RouteAfterUpdateCallback;
   beforeLeave?: RouteBeforeLeaveCallback;
   willLeave?: RouteWillLeaveCallback;

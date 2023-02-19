@@ -4,6 +4,7 @@
     "composite": true,
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["jest"],
+    "strictFunctionTypes": false,
     "experimentalDecorators": true,
     "noEmit": true,
     "outDir": "../../bld/test"
