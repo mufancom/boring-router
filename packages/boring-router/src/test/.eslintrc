@@ -6,6 +6,9 @@
       "extends": ["plugin:@mufan/default", "plugin:@mufan/override-dev"],
       "parserOptions": {
         "project": "tsconfig.json"
+      },
+      "settings": {
+        "import/core-modules": ["boring-router"]
       }
     }
   ]
