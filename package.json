@@ -9,7 +9,7 @@
     "url": "https://github.com/mufancom/boring-router.git"
   },
   "scripts": {
-    "publish-doc": "docz build && gh-pages -d .docz/dist",
+    "publish-doc": "NODE_OPTIONS=--openssl-legacy-provider docz build && gh-pages -d .docz/dist",
     "link-global": "yarn workspace boring-router link && yarn workspace boring-router-react link",
     "unlink-global": "yarn workspace boring-router unlink && yarn workspace boring-router-react unlink",
     "lerna:publish": "lerna publish patch --registry=https://registry.npmjs.org",
@@ -27,6 +27,7 @@
     "packages/examples/route-content"
   ],
   "devDependencies": {
+    "@emotion/core": "10",
     "@mufan/code": "^0.2.16",
     "@mufan/eslint-plugin": "^0.1.77",
     "docz": "^2.4.0",
