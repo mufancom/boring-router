@@ -25,6 +25,6 @@ route: /examples
 
   Parallel routes example with sidebar and overlay.
 
-- <a href="https://github.com/makeflow/boring-router/tree/master/packages/examples/server-side-rendering" target="_blank">Server-Side Rendering</a>
+- <a href="https://github.com/mufancom/boring-router/tree/master/packages/examples/server-side-rendering" target="_blank">Server-Side Rendering</a>
 
   Basic SSR snippet for reference.

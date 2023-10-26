@@ -131,5 +131,5 @@
 - `$navigate` method of `RouteMatch` is now removed in favor of `$push` and `$replace`.
 - `<Redirect>` component no longer accepts `match` parameter with type boolean.
 
-[0.2.1]: https://github.com/makeflow/boring-router/releases/tag/v0.2.1
-[0.2.0]: https://github.com/makeflow/boring-router/releases/tag/v0.2.0
+[0.2.1]: https://github.com/mufancom/boring-router/releases/tag/v0.2.1
+[0.2.0]: https://github.com/mufancom/boring-router/releases/tag/v0.2.0

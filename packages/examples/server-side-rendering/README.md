@@ -20,8 +20,8 @@ export async function render(path: string): Promise<string> {
   // Wait till route settled.
   // We can use life-cycle hooks like `willEnter` to load data during this phase.
   // See:
-  // - https://makeflow.github.io/boring-router/references/lifecycle-hooks
-  // - https://makeflow.github.io/boring-router/references/service
+  // - https://mufancom.github.io/boring-router/references/lifecycle-hooks
+  // - https://mufancom.github.io/boring-router/references/service
   await when(() => !router.$routing);
 
   return renderToString(<App router={router} route={route} />);

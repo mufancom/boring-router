@@ -6,7 +6,7 @@
   "author": "Chengdu Mufan Technology Co., Ltd.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/makeflow/boring-router.git"
+    "url": "https://github.com/mufancom/boring-router.git"
   },
   "scripts": {
     "test": "jest"
