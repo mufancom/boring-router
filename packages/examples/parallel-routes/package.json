@@ -3,9 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "author": "Chengdu Mufan Technology Co., Ltd.",
+  "type": "module",
   "dependencies": {
     "boring-router": "*",
     "boring-router-react": "*",
-    "tslib": "^2.5.0"
+    "tslib": "^2.6.2"
   }
 }

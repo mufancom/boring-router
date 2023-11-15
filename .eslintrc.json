@@ -1,6 +1,7 @@
 {
   "root": true,
   "ignorePatterns": [
+    "node_modules/",
     "/packages/boring-router/src/",
     "/packages/boring-router/bld/",
     "/packages/boring-router-react/src/",
@@ -10,9 +11,19 @@
     "/packages/examples/parallel-routes/",
     "/packages/examples/route-content/"
   ],
-  "extends": ["eslint:recommended"],
-  "env": {
-    "node": true,
-    "es2020": true
-  }
+  "extends": ["plugin:@mufan/javascript"],
+  "overrides": [
+    {
+      "files": "**/*.{js,mjs}",
+      "parserOptions": {
+        "sourceType": "module"
+      }
+    },
+    {
+      "files": "**/*.cjs",
+      "parserOptions": {
+        "sourceType": "script"
+      }
+    }
+  ]
 }

@@ -3,12 +3,12 @@
   "version": "0.0.0",
   "license": "MIT",
   "author": "Chengdu Mufan Technology Co., Ltd.",
+  "type": "module",
   "exports": {
-    "types": "./bld/library/cjs/index.d.ts",
-    "import": "./bld/library/esm/index.js",
-    "require": "./bld/library/cjs/index.js"
+    "types": "./bld/library/index.d.ts",
+    "default": "./bld/library/index.js"
   },
   "dependencies": {
-    "tslib": "^2.5.0"
+    "tslib": "^2.6.2"
   }
 }

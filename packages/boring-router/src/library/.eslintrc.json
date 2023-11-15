@@ -3,7 +3,7 @@
   "overrides": [
     {
       "files": ["**/*.{ts,tsx}"],
-      "extends": ["plugin:@mufan/default", "plugin:@mufan/override-dev"],
+      "extends": ["plugin:@mufan/typescript"],
       "parserOptions": {
         "project": "tsconfig.json"
       }
