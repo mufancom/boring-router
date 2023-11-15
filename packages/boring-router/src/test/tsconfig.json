@@ -1,12 +1,11 @@
 {
-  "extends": "@mufan/code/tsconfig.json",
+  "extends": "../../../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["jest"],
     "strictFunctionTypes": false,
-    "experimentalDecorators": true,
-    "noEmit": true,
+    "rootDir": ".",
     "outDir": "../../bld/test"
   },
   "references": [

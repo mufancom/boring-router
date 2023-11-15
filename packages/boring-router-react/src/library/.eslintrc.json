@@ -3,9 +3,12 @@
   "overrides": [
     {
       "files": ["**/*.{ts,tsx}"],
-      "extends": ["plugin:@mufan/default"],
+      "extends": ["plugin:@mufan/typescript"],
       "parserOptions": {
         "project": "tsconfig.json"
+      },
+      "settings": {
+        "import/core-modules": ["boring-router"]
       }
     }
   ]

@@ -4,16 +4,10 @@
       "path": "packages/boring-router/src/library"
     },
     {
-      "path": "packages/boring-router/src/library/tsconfig.esm.json"
-    },
-    {
       "path": "packages/boring-router/src/test"
     },
     {
       "path": "packages/boring-router-react/src/library"
-    },
-    {
-      "path": "packages/boring-router-react/src/library/tsconfig.esm.json"
     },
     {
       "path": "packages/examples/basic"

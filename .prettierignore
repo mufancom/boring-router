@@ -1,5 +1,8 @@
+# Magicspace
+boilerplate.schema.json
 # TypeScript Build Artifacts
 bld/
+.bld/
 # Other Build Artifacts
 dist/
 .cache/

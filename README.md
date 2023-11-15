@@ -1,5 +1,5 @@
-[![NPM Package](https://badge.fury.io/js/boring-router.svg)](https://www.npmjs.com/package/boring-router)
-[![Build Status](https://travis-ci.org/makeflow/boring-router.svg?branch=master)](https://travis-ci.org/makeflow/boring-router)
+[![MIT License](https://img.shields.io/badge/license-MIT-999999?style=flat-square)](./LICENSE)
+[![Discord](https://img.shields.io/badge/chat-discord-5662f6?style=flat-square)](https://discord.gg/vanVrDwSkS)
 
 # Boring Router
 

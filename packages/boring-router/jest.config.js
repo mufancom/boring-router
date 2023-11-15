@@ -1,15 +1,6 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  roots: ['src/test'],
-  transform: {
-    '^.+\\.tsx?$': [
-      'ts-jest',
-      {
-        tsconfig: 'src/test/tsconfig.json',
-      },
-    ],
-  },
+/** @type {import('jest').Config} */
+export default {
+  transform: {},
+  testMatch: ['<rootDir>/bld/test/*.test.js'],
   clearMocks: true,
 };

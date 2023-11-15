@@ -2,10 +2,11 @@
 .DS_Store
 *.tgz
 node_modules/
+# Package Manager
 yarn-error.log
-npm-debug.log
 # TypeScript Build Artifacts
 bld/
+.bld/
 *.tsbuildinfo
 # Other Build Artifacts
 dist/

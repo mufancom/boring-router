@@ -1,20 +1,14 @@
 {
   "compilerOptions": {
     "target": "ES2018",
-    "module": "CommonJS",
-    "moduleResolution": "nodenext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "lib": ["ESNext", "DOM"],
     "types": [],
     "importHelpers": true,
     "esModuleInterop": true,
-    "sourceMap": true,
-    "stripInternal": true,
     "jsx": "react",
     "strict": true,
-    "strictFunctionTypes": false,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "useDefineForClassFields": true,
     "newLine": "LF",
     "noEmit": true
   }

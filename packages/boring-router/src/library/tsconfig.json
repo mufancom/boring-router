@@ -1,9 +1,9 @@
 {
-  "extends": "@mufan/code/tsconfig.json",
+  "extends": "../../../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
     "strictFunctionTypes": false,
-    "experimentalDecorators": true,
-    "outDir": "../../bld/library/cjs"
+    "rootDir": ".",
+    "outDir": "../../bld/library"
   }
 }
