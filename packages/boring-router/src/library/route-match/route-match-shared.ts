@@ -1,12 +1,12 @@
-import {computed, makeObservable} from 'mobx';
+import {computed} from 'mobx';
 import type {Dict, EmptyObjectPatch} from 'tslang';
 
-import {isQueryIdsMatched} from '../@utils';
-import type {IHistory} from '../history';
-import {RouteBuilder} from '../route-builder';
-import type {Router, RouterNavigateOptions} from '../router';
+import {isQueryIdsMatched} from '../@utils.js';
+import type {IHistory} from '../history/index.js';
+import {RouteBuilder} from '../route-builder.js';
+import type {Router, RouterNavigateOptions} from '../router.js';
 
-import type {RouteMatchEntry, RouteSource} from './route-match';
+import type {RouteMatchEntry, RouteSource} from './route-match.js';
 
 export type GeneralSegmentDict = Dict<string | undefined>;
 export type GeneralQueryDict = Dict<string | undefined>;
@@ -17,7 +17,7 @@ export type RouteMatchSharedToParamDict<TRouteMatchShared> =
     ? TParamDict
     : never;
 
-export interface RouteMatchBuildOptions<TGroupName extends string> {
+export type RouteMatchBuildOptions<TGroupName extends string> = {
   /**
    * Whether to leave this match's group.
    */
@@ -26,18 +26,17 @@ export interface RouteMatchBuildOptions<TGroupName extends string> {
    * Parallel route groups to leave.
    */
   leaves?: TGroupName | TGroupName[];
-}
+};
 
-export interface RouteMatchNavigateOptions<TGroupName extends string>
-  extends RouteMatchBuildOptions<TGroupName>,
-    RouterNavigateOptions {}
+export type RouteMatchNavigateOptions<TGroupName extends string> =
+  {} & RouteMatchBuildOptions<TGroupName> & RouterNavigateOptions;
 
-export interface RouteMatchSharedOptions {
+export type RouteMatchSharedOptions = {
   match: string | RegExp;
   query: Map<string, string | symbol | true>;
   group: string | undefined;
   metadata: object | undefined;
-}
+};
 
 export abstract class RouteMatchShared<
   TParamDict extends GeneralParamDict = GeneralParamDict,
@@ -88,8 +87,6 @@ export abstract class RouteMatchShared<
     history: IHistory,
     {match, query, group, metadata}: RouteMatchSharedOptions,
   ) {
-    makeObservable(this);
-
     this.$name = name;
     this.$group = group as TSpecificGroupName;
     this.$parent = parent;
@@ -110,7 +107,6 @@ export abstract class RouteMatchShared<
       ...query,
     ]);
 
-    // eslint-disable-next-line @mufan/no-object-literal-type-assertion
     this.$metadata = {
       ...parent?.$metadata,
       ...metadata,
@@ -122,7 +118,6 @@ export abstract class RouteMatchShared<
    */
   @computed
   get $params(): TParamDict {
-    // eslint-disable-next-line @mufan/no-object-literal-type-assertion
     return {
       ...this._paramSegments,
       ...this._query,
@@ -235,8 +230,6 @@ export abstract class RouteMatchShared<
       dict[key] = sourceQuery.value;
 
       return dict;
-
-      // eslint-disable-next-line @mufan/no-object-literal-type-assertion
     }, {} as GeneralQueryDict);
   }
 

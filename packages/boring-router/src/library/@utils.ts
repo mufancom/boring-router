@@ -1,4 +1,7 @@
-import type {GeneralParamDict, GeneralSegmentDict} from './route-match';
+import type {
+  GeneralParamDict,
+  GeneralSegmentDict,
+} from './route-match/index.js';
 
 export function isQueryIdsMatched(
   a: string | symbol | true,
@@ -57,11 +60,11 @@ export function buildRef(
   return `${primaryPath}${query ? `?${query}` : ''}`;
 }
 
-export interface ParseRefResult {
+export type ParseRefResult = {
   pathname: string;
   search: string;
   hash: string;
-}
+};
 
 export function parseRef(ref: string): ParseRefResult {
   let pathname = ref || '/';

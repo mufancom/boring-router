@@ -1,7 +1,8 @@
-import {MemoryHistory, Router} from 'boring-router';
 import {configure} from 'mobx';
 
-import {nap} from './@utils';
+import {MemoryHistory, Router} from '../library/index.js';
+
+import {nap} from './@utils.js';
 
 configure({
   enforceActions: 'observed',

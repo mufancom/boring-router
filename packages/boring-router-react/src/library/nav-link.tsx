@@ -4,14 +4,13 @@ import {observer} from 'mobx-react-lite';
 import type {ForwardedRef} from 'react';
 import React, {forwardRef} from 'react';
 
-import type {LinkProps} from './link';
-import {Link} from './link';
+import type {LinkProps} from './link.js';
+import {Link} from './link.js';
 
-export interface NavLinkProps<T extends RouteMatch | RouteBuilder>
-  extends LinkProps<T> {
+export type NavLinkProps<T extends RouteMatch | RouteBuilder> = {
   exact?: boolean;
   activeClassName?: string;
-}
+} & LinkProps<T>;
 
 export const NavLink = observer(
   forwardRef(

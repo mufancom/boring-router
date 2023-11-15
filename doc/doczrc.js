@@ -1,7 +1,7 @@
 module.exports = {
   title: '🥱 Boring Router',
   base: '/boring-router/',
-  files: 'doc/**/*.{md,mdx}',
+  files: '**/*.{md,mdx}',
   menu: [
     'Introduction',
     'Get Started',

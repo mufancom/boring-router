@@ -1,15 +1,15 @@
 export type HistoryChangeCallbackRemovalHandler = () => void;
 
-export interface HistoryEntry<TId, TData> {
+export type HistoryEntry<TId, TData> = {
   readonly id: TId;
   readonly ref: string;
   readonly data: TData | undefined;
-}
+};
 
-export interface HistorySnapshot<TEntryId, TData> {
+export type HistorySnapshot<TEntryId, TData> = {
   readonly entries: readonly HistoryEntry<TEntryId, TData>[];
   readonly active: TEntryId;
-}
+};
 
 export type HistoryChangeCallback<TEntryId, TData> = (
   snapshot: HistorySnapshot<TEntryId, TData>,
@@ -74,8 +74,10 @@ abstract class History<TEntryId, TData> {
 
 export const AbstractHistory = History;
 
-export interface IHistory<TEntryId = unknown, TData = unknown>
-  extends History<TEntryId, TData> {}
+export type IHistory<TEntryId = unknown, TData = unknown> = {} & History<
+  TEntryId,
+  TData
+>;
 
 export function isHistoryEntryEqual<TEntryId, TData>(
   x: HistoryEntry<TEntryId, TData>,

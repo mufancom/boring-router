@@ -1,7 +1,9 @@
-import {MemoryHistory, Router} from 'boring-router';
+import {jest} from '@jest/globals';
 import {action, configure, observable} from 'mobx';
 
-import {nap} from './@utils';
+import {MemoryHistory, Router} from '../library/index.js';
+
+import {nap} from './@utils.js';
 
 configure({
   enforceActions: 'observed',
@@ -27,14 +29,14 @@ const primaryRoute = router.$route({
   },
 });
 
-const redirectBeforeEnter = jest.fn(() => {
+const redirectBeforeEnter = jest.fn<() => void>(() => {
   primaryRoute.about.$push();
 });
-const redirectWillEnter = jest.fn();
-const redirectEnter = jest.fn();
-const redirectAfterEnter = jest.fn();
-const redirectAutorun = jest.fn();
-const redirectReaction = jest.fn();
+const redirectWillEnter = jest.fn<() => void>();
+const redirectEnter = jest.fn<() => void>();
+const redirectAfterEnter = jest.fn<() => void>();
+const redirectAutorun = jest.fn<() => void>();
+const redirectReaction = jest.fn<() => void>();
 
 primaryRoute.redirect.$beforeEnter(redirectBeforeEnter);
 primaryRoute.redirect.$willEnter(redirectWillEnter);
@@ -43,56 +45,56 @@ primaryRoute.redirect.$afterEnter(redirectAfterEnter);
 primaryRoute.redirect.$autorun(redirectAutorun);
 primaryRoute.redirect.$reaction(() => {}, redirectReaction);
 
-const revertBeforeEnter = jest.fn(() => false);
-const revertEnter = jest.fn();
-const revertAfterEnter = jest.fn();
+const revertBeforeEnter = jest.fn<() => boolean>(() => false);
+const revertEnter = jest.fn<() => void>();
+const revertAfterEnter = jest.fn<() => void>();
 
 primaryRoute.revert.$beforeEnter(revertBeforeEnter);
 primaryRoute.revert.$enter(revertEnter);
 primaryRoute.revert.$afterEnter(revertAfterEnter);
 
-const persistBeforeLeave = jest.fn(() => false);
+const persistBeforeLeave = jest.fn<() => boolean>(() => false);
 
 primaryRoute.persist.$beforeLeave(persistBeforeLeave);
 
-const parentBeforeEnter = jest.fn();
-const parentBeforeUpdate = jest.fn();
-const parentWillUpdate = jest.fn();
-const parentUpdate = jest.fn();
+const parentBeforeEnter = jest.fn<() => void>();
+const parentBeforeUpdate = jest.fn<() => void>();
+const parentWillUpdate = jest.fn<() => void>();
+const parentUpdate = jest.fn<() => void>();
 
 primaryRoute.parent.$beforeEnter(parentBeforeEnter);
 primaryRoute.parent.$beforeUpdate(parentBeforeUpdate);
 primaryRoute.parent.$willUpdate(parentWillUpdate);
 primaryRoute.parent.$willUpdate(parentUpdate);
 
-const aboutBeforeEnter = jest.fn();
-const aboutWillEnter = jest.fn();
-const aboutEnter = jest.fn();
-const aboutAfterEnter = jest.fn();
-const aboutBeforeLeave = jest.fn();
-const aboutWillLeave = jest.fn();
-const aboutLeave = jest.fn();
-const aboutAfterLeave = jest.fn(() => {
+const aboutBeforeEnter = jest.fn<() => void>();
+const aboutWillEnter = jest.fn<() => void>();
+const aboutEnter = jest.fn<() => void>();
+const aboutAfterEnter = jest.fn<() => void>();
+const aboutBeforeLeave = jest.fn<() => void>();
+const aboutWillLeave = jest.fn<() => void>();
+const aboutLeave = jest.fn<() => void>();
+const aboutAfterLeave = jest.fn<() => void>(() => {
   increaseAboutObserveChangeTestNumber();
 });
-const aboutAfterEnterAutorun = jest.fn();
-const aboutAfterEnterReactionExpression = jest.fn();
-const aboutAfterEnterReactionEffect = jest.fn();
+const aboutAfterEnterAutorun = jest.fn<() => void>();
+const aboutAfterEnterReactionExpression = jest.fn<() => void>();
+const aboutAfterEnterReactionEffect = jest.fn<() => void>();
 
 const aboutObserveChangeTestNumber = observable.box(0);
 
-let increaseAboutObserveChangeTestNumber = action(() => {
+const increaseAboutObserveChangeTestNumber = action(() => {
   aboutObserveChangeTestNumber.set(aboutObserveChangeTestNumber.get() + 1);
 });
 
-const aboutAutorun = jest.fn(() => {
+const aboutAutorun = jest.fn<() => void>(() => {
   aboutObserveChangeTestNumber.get();
 });
 
-const aboutReactionExpression = jest.fn(() => {
+const aboutReactionExpression = jest.fn<() => void>(() => {
   return aboutObserveChangeTestNumber.get();
 });
-const aboutReactionEffect = jest.fn();
+const aboutReactionEffect = jest.fn<(...args: unknown[]) => void>();
 
 primaryRoute.about.$autorun(aboutAutorun);
 primaryRoute.about.$reaction(aboutReactionExpression, aboutReactionEffect);
@@ -106,11 +108,11 @@ primaryRoute.about.$willLeave(aboutWillLeave);
 primaryRoute.about.$leave(aboutLeave);
 primaryRoute.about.$afterLeave(aboutAfterLeave);
 
-const routingBeforeEnter = jest.fn();
+const routingBeforeEnter = jest.fn<() => void>();
 
 primaryRoute.routing.$beforeEnter(routingBeforeEnter);
 
-const removedAboutAfterEnter = jest.fn();
+const removedAboutAfterEnter = jest.fn<() => void>();
 
 const removalCallback = primaryRoute.about.$afterEnter(removedAboutAfterEnter);
 

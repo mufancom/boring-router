@@ -19,12 +19,12 @@ type BrowserHistoryEntry<TData> = HistoryEntry<number, TData>;
 
 type BrowserHistorySnapshot<TData> = HistorySnapshot<number, TData>;
 
-interface BrowserHistoryState<TData> {
+type BrowserHistoryState<TData> = {
   id: number;
   data: TData;
-}
+};
 
-export interface BrowserHistoryOptions {
+export type BrowserHistoryOptions = {
   /**
    * URL prefix, ignored if `hash` is enabled.
    */
@@ -36,7 +36,7 @@ export interface BrowserHistoryOptions {
    * obsolete browsers.
    */
   hash?: boolean;
-}
+};
 
 export class BrowserHistory<TData = any> extends AbstractHistory<
   number,

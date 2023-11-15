@@ -6,9 +6,6 @@
       "extends": ["plugin:@mufan/typescript"],
       "parserOptions": {
         "project": "tsconfig.json"
-      },
-      "settings": {
-        "import/core-modules": ["boring-router"]
       }
     }
   ]

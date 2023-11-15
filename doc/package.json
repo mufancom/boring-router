@@ -1,0 +1,13 @@
+{
+  "name": "@boring-router/doc",
+  "private": true,
+  "scripts": {
+    "publish-doc": "NODE_OPTIONS=--openssl-legacy-provider docz build && gh-pages -d .docz/dist"
+  },
+  "dependencies": {
+    "@emotion/core": "10",
+    "docz": "^2.4.0",
+    "gatsby-plugin-catch-links": "^5.6.0",
+    "gh-pages": "^5.0.0"
+  }
+}

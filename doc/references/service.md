@@ -93,7 +93,7 @@ type UserIdRoute = typeof route.user.userId;
 
 class UserIdRouteService implements IRouteService<UserIdRoute> {
   @observable
-  user!: User;
+  accessor user!: User;
 
   willEnter(next: UserIdRoute['$next']): void {
     this.user = new User(next.$params.userId);

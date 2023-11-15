@@ -7,18 +7,18 @@ import type {
 import {autorun, observable, reaction} from 'mobx';
 import type {OmitValueOfKey, OmitValueWithType} from 'tslang';
 
-import {testPathPrefix, tolerate} from '../@utils';
-import type {IHistory} from '../history';
-import type {RouteBuilder} from '../route-builder';
-import type {Router} from '../router';
+import {testPathPrefix, tolerate} from '../@utils.js';
+import type {IHistory} from '../history/index.js';
+import type {RouteBuilder} from '../route-builder.js';
+import type {Router} from '../router.js';
 
-import type {NextRouteMatch} from './next-route-match';
+import type {NextRouteMatch} from './next-route-match.js';
 import type {
   GeneralParamDict,
   GeneralSegmentDict,
   RouteMatchSharedOptions,
-} from './route-match-shared';
-import {RouteMatchShared} from './route-match-shared';
+} from './route-match-shared.js';
+import {RouteMatchShared} from './route-match-shared.js';
 
 export const ROUTE_SERVICE_ENTER_UPDATE_DATA_SYMBOL = Symbol('enter data');
 export const ROUTE_SERVICE_UPDATE_DATA_SYMBOL = Symbol('update data');
@@ -29,9 +29,9 @@ export const ROUTE_SERVICE_EXTENSION_SYMBOL = Symbol('extension');
 // lifecycle hooks //
 /////////////////////
 
-export interface RouteUpdateContext {
+export type RouteUpdateContext = {
   descendants: boolean;
-}
+};
 
 // before enter //
 
@@ -58,16 +58,16 @@ export type RouteBeforeUpdateCallback<
   context: RouteUpdateContext,
 ) => Promise<boolean | void> | boolean | void;
 
-export interface RouteBeforeUpdateOptions {
+export type RouteBeforeUpdateOptions = {
   traceDescendants: boolean;
-}
+};
 
-export interface RouteBeforeUpdateEntry<
+export type RouteBeforeUpdateEntry<
   TRouteMatch extends RouteMatch = RouteMatch,
-> {
+> = {
   callback: RouteBeforeUpdateCallback<TRouteMatch>;
   options?: RouteBeforeUpdateOptions;
-}
+};
 
 // before leave //
 
@@ -116,16 +116,15 @@ export type ServiceWillUpdateCallbackReturn<
   ? Promise<T> | T
   : never;
 
-export interface RouteWillUpdateOptions {
+export type RouteWillUpdateOptions = {
   traceDescendants: boolean;
-}
+};
 
-export interface RouteWillUpdateEntry<
-  TRouteMatch extends RouteMatch = RouteMatch,
-> {
-  callback: RouteWillUpdateCallback<TRouteMatch>;
-  options?: RouteWillUpdateOptions;
-}
+export type RouteWillUpdateEntry<TRouteMatch extends RouteMatch = RouteMatch> =
+  {
+    callback: RouteWillUpdateCallback<TRouteMatch>;
+    options?: RouteWillUpdateOptions;
+  };
 
 // will leave //
 
@@ -149,14 +148,14 @@ export type ServiceUpdateCallbackReturn<
   TClassExtension extends Partial<RouteServiceExtension<TRouteMatch>> = {},
 > = Omit<RouteServiceExtension<TRouteMatch>, keyof TClassExtension> | void;
 
-export interface RouteUpdateOptions {
+export type RouteUpdateOptions = {
   traceDescendants: boolean;
-}
+};
 
-export interface RouteUpdateEntry {
+export type RouteUpdateEntry = {
   callback: RouteUpdateCallback;
   options?: RouteUpdateOptions;
-}
+};
 
 // leave //
 
@@ -173,14 +172,14 @@ export type RouteAfterEnterCallback = () => void;
  */
 export type RouteAfterUpdateCallback = (context: RouteUpdateContext) => void;
 
-export interface RouteAfterUpdateOptions {
+export type RouteAfterUpdateOptions = {
   traceDescendants: boolean;
-}
+};
 
-export interface RouteAfterUpdateEntry {
+export type RouteAfterUpdateEntry = {
   options?: RouteAfterUpdateOptions;
   callback: RouteAfterUpdateCallback;
-}
+};
 
 // after leave //
 
@@ -194,12 +193,12 @@ export type RouteAutorunView = (reaction: IReactionPublic) => void;
 
 export type RouteAutorunOptions = IAutorunOptions;
 
-interface RouteAutorunEntry {
+type RouteAutorunEntry = {
   type: 'autorun';
   view: RouteAutorunView;
   options: RouteAutorunOptions | undefined;
   disposer: RouteReactiveDisposer | undefined;
-}
+};
 
 export type RouteReactionExpression<T> = (reaction: IReactionPublic) => T;
 
@@ -214,16 +213,16 @@ export type RouteReactionOptions<
   FireImmediately extends boolean = boolean,
 > = IReactionOptions<T, FireImmediately> | undefined;
 
-interface RouteReactionEntry<
+type RouteReactionEntry<
   T = unknown,
   FireImmediately extends boolean = boolean,
-> {
+> = {
   type: 'reaction';
   expression: RouteReactionExpression<T>;
   effect: RouteReactionEffect<T>;
   options: RouteReactionOptions<T, FireImmediately> | undefined;
   disposer: RouteReactiveDisposer | undefined;
-}
+};
 
 // removal //
 
@@ -316,58 +315,59 @@ export type RouteServiceExtension<TRouteMatch extends RouteMatch> =
 
 type RouteReactiveEntry = RouteAutorunEntry | RouteReactionEntry;
 
-interface RouteMatchInternalResult {
+type RouteMatchInternalResult = {
   matched: boolean;
   exactlyMatched: boolean;
   segment: string | undefined;
   rest: string;
-}
+};
 
-export interface RouteMatchResult {
+export type RouteMatchResult = {
   matched: boolean;
   exactlyMatched: boolean;
   rest: string;
-}
+};
 
-export interface RouteMatchParallelOptions<TGroupName extends string> {
+export type RouteMatchParallelOptions<TGroupName extends string> = {
   groups?: TGroupName[];
   matches?: RouteMatch[];
-}
+};
 
 /** @internal */
-export interface RouteMatchUpdateResult {
+export type RouteMatchUpdateResult = {
   pathSegmentDict: GeneralSegmentDict;
   paramSegmentDict: GeneralSegmentDict;
-}
+};
 
-export interface RouteMatchEntry {
+export type RouteMatchEntry = {
   match: RouteMatch;
   exact: boolean;
   segment: string;
   rest: string;
-}
+};
 
-export interface RouteSourceQuery {
+export type RouteSourceQuery = {
   id: string | symbol | true;
   value: string;
-}
+};
 
-export interface RouteSource {
+export type RouteSource = {
   groupToMatchToMatchEntryMapMap: Map<
     string | undefined,
     Map<RouteMatch, RouteMatchEntry>
   >;
   queryMap: Map<string, RouteSourceQuery>;
   pathMap: Map<string | undefined, string>;
-}
+};
 
-export interface RouteMatchOptions extends RouteMatchSharedOptions {
+export type RouteMatchOptions = {
   exact: boolean | string;
-}
+} & RouteMatchSharedOptions;
 
 export class RouteMatch<
   TParamDict extends GeneralParamDict = GeneralParamDict,
-  TNextRouteMatch extends NextRouteMatch<TParamDict> = NextRouteMatch<TParamDict>,
+  TNextRouteMatch extends
+    NextRouteMatch<TParamDict> = NextRouteMatch<TParamDict>,
   TSpecificGroupName extends string | undefined = string | undefined,
   TGroupName extends string = string,
   TMetadata extends object = object,
@@ -422,7 +422,7 @@ export class RouteMatch<
 
   /** @internal */
   @observable
-  private _service: IRouteService<this> | undefined;
+  private accessor _service: IRouteService<this> | undefined;
 
   /** @internal */
   private _servicePromise: Promise<IRouteService<this> | undefined> | undefined;

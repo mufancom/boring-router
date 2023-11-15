@@ -1,9 +1,9 @@
-import type {HistorySnapshot} from './history';
-import {AbstractHistory, getActiveHistoryEntryIndex} from './history';
+import type {HistorySnapshot} from './history.js';
+import {AbstractHistory, getActiveHistoryEntryIndex} from './history.js';
 
 const SNAP_PROMISE = Promise.resolve();
 
-export interface MemoryHistoryOptions {
+export type MemoryHistoryOptions = {
   /**
    * Initial ref, defaults to '/'.
    */
@@ -12,7 +12,7 @@ export interface MemoryHistoryOptions {
    * URL prefix.
    */
   prefix?: string;
-}
+};
 
 export class MemoryHistory<TData = any> extends AbstractHistory<number, TData> {
   private _snapshot: HistorySnapshot<number, TData>;

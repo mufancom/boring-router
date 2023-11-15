@@ -1,19 +1,28 @@
 {
+  "$schema": "boilerplate.schema.json",
   "boilerplate": "@mufan/code-boilerplates/typescript",
   "options": {
     "name": "boring-router-packages",
     "license": "MIT",
     "author": "Chengdu Mufan Technology Co., Ltd.",
+    "defaultBranch": "master",
+    "packageManager": "yarn",
+    "badges": {
+      "npm": true,
+      "license": true,
+      "discord": "https://discord.gg/vanVrDwSkS"
+    },
+    "type": "module",
     "packages": [
       {
         "name": "boring-router",
         "projects": [
           {
-            "name": "library",
-            "module": ["cjs", "esm"]
+            "name": "library"
           },
           {
-            "name": "test"
+            "name": "test",
+            "references": ["library"]
           }
         ]
       },
@@ -22,7 +31,6 @@
         "projects": [
           {
             "name": "library",
-            "module": ["cjs", "esm"],
             "references": [
               {
                 "package": "boring-router",

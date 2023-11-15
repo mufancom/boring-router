@@ -334,7 +334,7 @@ type UserRoute = typeof route.user;
 
 class UserRouteService implements IRouteService<UserRoute> {
   @observable
-  user!: User;
+  accessor user!: User;
 
   constructor(private match: UserRoute) {}
 

@@ -1,8 +1,9 @@
-import {MemoryHistory, RouteMatch, Router} from 'boring-router';
 import {configure} from 'mobx';
 import type {AssertTrue, IsEqual} from 'tslang';
 
-import {nap} from './@utils';
+import {MemoryHistory, RouteMatch, Router} from '../library/index.js';
+
+import {nap} from './@utils.js';
 
 configure({
   enforceActions: 'observed',
@@ -250,17 +251,11 @@ test('metadata should be merged', async () => {
   const accountMetadata = primaryRoute.account.$metadata;
   const accountIdMetadata = primaryRoute.account.id.$next.$metadata;
 
-  // @ts-ignore
-  type __Assertion =
-    // line-break
-    AssertTrue<IsEqual<typeof accountMetadata, {title: string}>>;
-
-  // @ts-ignore
-  type __Assertion =
-    // line-break
-    AssertTrue<
-      IsEqual<typeof accountIdMetadata, {title: string; 'sub-title': number}>
-    >;
+  type _assert =
+    | AssertTrue<IsEqual<typeof accountMetadata, {title: string}>>
+    | AssertTrue<
+        IsEqual<typeof accountIdMetadata, {title: string; 'sub-title': number}>
+      >;
 
   expect(accountMetadata).toEqual({title: 'account'});
   expect(accountIdMetadata).toEqual({title: 'account', 'sub-title': 123});

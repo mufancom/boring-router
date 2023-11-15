@@ -3,9 +3,9 @@ import {observer} from 'mobx-react-lite';
 import type {ComponentType, ReactElement, ReactNode} from 'react';
 import React from 'react';
 
-export interface RouteComponentProps<TRouteMatch extends RouteMatch> {
+export type RouteComponentProps<TRouteMatch extends RouteMatch> = {
   match: TRouteMatch;
-}
+};
 
 export type RouteComponent<TRouteMatch extends RouteMatch> = ComponentType<
   RouteComponentProps<TRouteMatch>
@@ -15,12 +15,12 @@ export type RouteFunctionChild<TRouteMatch extends RouteMatch> = (
   match: TRouteMatch,
 ) => ReactElement;
 
-export interface RouteProps<TRouteMatch extends RouteMatch> {
+export type RouteProps<TRouteMatch extends RouteMatch> = {
   match: TRouteMatch | TRouteMatch[];
   exact?: boolean;
   component?: RouteComponent<TRouteMatch>;
   children?: RouteFunctionChild<TRouteMatch> | ReactNode;
-}
+};
 
 export const Route = observer(
   <TRouteMatch extends RouteMatch>({
@@ -36,7 +36,6 @@ export const Route = observer(
     );
 
     if (firstMatch) {
-      // eslint-disable-next-line no-null/no-null
       if (children !== undefined && children !== null) {
         if (RouteComponent) {
           throw new Error(

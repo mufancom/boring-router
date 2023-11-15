@@ -1,6 +1,6 @@
 import type {Dict} from 'tslang';
 
-export interface RootRouteSchema {
+export type RootRouteSchema = {
   $query?: Dict<string | symbol | true>;
   /**
    * Whether to allow exact match while if this route has children. Only
@@ -13,11 +13,11 @@ export interface RootRouteSchema {
   $children?: RouteSchemaDict;
   $extension?: object;
   $metadata?: object;
-}
+};
 
-export interface RouteSchema extends RootRouteSchema {
+export type RouteSchema = {
   $match?: string | RegExp;
-}
+} & RootRouteSchema;
 
 export type RouteSchemaDict = Dict<RouteSchema | boolean>;
 export type GroupToRouteSchemaDictDict = Dict<RouteSchemaDict>;

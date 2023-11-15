@@ -1,13 +1,15 @@
+import {jest} from '@jest/globals';
+import {computed, configure} from 'mobx';
+
 import type {
   IRouteService,
   RouteUpdateContext,
   ServiceWillEnterCallbackReturn,
   ServiceWillUpdateCallbackReturn,
-} from 'boring-router';
-import {MemoryHistory, RouteMatch, Router} from 'boring-router';
-import {computed, configure} from 'mobx';
+} from '../library/index.js';
+import {MemoryHistory, RouteMatch, Router} from '../library/index.js';
 
-import {nap} from './@utils';
+import {nap} from './@utils.js';
 
 configure({
   enforceActions: 'observed',
@@ -55,13 +57,13 @@ const afterLeave = jest.fn();
 
 type AccountIdRouteMatch = typeof primaryRoute.account.accountId;
 
-interface AccountRouteServiceEnterUpdateData {
+type AccountRouteServiceEnterUpdateData = {
   foo: string;
-}
+};
 
-interface AccountRouteServiceClassExtension {
+type AccountRouteServiceClassExtension = {
   name: string;
-}
+};
 
 class AccountRouteService
   implements

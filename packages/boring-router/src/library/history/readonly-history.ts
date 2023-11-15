@@ -1,7 +1,7 @@
-import type {HistorySnapshot} from './history';
-import {AbstractHistory} from './history';
+import type {HistorySnapshot} from './history.js';
+import {AbstractHistory} from './history.js';
 
-export interface ReadOnlyHistoryOptions {
+export type ReadOnlyHistoryOptions = {
   /**
    * Initial ref, defaults to '/'.
    */
@@ -10,7 +10,7 @@ export interface ReadOnlyHistoryOptions {
    * URL prefix.
    */
   prefix?: string;
-}
+};
 
 export class ReadOnlyHistory<TData = any> extends AbstractHistory<
   number,

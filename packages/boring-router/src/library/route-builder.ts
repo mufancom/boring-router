@@ -1,26 +1,26 @@
 import _ from 'lodash';
 import type {EmptyObjectPatch} from 'tslang';
 
-import {buildPath, buildRef, isQueryIdsMatched, parseSearch} from './@utils';
+import {buildPath, buildRef, isQueryIdsMatched, parseSearch} from './@utils.js';
 import type {
   GeneralParamDict,
   RouteMatchShared,
   RouteMatchSharedToParamDict,
-} from './route-match';
-import type {Router, RouterNavigateOptions} from './router';
+} from './route-match/index.js';
+import type {Router, RouterNavigateOptions} from './router.js';
 
 type BuildingPart = RouteBuilderBuildingPart | StringBuildingPart;
 
-interface StringBuildingPart {
+type StringBuildingPart = {
   route?: RouteMatchShared;
   path: string;
   query: Map<string, string>;
-}
+};
 
-export interface RouteBuilderBuildingPart {
+export type RouteBuilderBuildingPart = {
   route: RouteMatchShared;
   params?: GeneralParamDict;
-}
+};
 
 export type RouteBuilderSourceType = 'current' | 'next' | 'none';
 
@@ -258,15 +258,15 @@ export class RouteBuilder<TGroupName extends string = string> {
   }
 }
 
-interface ParsedStringBuildingPartGroup {
+type ParsedStringBuildingPartGroup = {
   name: string | undefined;
   path: string;
-}
+};
 
-interface ParsedStringBuildingPart {
+type ParsedStringBuildingPart = {
   groups: ParsedStringBuildingPartGroup[];
   query: Map<string, string>;
-}
+};
 
 function parseStringBuildingPart(
   part: string,

@@ -1,3 +1,3 @@
-export * from './history';
-export * from './memory-history';
-export * from './readonly-history';
+export * from './history.js';
+export * from './memory-history.js';
+export * from './readonly-history.js';

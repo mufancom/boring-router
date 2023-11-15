@@ -4,10 +4,9 @@ import {observer} from 'mobx-react-lite';
 import type {ForwardedRef, HTMLAttributes, MouseEvent, ReactNode} from 'react';
 import React, {forwardRef} from 'react';
 
-import {composeEventHandler} from './@utils';
+import {composeEventHandler} from './@utils.js';
 
-export interface LinkProps<T extends RouteMatch | RouteBuilder>
-  extends HTMLAttributes<HTMLAnchorElement> {
+export type LinkProps<T extends RouteMatch | RouteBuilder> = {
   className?: string;
   to: T;
   params?: T extends RouteMatch ? RouteMatchSharedToParamDict<T> : undefined;
@@ -16,7 +15,7 @@ export interface LinkProps<T extends RouteMatch | RouteBuilder>
   toggle?: T extends RouteMatch ? boolean : undefined;
   leave?: T extends RouteMatch ? boolean : undefined;
   stopPropagation?: boolean;
-}
+} & HTMLAttributes<HTMLAnchorElement>;
 
 export const Link = observer(
   forwardRef(

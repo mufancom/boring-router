@@ -1,16 +1,16 @@
-import hyphenate from 'hyphenate';
+import {hyphenate} from 'hyphenate';
 import _ from 'lodash';
-import {makeObservable, observable, runInAction} from 'mobx';
+import {observable, runInAction} from 'mobx';
 import type {Dict, EmptyObjectPatch} from 'tslang';
 
-import {parseRef, parseSearch} from './@utils';
+import {parseRef, parseSearch} from './@utils.js';
 import type {
   HistoryChangeCallbackRemovalHandler,
   HistorySnapshot,
   IHistory,
-} from './history';
-import {getActiveHistoryEntry} from './history';
-import {RouteBuilder} from './route-builder';
+} from './history/index.js';
+import {getActiveHistoryEntry} from './history/index.js';
+import {RouteBuilder} from './route-builder.js';
 import type {
   GeneralParamDict,
   RouteMatchEntry,
@@ -19,9 +19,9 @@ import type {
   RouteMatchSharedToParamDict,
   RouteSource,
   RouteSourceQuery,
-} from './route-match';
-import {NextRouteMatch, RouteMatch} from './route-match';
-import type {RootRouteSchema, RouteSchema, RouteSchemaDict} from './schema';
+} from './route-match/index.js';
+import {NextRouteMatch, RouteMatch} from './route-match/index.js';
+import type {RootRouteSchema, RouteSchema, RouteSchemaDict} from './schema.js';
 
 export type SegmentMatcherCallback = (key: string) => string;
 
@@ -42,22 +42,22 @@ type FilterRouteMatchNonStringSegment<TRouteSchema, T> = TRouteSchema extends {
     : T
   : never;
 
-interface RouteSchemaChildrenSection<TRouteSchemaDict> {
+type RouteSchemaChildrenSection<TRouteSchemaDict> = {
   $children: TRouteSchemaDict;
-}
+};
 
 type NestedRouteSchemaDictType<TRouteSchema> =
   TRouteSchema extends RouteSchemaChildrenSection<infer TNestedRouteSchemaDict>
     ? TNestedRouteSchemaDict
     : {};
 
-interface RouteSchemaExtensionSection<TRouteMatchExtension> {
+type RouteSchemaExtensionSection<TRouteMatchExtension> = {
   $extension: TRouteMatchExtension;
-}
+};
 
-interface RouteSchemaMetadataSection<TMetadata> {
+type RouteSchemaMetadataSection<TMetadata> = {
   $metadata: TMetadata;
-}
+};
 
 type RouteMatchMetadataType<TRouteSchema, TUpperMetadata> =
   TRouteSchema extends RouteSchemaMetadataSection<infer TMetadata>
@@ -215,11 +215,11 @@ export type RouterOnLeave = (path: string) => void;
 
 export type RouterOnNavigateComplete = () => void;
 
-export interface RouterHistoryEntryData {
+export type RouterHistoryEntryData = {
   navigateCompleteListener?: RouterOnNavigateComplete;
-}
+};
 
-export interface RouterOptions {
+export type RouterOptions = {
   readOnly?: boolean;
   /**
    * Start listen automatically, defaults to true unless `readOnly` is true.
@@ -230,14 +230,14 @@ export interface RouterOptions {
    * transformation.
    */
   segmentMatcher?: SegmentMatcherCallback;
-}
+};
 
-export interface RouterNavigateOptions {
+export type RouterNavigateOptions = {
   /**
    * The callback that will be called after a route completed (after all the hooks).
    */
   onComplete?: RouterOnNavigateComplete;
-}
+};
 
 export type RouterHistory = IHistory<unknown, RouterHistoryEntryData>;
 
@@ -246,12 +246,12 @@ export type RouterHistorySnapshot = HistorySnapshot<
   RouterHistoryEntryData
 >;
 
-interface InterUpdateData {
+type InterUpdateData = {
   reversedLeavingMatches: RouteMatch[];
   enteringAndUpdatingMatchSet: Set<RouteMatch>;
   previousMatchSet: Set<RouteMatch>;
   descendantUpdatingMatchSet: Set<RouteMatch>;
-}
+};
 
 export class Router<TGroupName extends string = string> {
   /** @internal */
@@ -267,11 +267,11 @@ export class Router<TGroupName extends string = string> {
 
   /** @internal */
   @observable.ref
-  private _snapshot: RouterHistorySnapshot | undefined;
+  private accessor _snapshot: RouterHistorySnapshot | undefined;
 
   /** @internal */
   @observable.ref
-  private _nextSnapshot: RouterHistorySnapshot | undefined;
+  private accessor _nextSnapshot: RouterHistorySnapshot | undefined;
 
   /** @internal */
   private _source: RouteSource = observable({
@@ -292,7 +292,7 @@ export class Router<TGroupName extends string = string> {
 
   /** @internal */
   @observable
-  private _routing = 0;
+  private accessor _routing = 0;
 
   constructor(
     history: RouterHistory,
@@ -302,8 +302,6 @@ export class Router<TGroupName extends string = string> {
       segmentMatcher,
     }: RouterOptions = {},
   ) {
-    makeObservable(this);
-
     this._history = history;
     this.$readOnly = readOnly;
 
